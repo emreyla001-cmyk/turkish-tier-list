@@ -29,7 +29,7 @@ export default async function CharacterPage({ params }) {
     .select('*')
     .eq('id', params.id)
     .eq('status', 'published')
-    .single();
+    .maybeSingle();
 
   if (!character) {
     return <div className="wrap empty">Bu karakter bulunamadı ya da henüz onaylanmadı.</div>;
