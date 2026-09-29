@@ -24,8 +24,11 @@ export default async function HomePage() {
   const list = characters || [];
   const count = list.length;
 
-  // Spotlight vitrinine koyulacak karakterler (En yüksek tier/power veya en son eklenenler)
-  const spotlightChars = list.slice(0, 4);
+  // Spotlight vitrinine koyulacak karakterler: 
+  // Görsel her 1.5 saatte bir değişir ve sadece 5 karakterle sınırlı değildir.
+  // Kataloğumuzdaki fotoğraflı tüm yayınlanmış karakterler vitrin döngüsüne dahil edilir.
+  const photoChars = list.filter((c) => c.image_url && c.image_url.trim().length > 0);
+  const spotlightChars = photoChars.length > 0 ? photoChars : list;
 
   return (
     <div style={{ paddingBottom: '60px' }}>
