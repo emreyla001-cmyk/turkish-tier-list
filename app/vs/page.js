@@ -10,9 +10,11 @@ export default function VersusPage() {
   const [loading, setLoading] = useState(true);
   const [id1, setId1] = useState('');
   const [id2, setId2] = useState('');
-  const [votes, setVotes] = useState({ left: 12, right: 15 });
+  const [votes, setVotes] = useState({ left: 0, right: 0 });
   const [hasVoted, setHasVoted] = useState(false);
   const [userChoice, setUserChoice] = useState(null);
+
+  const duelKey = id1 && id2 ? `duel_${id1}_vs_${id2}` : null;
 
   useEffect(() => {
     supabase
@@ -54,19 +56,50 @@ export default function VersusPage() {
     val: c2 ? c2[s.key] : 5,
   }));
 
+  useEffect(() => {
+    if (!duelKey) return;
+    try {
+      const savedChoice = localStorage.getItem(duelKey);
+      if (savedChoice) {
+        setHasVoted(true);
+        setUserChoice(savedChoice);
+      } else {
+        setHasVoted(false);
+        setUserChoice(null);
+      }
+      const savedVotes = localStorage.getItem(`${duelKey}_counts`);
+      if (savedVotes) {
+        setVotes(JSON.parse(savedVotes));
+      } else {
+        setVotes({ left: 0, right: 0 });
+      }
+    } catch {
+      // localStorage erişim güvenliği
+    }
+  }, [duelKey]);
+
   function handleVote(choice) {
     if (hasVoted) return;
-    setVotes((prev) => ({
-      ...prev,
-      [choice]: prev[choice] + 1,
-    }));
+    const nextVotes = {
+      left: choice === 'left' ? votes.left + 1 : votes.left,
+      right: choice === 'right' ? votes.right + 1 : votes.right,
+    };
+    setVotes(nextVotes);
     setHasVoted(true);
     setUserChoice(choice);
+    if (duelKey) {
+      try {
+        localStorage.setItem(duelKey, choice);
+        localStorage.setItem(`${duelKey}_counts`, JSON.stringify(nextVotes));
+      } catch {
+        // ignore
+      }
+    }
   }
 
   const total = votes.left + votes.right;
-  const leftPct = Math.round((votes.left / total) * 100);
-  const rightPct = 100 - leftPct;
+  const leftPct = total > 0 ? Math.round((votes.left / total) * 100) : 0;
+  const rightPct = total > 0 ? 100 - leftPct : 0;
 
   if (loading) {
     return <div className="wrap empty">VS Arenası yükleniyor...</div>;
@@ -84,7 +117,7 @@ export default function VersusPage() {
       <div className="vs-selector-bar card">
         <div className="field" style={{ flex: 1, margin: 0 }}>
           <label>1. Dövüşçü</label>
-          <select value={id1} onChange={(e) => { setId1(e.target.value); setHasVoted(false); }}>
+          <select value={id1} onChange={(e) => setId1(e.target.value)}>
             {characters.map((c) => (
               <option key={c.id} value={c.id} disabled={c.id === id2}>
                 {c.name} ({c.series || 'Kurgu'}) — {c.tier || 'Tier ?'}
@@ -97,7 +130,7 @@ export default function VersusPage() {
 
         <div className="field" style={{ flex: 1, margin: 0 }}>
           <label>2. Dövüşçü</label>
-          <select value={id2} onChange={(e) => { setId2(e.target.value); setHasVoted(false); }}>
+          <select value={id2} onChange={(e) => setId2(e.target.value)}>
             {characters.map((c) => (
               <option key={c.id} value={c.id} disabled={c.id === id1}>
                 {c.name} ({c.series || 'Kurgu'}) — {c.tier || 'Tier ?'}
@@ -133,7 +166,7 @@ export default function VersusPage() {
                   onClick={() => handleVote('left')}
                   disabled={hasVoted}
                 >
-                  {hasVoted ? (userChoice === 'left' ? '✓ Oy Verildi' : `${leftPct}%`) : 'Bence Bu Alır'}
+                  {hasVoted ? (userChoice === 'left' ? '✓ Oyunuz Burada' : `${leftPct}%`) : 'Bence Bu Alır'}
                 </button>
               </div>
             </div>
@@ -141,16 +174,22 @@ export default function VersusPage() {
             {/* Orta VS & Oylama Barı */}
             <div className="versus-divider">
               <div className="vs-emblem">VS</div>
-              <div className="vs-vote-bar">
-                <div className="vs-bar-track">
-                  <div className="vs-bar-fill-left" style={{ width: `${leftPct}%` }} />
-                  <div className="vs-bar-fill-right" style={{ width: `${rightPct}%` }} />
+              {hasVoted && total > 0 ? (
+                <div className="vs-vote-bar">
+                  <div className="vs-bar-track">
+                    <div className="vs-bar-fill-left" style={{ width: `${leftPct}%` }} />
+                    <div className="vs-bar-fill-right" style={{ width: `${rightPct}%` }} />
+                  </div>
+                  <div className="vs-bar-labels">
+                    <span className="left-pct">%{leftPct} ({votes.left} oy)</span>
+                    <span className="right-pct">%{rightPct} ({votes.right} oy)</span>
+                  </div>
                 </div>
-                <div className="vs-bar-labels">
-                  <span className="left-pct">%{leftPct} ({votes.left} oy)</span>
-                  <span className="right-pct">%{rightPct} ({votes.right} oy)</span>
+              ) : (
+                <div style={{ textAlign: 'center', fontSize: '.8rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+                  Sonuçları görmek için oy ver
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Sağ Karakter */}
@@ -175,7 +214,7 @@ export default function VersusPage() {
                   onClick={() => handleVote('right')}
                   disabled={hasVoted}
                 >
-                  {hasVoted ? (userChoice === 'right' ? '✓ Oy Verildi' : `${rightPct}%`) : 'Bence Bu Alır'}
+                  {hasVoted ? (userChoice === 'right' ? '✓ Oyunuz Burada' : `${rightPct}%`) : 'Bence Bu Alır'}
                 </button>
               </div>
             </div>
