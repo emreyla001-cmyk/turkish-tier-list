@@ -98,10 +98,13 @@ function ProfilContent() {
         equipped_frame: null,
         equipped_background: null,
         equipped_name_color: null,
-        profile_bg_url: null,
+        profile_bg_url: u.user_metadata?.profile_bg_url || null,
       };
 
-      const prof = data || fallbackProfile;
+      const prof = data ? { ...fallbackProfile, ...data } : fallbackProfile;
+      if (!prof.profile_bg_url && u.user_metadata?.profile_bg_url) {
+        prof.profile_bg_url = u.user_metadata.profile_bg_url;
+      }
       setProfile(prof);
       setUsername(prof.username || '');
     } catch (err) {
@@ -187,13 +190,34 @@ function ProfilContent() {
       return;
     }
     const { data } = supabase.storage.from('character-media').getPublicUrl(path);
-    const { error: err2 } = await supabase.from('profiles').update({ avatar_url: data?.publicUrl }).eq('id', user.id);
-    say('avatar', err2 ? 'Kaydedilemedi.' : 'Avatarın güncellendi!');
+    const newAvatarUrl = data?.publicUrl;
+
+    let saved = false;
+    let errMsg = '';
+    try {
+      const { error: err2 } = await supabase.from('profiles').update({ avatar_url: newAvatarUrl }).eq('id', user.id);
+      if (!err2) saved = true;
+      else errMsg = err2.message || '';
+    } catch (e) {
+      errMsg = e.message || '';
+    }
+
+    try {
+      const { error: authErr } = await supabase.auth.updateUser({ data: { avatar_url: newAvatarUrl } });
+      if (!authErr) saved = true;
+    } catch {}
+
+    say('avatar', saved ? 'Avatarın güncellendi!' : `Kaydedilemedi: ${errMsg || 'Hata oluştu'}`);
     load();
   }
 
   async function removeAvatar() {
-    await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);
+    try {
+      await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);
+    } catch {}
+    try {
+      await supabase.auth.updateUser({ data: { avatar_url: null } });
+    } catch {}
     say('avatar', 'Avatar kaldırıldı.');
     load();
   }
@@ -226,13 +250,43 @@ function ProfilContent() {
       return;
     }
     const { data } = supabase.storage.from('character-media').getPublicUrl(path);
-    const { error: err2 } = await supabase.from('profiles').update({ profile_bg_url: data?.publicUrl }).eq('id', user.id);
-    say('bg', err2 ? 'Kaydedilemedi.' : 'Özel profil arka planın güncellendi!');
+    const newBgUrl = data?.publicUrl;
+
+    let saved = false;
+    let errMsg = '';
+    // 1. profiles tablosunu güncelle
+    try {
+      const { error: err2 } = await supabase.from('profiles').update({ profile_bg_url: newBgUrl }).eq('id', user.id);
+      if (!err2) {
+        saved = true;
+      } else {
+        errMsg = err2.message || '';
+      }
+    } catch (e) {
+      errMsg = e.message || '';
+    }
+
+    // 2. Supabase Auth user_metadata'ya da kaydet (RLS kısıtlamalarına karşı yedekli)
+    try {
+      const { error: authErr } = await supabase.auth.updateUser({
+        data: { profile_bg_url: newBgUrl }
+      });
+      if (!authErr) {
+        saved = true;
+      }
+    } catch {}
+
+    say('bg', saved ? 'Özel profil arka planın güncellendi!' : `Kaydedilemedi: ${errMsg || 'Hata oluştu'}`);
     load();
   }
 
   async function removeCustomBackground() {
-    await supabase.from('profiles').update({ profile_bg_url: null }).eq('id', user.id);
+    try {
+      await supabase.from('profiles').update({ profile_bg_url: null }).eq('id', user.id);
+    } catch {}
+    try {
+      await supabase.auth.updateUser({ data: { profile_bg_url: null } });
+    } catch {}
     say('bg', 'Özel arka plan kaldırıldı.');
     load();
   }
