@@ -93,33 +93,18 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Tier Rehberi Özeti */}
         <section className="section">
           <div className="section-head">
-            <h2>Tier Sistemi Nasıl Okunur?</h2>
-            <p>Sıralama, VS Battles Wiki standartlarına dayanır. Sayı küçüldükçe kozmik güç artar.</p>
+            <h2>Tier sistemi nasıl okunur?</h2>
+            <p>Sıralama, VS Battles Wiki'nin tier sistemine dayanır. Sayı küçüldükçe güç artar.</p>
           </div>
           <div className="card tier-guide">
-            <div className="item">
-              <TierBadge tier="10-B" />
-              <span>Sıradan insan gücü. Gerçekçi dizi ve film karakterlerinin çoğu bu kademededir.</span>
-            </div>
-            <div className="item">
-              <TierBadge tier="9-C" />
-              <span>Zirve insan: Özel harekat, elit dövüşçü veya üstün fiziksel kondisyon.</span>
-            </div>
-            <div className="item">
-              <TierBadge tier="7-C" />
-              <span>Kasaba/Şehir seviyesi yıkım. Büyü, fantastik ve süper kahraman kurgularında görülür.</span>
-            </div>
-            <div className="item">
-              <TierBadge tier="High 1-A" />
-              <span>Kozmik/Metafizik güç. Destan kahramanları veya evren üstü tanrısal varlıklar.</span>
-            </div>
+            <div className="item"><TierBadge tier="10-B" /><span>Sıradan insan gücü. Gerçekçi dizi karakterlerinin çoğu 10. ve 9. tier'da yer alır.</span></div>
+            <div className="item"><TierBadge tier="9-C" /><span>İnsan gücünün sınırı: olimpiyat sporcusu ya da çok usta bir dövüşçü.</span></div>
+            <div className="item"><TierBadge tier="7-C" /><span>Bir kasabayı yok edebilecek güç. Fantastik ve bilimkurgu yapımlarda görülür.</span></div>
+            <div className="item"><TierBadge tier="High 7-C" /><span>Low ve High, bazı tier'ların alt ve üst kademeleridir. Low 7-C, 7-C'den; 7-C ise High 7-C'den zayıftır.</span></div>
           </div>
-          <p style={{ marginTop: '16px' }}>
-            <a href="/tier-sistemi" className="btn btn-ghost">Tüm Tier Rehberini İncele →</a>
-          </p>
+          <p style={{ marginTop: '14px' }}><a href="/tier-sistemi" className="btn btn-ghost">Tüm tier'ları ve anlamlarını gör</a></p>
         </section>
 
         <CtaBand />

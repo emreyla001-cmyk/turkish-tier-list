@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import UserBadge, { Avatar, levelFromXp, xpForLevel } from '../components/UserBadge';
+import UserBadge, { Avatar, NameTag, levelFromXp, xpForLevel } from '../components/UserBadge';
 import { useFrameMap } from '../components/useFrameMap';
+import { resolveBackground, resolveFrame, resolveNameColor } from '../components/cosmetics';
 import TwoFactor from '../components/TwoFactor';
 
 const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
@@ -74,7 +75,7 @@ function ProfilContent() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, role, xp, coins, vip_until, name_color_until, avatar_gif_until, equipped_frame, equipped_background')
+        .select('id, username, avatar_url, role, xp, coins, vip_until, name_color_until, avatar_gif_until, equipped_frame, equipped_background, equipped_name_color')
         .eq('id', u.id)
         .maybeSingle();
 
@@ -90,6 +91,7 @@ function ProfilContent() {
         avatar_gif_until: null,
         equipped_frame: null,
         equipped_background: null,
+        equipped_name_color: null,
       };
 
       const prof = data || fallbackProfile;
@@ -204,19 +206,34 @@ function ProfilContent() {
   const xpDiff = Math.max(1, next - cur);
   const pct = Math.min(100, Math.max(0, Math.round(((currentXp - cur) / xpDiff) * 100)));
 
-  const bannerBg = profile?.equipped_background && frameMap ? frameMap[profile.equipped_background] : undefined;
-  const frameGrad = profile?.equipped_frame && frameMap ? frameMap[profile.equipped_frame] : undefined;
+  const bannerBg = resolveBackground(profile?.equipped_background, frameMap);
+  const frameGrad = resolveFrame(profile?.equipped_frame, frameMap);
+  const nameColorVal = resolveNameColor(profile?.equipped_name_color, frameMap);
+
+  async function unequipCosmetic(column) {
+    await supabase.from('profiles').update({ [column]: null }).eq('id', user.id);
+    load();
+  }
 
   return (
     <div className="wrap" style={{ maxWidth: '640px' }}>
       <h1>Profil Ayarları</h1>
 
       <ErrorBoundary>
-        <div className="card profile-banner" style={bannerBg ? { backgroundImage: bannerBg } : undefined}>
+        <div
+          className="card profile-banner"
+          style={{
+            backgroundImage: bannerBg ? `${bannerBg}` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
           <div className="profile-head">
             <Avatar url={profile?.avatar_url} name={profile?.username || user?.email || '?'} size={72} frameGradient={frameGrad} />
             <div>
-              <h3 style={{ margin: '0 0 6px' }}>{profile?.username || 'Kullanıcı'}</h3>
+              <h3 style={{ margin: '0 0 6px' }}>
+                <NameTag name={profile?.username || 'Kullanıcı'} color={nameColorVal} />
+              </h3>
               <UserBadge role={profile?.role || 'user'} xp={currentXp} vipActive={vipActive} />
             </div>
           </div>
@@ -235,6 +252,73 @@ function ProfilContent() {
           </p>
         </div>
       </ErrorBoundary>
+
+      {/* Kuşanılan Kozmetikler Yönetim Kartı */}
+      <div className="card" style={{ marginTop: '14px' }}>
+        <h3>Kuşanılan Eşyalar (Kozmetikler)</h3>
+        <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: '4px 0 12px' }}>
+          Mağazadan aldığın ve şu an profilinde/sohbette aktif olan eşyalar:
+        </p>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-2)', padding: '10px 14px', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>🖼️</span>
+              <div>
+                <strong style={{ fontSize: '.88rem' }}>Avatar Çerçevesi:</strong>{' '}
+                <span style={{ fontSize: '.85rem', color: 'var(--text-dim)' }}>
+                  {profile?.equipped_frame ? 'Aktif' : 'Varsayılan'}
+                </span>
+              </div>
+            </div>
+            {profile?.equipped_frame && (
+              <button type="button" className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '.75rem' }} onClick={() => unequipCosmetic('equipped_frame')}>
+                Çerçeveyi Çıkar
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-2)', padding: '10px 14px', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>🎨</span>
+              <div>
+                <strong style={{ fontSize: '.88rem' }}>İsim Rengi:</strong>{' '}
+                <span style={{ fontSize: '.85rem' }}>
+                  {profile?.equipped_name_color ? (
+                    <NameTag name="Örnek İsim" color={nameColorVal} />
+                  ) : (
+                    <span style={{ color: 'var(--text-dim)' }}>Varsayılan</span>
+                  )}
+                </span>
+              </div>
+            </div>
+            {profile?.equipped_name_color && (
+              <button type="button" className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '.75rem' }} onClick={() => unequipCosmetic('equipped_name_color')}>
+                Rengi Sıfırla
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-2)', padding: '10px 14px', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>🌄</span>
+              <div>
+                <strong style={{ fontSize: '.88rem' }}>Profil Arka Planı:</strong>{' '}
+                <span style={{ fontSize: '.85rem', color: 'var(--text-dim)' }}>
+                  {profile?.equipped_background ? 'Aktif' : 'Varsayılan'}
+                </span>
+              </div>
+            </div>
+            {profile?.equipped_background && (
+              <button type="button" className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '.75rem' }} onClick={() => unequipCosmetic('equipped_background')}>
+                Arka Planı Kaldır
+              </button>
+            )}
+          </div>
+        </div>
+        <p style={{ marginTop: '12px', fontSize: '.82rem' }}>
+          Yeni çerçeve ve efektler için <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>Mağazayı ziyaret et →</a>
+        </p>
+      </div>
 
       <div className="card" style={{ marginTop: '14px' }}>
         <h3>Avatar</h3>

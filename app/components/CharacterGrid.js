@@ -2,13 +2,22 @@
 
 import { useMemo, useState } from 'react';
 import TierBadge from './TierBadge';
-import { tierRank, tierNumber } from './tiers';
+import { tierRank, tierNumber, GROUPS } from './tiers';
 
 export default function CharacterGrid({ characters = [] }) {
   const [q, setQ] = useState('');
-  const [sort, setSort] = useState('strong'); // Varsayılan en güçlüden zayıfa
-  const [tierGroup, setTierGroup] = useState('all');
+  const [sort, setSort] = useState('strong');
+  const [group, setGroup] = useState('all');
   const [cat, setCat] = useState('all');
+
+  const groups = useMemo(() => {
+    const set = new Set();
+    characters.forEach((c) => {
+      const n = tierNumber(c.tier);
+      if (n !== null) set.add(n);
+    });
+    return [...set].sort((a, b) => a - b); // Tier 0, 1, 2... en güçlüden sırayla
+  }, [characters]);
 
   const categories = useMemo(() => {
     const set = new Set();
@@ -22,18 +31,6 @@ export default function CharacterGrid({ characters = [] }) {
     c.created_at &&
     Date.now() - new Date(c.created_at).getTime() < 7 * 24 * 3600 * 1000;
 
-  // Hızlı Tier Kademesi Gruplaması
-  const filterByTierGroup = (tier, groupKey) => {
-    if (groupKey === 'all') return true;
-    const num = tierNumber(tier);
-    if (num === null) return groupKey === 'other';
-    if (groupKey === 'godly') return num >= 0 && num <= 2;
-    if (groupKey === 'super') return num >= 3 && num <= 6;
-    if (groupKey === 'peak') return num >= 7 && num <= 9;
-    if (groupKey === 'human') return num >= 10;
-    return true;
-  };
-
   const list = useMemo(() => {
     const query = q.trim().toLocaleLowerCase('tr');
     let items = characters.filter((c) => {
@@ -45,13 +42,13 @@ export default function CharacterGrid({ characters = [] }) {
       ) {
         return false;
       }
-      if (!filterByTierGroup(c.tier, tierGroup)) return false;
+      if (group !== 'all' && String(tierNumber(c.tier)) !== group) return false;
       if (cat !== 'all' && c.category !== cat) return false;
       return true;
     });
 
-    // Sıralama
-    const cmpTier = (dir) => (a, b) => {
+    // Tier'ı belirlenmemiş karakterler her zaman sonda
+    const cmp = (dir) => (a, b) => {
       const ra = tierRank(a.tier);
       const rb = tierRank(b.tier);
       if (ra < 0 && rb < 0) return 0;
@@ -60,10 +57,8 @@ export default function CharacterGrid({ characters = [] }) {
       return dir * (rb - ra);
     };
 
-    if (sort === 'strong') items = [...items].sort(cmpTier(1));
-    if (sort === 'weak') items = [...items].sort(cmpTier(-1));
-    if (sort === 'power') items = [...items].sort((a, b) => (b.power_score || 0) - (a.power_score || 0));
-    if (sort === 'intel') items = [...items].sort((a, b) => (b.intelligence_score || 0) - (a.intelligence_score || 0));
+    if (sort === 'strong') items = [...items].sort(cmp(1));
+    if (sort === 'weak') items = [...items].sort(cmp(-1));
     if (sort === 'name') items = [...items].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
     if (sort === 'new') {
       items = [...items].sort(
@@ -72,57 +67,18 @@ export default function CharacterGrid({ characters = [] }) {
     }
 
     return items;
-  }, [characters, q, sort, tierGroup, cat]);
+  }, [characters, q, sort, group, cat]);
 
   return (
     <div className="char-section-wrap">
-      {/* Üst Sekmeler / Hızlı Tier Filtreleri */}
-      <div className="filter-tabs">
-        <button
-          type="button"
-          className={`filter-tab ${tierGroup === 'all' ? 'active' : ''}`}
-          onClick={() => setTierGroup('all')}
-        >
-          Tüm Karakterler
-        </button>
-        <button
-          type="button"
-          className={`filter-tab ${tierGroup === 'godly' ? 'active' : ''}`}
-          onClick={() => setTierGroup('godly')}
-        >
-          🌌 Tanrısal / Kozmik (Tier 0-2)
-        </button>
-        <button
-          type="button"
-          className={`filter-tab ${tierGroup === 'super' ? 'active' : ''}`}
-          onClick={() => setTierGroup('super')}
-        >
-          🔥 Doğaüstü / Büyü (Tier 3-6)
-        </button>
-        <button
-          type="button"
-          className={`filter-tab ${tierGroup === 'peak' ? 'active' : ''}`}
-          onClick={() => setTierGroup('peak')}
-        >
-          ⚔️ Dövüşçü / Zirve (Tier 7-9)
-        </button>
-        <button
-          type="button"
-          className={`filter-tab ${tierGroup === 'human' ? 'active' : ''}`}
-          onClick={() => setTierGroup('human')}
-        >
-          👤 İnsan Düzeyi (Tier 10)
-        </button>
-      </div>
-
-      {/* Arama & Sıralama Çubuğu */}
+      {/* Orijinal Tier Filtre Çubuğu */}
       <div className="char-toolbar">
         <div className="toolbar-search">
           <span className="search-icon-inline">🔍</span>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="İsim, yapım veya kategori ara..."
+            placeholder="Karakter veya yapım ara..."
           />
           {q && (
             <button
@@ -136,6 +92,15 @@ export default function CharacterGrid({ characters = [] }) {
         </div>
 
         <div className="toolbar-filters">
+          <select value={group} onChange={(e) => setGroup(e.target.value)}>
+            <option value="all">Tüm Tier&apos;lar</option>
+            {groups.map((n) => (
+              <option key={n} value={String(n)}>
+                Tier {n} · {GROUPS[n]?.[0] || 'Seviye'}
+              </option>
+            ))}
+          </select>
+
           {categories.length > 1 && (
             <select value={cat} onChange={(e) => setCat(e.target.value)}>
               <option value="all">Tüm Kategoriler</option>
@@ -148,32 +113,30 @@ export default function CharacterGrid({ characters = [] }) {
           )}
 
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="strong">En Güçlüden Zayıfa (Tier)</option>
-            <option value="power">Güç Puanına Göre (10-1)</option>
-            <option value="intel">Zeka Puanına Göre (10-1)</option>
+            <option value="strong">Güçlüden Zayıfa (Tier)</option>
+            <option value="weak">Zayıftan Güçlüye (Tier)</option>
             <option value="new">En Yeniler</option>
             <option value="name">İsme Göre (A-Z)</option>
-            <option value="weak">Zayıftan Güçlüye</option>
           </select>
         </div>
       </div>
 
-      {/* Karakter Kartları Izgarası (3:4 Poster Düzeni) */}
+      {/* 3:4 Dikey Poster Izgarası */}
       {list.length === 0 ? (
         <div className="empty">
-          <p>Arama veya filtre kriterlerine uyan karakter bulunamadı.</p>
-          {(q || tierGroup !== 'all' || cat !== 'all') && (
+          <p>Aramana veya filtrene uyan karakter bulunamadı.</p>
+          {(q || group !== 'all' || cat !== 'all') && (
             <button
               type="button"
               className="btn btn-ghost"
-              style={{ marginTop: '12px' }}
+              style={{ marginTop: '10px' }}
               onClick={() => {
                 setQ('');
-                setTierGroup('all');
+                setGroup('all');
                 setCat('all');
               }}
             >
-              Filtreleri Temizle
+              Filtreleri Sıfırla
             </button>
           )}
         </div>
@@ -188,31 +151,29 @@ export default function CharacterGrid({ characters = [] }) {
                   <div className="poster-fallback-inner">🎭</div>
                 )}
 
-                {/* Sol Üst: Seri / Kategori */}
+                {/* Sol Üst Rozetler */}
                 <div className="poster-badges-top-left">
                   {isNew(c) && <span className="poster-new-tag">YENİ</span>}
                   {c.category && <span className="poster-cat-tag">{c.category}</span>}
                 </div>
 
-                {/* Sağ Üst: Tier Rozeti */}
+                {/* Sağ Üst Tier Rozeti */}
                 <div className="poster-tier-float">
                   <TierBadge tier={c.tier} />
                 </div>
 
-                {/* Hover Stat Önizlemesi */}
-                <div className="poster-hover-stats">
-                  <span>⚡ {c.power_score ?? '?'}/10 Güç</span>
-                  <span>🧠 {c.intelligence_score ?? '?'}/10 Zeka</span>
-                </div>
-
-                {/* Alt Karartma Gradyanı */}
+                {/* Alt Karartma */}
                 <div className="poster-shade" />
               </div>
 
               {/* Kart Bilgileri */}
               <div className="poster-details">
                 <h3 className="poster-name">{c.name}</h3>
-                <p className="poster-series">{c.series || 'Kurgusal Evren'}</p>
+                <p className="poster-series">{c.series || 'Kurgu'}</p>
+                <div className="row" style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="tag" style={{ fontSize: '.72rem' }}>{c.category || 'Genel'}</span>
+                  <TierBadge tier={c.tier} />
+                </div>
               </div>
             </a>
           ))}
