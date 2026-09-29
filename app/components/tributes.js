@@ -3,6 +3,12 @@
  * sanatçılarımız için özel saygı ve anma (In Memoriam) kayıtları.
  */
 export const TRIBUTES = {
+  'Ergun Plak': {
+    actor: 'Serhat Kılıç',
+    years: '1975 – 2026',
+    roleNote: 'Seksenler dizisinde canlandırdığı efsanevi "Ergun Plak" karakteri, unutulmaz renkli gömlekleri ve samimi mahalle esnafı ruhuyla gönüllerde taht kurmuştur.',
+    message: '2026 yılında ebediyete uğurladığımız kıymetli tiyatro ve sinema sanatçımız Serhat Kılıç\'ı sonsuz saygı, sevgi ve rahmetle anıyoruz.',
+  },
   'Niyazi': {
     actor: 'Vural Çelik',
     years: '1973 – 2024',
