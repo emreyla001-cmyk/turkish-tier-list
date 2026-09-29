@@ -8,6 +8,61 @@ import StatRadar from '../../components/StatRadar';
 
 export const revalidate = 0;
 
+/** Parse ve render: "1. Başlık\nGerekçe: ...\nAçıklama: ..." */
+function ScalingSection({ text }) {
+  if (!text) return null;
+
+  // Split on numbered headers like "1." "2." etc.
+  const raw = text.split(/(?=\d+\.\s+)/g).map((s) => s.trim()).filter(Boolean);
+
+  if (raw.length <= 1) {
+    // Plain text fallback
+    return <p style={{ lineHeight: 1.8, color: 'var(--text-light, #e0e4ee)', whiteSpace: 'pre-wrap' }}>{text}</p>;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      {raw.map((block, i) => {
+        const titleMatch = block.match(/^(\d+\.\s+[^\n]+)/);
+        const title = titleMatch ? titleMatch[1].trim() : `Güç ${i + 1}`;
+        const rest = block.slice(title.length).trim();
+
+        const gerekceMatch = rest.match(/Gerekçe:\s*([\s\S]*?)(?=Açıklama:|$)/i);
+        const aciklamaMatch = rest.match(/Açıklama:\s*([\s\S]*)$/i);
+        const gerekce = gerekceMatch ? gerekceMatch[1].trim() : '';
+        const aciklama = aciklamaMatch ? aciklamaMatch[1].trim() : rest;
+
+        return (
+          <div key={i} style={{
+            borderLeft: '3px solid var(--accent, #6366f1)',
+            paddingLeft: '16px',
+            background: 'rgba(99,102,241,.06)',
+            borderRadius: '0 10px 10px 0',
+            padding: '14px 16px',
+          }}>
+            <p style={{ fontWeight: 700, color: 'var(--accent, #a5b4fc)', marginBottom: '8px', fontSize: '.97rem' }}>
+              {title}
+            </p>
+            {gerekce && (
+              <p style={{ marginBottom: '8px', lineHeight: 1.7, color: 'var(--text-dim)' }}>
+                <span style={{ fontWeight: 600, color: '#f59e0b' }}>📌 Gerekçe: </span>
+                {gerekce}
+              </p>
+            )}
+            {aciklama && (
+              <p style={{ lineHeight: 1.8, color: 'var(--text-light, #e0e4ee)' }}>
+                <span style={{ fontWeight: 600, color: '#6fbf73' }}>🔍 Açıklama: </span>
+                {aciklama}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
 async function getComments(characterId) {
   const { data } = await supabase
     .from('comments')
@@ -138,10 +193,8 @@ export default async function CharacterPage({ params }) {
 
       {character.description && (
         <div className="card" style={{ marginTop: '20px' }}>
-          <h3>Scaling & Güç Açıklaması</h3>
-          <p style={{ lineHeight: 1.7, color: 'var(--text-light, #e0e4ee)' }}>
-            {character.description}
-          </p>
+          <h3 style={{ marginBottom: '18px' }}>⚔️ Scaling &amp; Güç Analizi</h3>
+          <ScalingSection text={character.description} />
         </div>
       )}
 
