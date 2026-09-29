@@ -80,10 +80,19 @@ export default function SohbetPage() {
         {messages.length === 0 && <p>Henüz mesaj yok, ilk mesajı sen yaz.</p>}
         {messages.map((m) => (
           <div className="msg" key={m.id}>
-            <Avatar url={m.profiles?.avatar_url} name={m.profiles?.username || '?'} frameGradient={frameMap[m.profiles?.equipped_frame]} />
+            <Avatar
+              url={m.profiles?.avatar_url}
+              name={m.profiles?.username || '?'}
+              frameGradient={frameMap ? (frameMap[m.profiles?.equipped_frame] || m.profiles?.equipped_frame) : m.profiles?.equipped_frame}
+            />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="msg-head">
-                <span className="msg-name"><NameTag name={m.profiles?.username || 'kullanıcı'} color={m.profiles?.equipped_name_color} /></span>
+                <span className="msg-name">
+                  <NameTag
+                    name={m.profiles?.username || 'kullanıcı'}
+                    color={frameMap ? (frameMap[m.profiles?.equipped_name_color] || m.profiles?.equipped_name_color) : m.profiles?.equipped_name_color}
+                  />
+                </span>
                 <UserBadge role={m.profiles?.role} xp={m.profiles?.xp} vipActive={m.profiles?.vip_until && new Date(m.profiles.vip_until) > new Date()} />
                 <span className="msg-time">{formatTime(m.created_at)}</span>
                 {user && (m.user_id === user.id || isStaff) && (

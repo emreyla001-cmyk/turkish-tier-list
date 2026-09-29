@@ -1,4 +1,4 @@
-import { nameColorStyle } from './cosmetics';
+import { nameColorStyle, resolveFrame } from './cosmetics';
 
 export const ROLES = {
   admin: ['👑', 'Admin'],
@@ -38,12 +38,49 @@ export function NameTag({ name, color }) {
 
 export function Avatar({ url, name = '?', size = 34, frameGradient }) {
   const safeName = (name && typeof name === 'string' && name.trim().length > 0) ? name.trim() : '?';
-  const wrapStyle = frameGradient
-    ? { width: size + 8, height: size + 8, borderRadius: '50%', padding: '3px', backgroundImage: frameGradient, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }
+  const activeFrame = resolveFrame(frameGradient);
+
+  const wrapStyle = activeFrame
+    ? {
+        width: size + 8,
+        height: size + 8,
+        borderRadius: '50%',
+        padding: '3px',
+        backgroundImage: activeFrame,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }
     : { width: size, height: size, flexShrink: 0, display: 'inline-flex' };
-  const inner = url
-    ? <img className="avatar" src={url} alt={safeName} style={{ width: size, height: size }} />
-    : <span className="avatar avatar-fallback" style={{ width: size, height: size, fontSize: size * 0.42 }}>{safeName.charAt(0).toLocaleUpperCase('tr')}</span>;
-  if (!frameGradient) return inner;
-  return <span style={wrapStyle}><span style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', background: 'var(--bg-2)' }}>{inner}</span></span>;
+
+  const inner = url ? (
+    <img className="avatar" src={url} alt={safeName} style={{ width: size, height: size }} />
+  ) : (
+    <span
+      className="avatar avatar-fallback"
+      style={{ width: size, height: size, fontSize: size * 0.42 }}
+    >
+      {safeName.charAt(0).toLocaleUpperCase('tr')}
+    </span>
+  );
+
+  if (!activeFrame) return inner;
+
+  return (
+    <span style={wrapStyle}>
+      <span
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          display: 'inline-flex',
+          background: 'var(--bg-2)',
+        }}
+      >
+        {inner}
+      </span>
+    </span>
+  );
 }
