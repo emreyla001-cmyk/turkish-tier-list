@@ -12,8 +12,8 @@ export const revalidate = 0;
 function ScalingSection({ text }) {
   if (!text) return null;
 
-  // Split on numbered headers like "1." "2." etc.
-  const raw = text.split(/(?=\d+\.\s+)/g).map((s) => s.trim()).filter(Boolean);
+  // Split on numbered headers at start of line: "1. ", "2. " etc.
+  const raw = text.split(/(?=(?:^|\n)\d+\.\s+)/g).map((s) => s.trim()).filter(Boolean);
 
   if (raw.length <= 1) {
     // Plain text fallback
@@ -27,10 +27,10 @@ function ScalingSection({ text }) {
         const title = titleMatch ? titleMatch[1].trim() : `Güç ${i + 1}`;
         const rest = block.slice(title.length).trim();
 
-        const gerekceMatch = rest.match(/Gerekçe:\s*([\s\S]*?)(?=Açıklama:|$)/i);
+        const gerekceMatch = rest.match(/Gerekçe:\s*([\s\S]*?)(?=(?:Açıklama:|$))/i);
         const aciklamaMatch = rest.match(/Açıklama:\s*([\s\S]*)$/i);
         const gerekce = gerekceMatch ? gerekceMatch[1].trim() : '';
-        const aciklama = aciklamaMatch ? aciklamaMatch[1].trim() : rest;
+        const aciklama = aciklamaMatch ? aciklamaMatch[1].trim() : (gerekce ? '' : rest);
 
         return (
           <div key={i} style={{
