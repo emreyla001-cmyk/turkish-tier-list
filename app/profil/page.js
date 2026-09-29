@@ -56,6 +56,11 @@ function formatDateSafe(dateVal) {
   }
 }
 
+function isVipUser(p) {
+  if (!p) return false;
+  return p.role === 'vip' || p.role === 'admin' || p.role === 'moderator' || isFutureDate(p.vip_until);
+}
+
 function ProfilContent() {
   const [user, setUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
@@ -75,7 +80,7 @@ function ProfilContent() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, role, xp, coins, vip_until, name_color_until, avatar_gif_until, equipped_frame, equipped_background, equipped_name_color')
+        .select('id, username, avatar_url, role, xp, coins, vip_until, name_color_until, avatar_gif_until, equipped_frame, equipped_background, equipped_name_color, profile_bg_url')
         .eq('id', u.id)
         .maybeSingle();
 
@@ -92,6 +97,7 @@ function ProfilContent() {
         equipped_frame: null,
         equipped_background: null,
         equipped_name_color: null,
+        profile_bg_url: null,
       };
 
       const prof = data || fallbackProfile;
@@ -145,10 +151,16 @@ function ProfilContent() {
   async function uploadAvatar(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const gifAllowed = isFutureDate(profile?.avatar_gif_until);
+    const isVip = isVipUser(profile);
+    const gifAllowed = isVip || isFutureDate(profile?.avatar_gif_until);
     const okTypes = gifAllowed ? { ...EXT, 'image/gif': 'gif' } : EXT;
     if (!okTypes[file.type]) {
-      say('avatar', gifAllowed ? 'Sadece PNG, JPG, WEBP veya GIF yükleyebilirsin.' : 'Sadece PNG, JPG veya WEBP yükleyebilirsin. GIF için mağazadan veya günlük çekilişten hak kazanmalısın.');
+      say(
+        'avatar',
+        gifAllowed
+          ? 'Sadece PNG, JPG, WEBP veya GIF yükleyebilirsin.'
+          : 'Hareketli avatar (GIF) kullanabilmek için VIP üyeliğe sahip olmalısın. Normal kullanıcılar PNG, JPG veya WEBP yükleyebilir.'
+      );
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -174,6 +186,42 @@ function ProfilContent() {
     load();
   }
 
+  async function uploadBackground(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isVip = isVipUser(profile);
+    if (!isVip) {
+      say('bg', 'Özel profil arka planı veya hareketli GIF arka plan yüklemek sadece VIP üyelere açıktır.');
+      return;
+    }
+    const okTypes = { ...EXT, 'image/gif': 'gif' };
+    if (!okTypes[file.type]) {
+      say('bg', 'Sadece PNG, JPG, WEBP veya GIF formatında arka plan yükleyebilirsin.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      say('bg', 'Arka plan görseli en fazla 5 MB olabilir.');
+      return;
+    }
+    say('bg', 'Arka plan yükleniyor...');
+    const path = `${user.id}/bg_${Date.now()}.${okTypes[file.type]}`;
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type });
+    if (error) {
+      say('bg', 'Yüklenemedi: ' + (error.message || ''));
+      return;
+    }
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { error: err2 } = await supabase.from('profiles').update({ profile_bg_url: data?.publicUrl }).eq('id', user.id);
+    say('bg', err2 ? 'Kaydedilemedi.' : 'Özel profil arka planın güncellendi!');
+    load();
+  }
+
+  async function removeCustomBackground() {
+    await supabase.from('profiles').update({ profile_bg_url: null }).eq('id', user.id);
+    say('bg', 'Özel arka plan kaldırıldı.');
+    load();
+  }
+
   async function savePassword(e) {
     e.preventDefault();
     if (pw.length < 6) { say('pw', 'Şifre en az 6 karakter olmalı.'); return; }
@@ -196,9 +244,9 @@ function ProfilContent() {
   if (!user) return <div className="wrap empty">Profil ayarları için <a href="/giris-yap">giriş yapmalısın</a>.</div>;
   if (!profile) return <div className="wrap empty">Yükleniyor...</div>;
 
-  const vipActive = profile?.role === 'vip' || profile?.role === 'admin' || isFutureDate(profile?.vip_until);
+  const vipActive = isVipUser(profile);
   const tempColorActive = isFutureDate(profile?.name_color_until);
-  const gifActive = isFutureDate(profile?.avatar_gif_until);
+  const gifActive = vipActive || isFutureDate(profile?.avatar_gif_until);
   const currentXp = Number(profile?.xp) || 0;
   const level = levelFromXp(currentXp);
   const cur = xpForLevel(level);
@@ -206,7 +254,9 @@ function ProfilContent() {
   const xpDiff = Math.max(1, next - cur);
   const pct = Math.min(100, Math.max(0, Math.round(((currentXp - cur) / xpDiff) * 100)));
 
-  const bannerBg = resolveBackground(profile?.equipped_background, frameMap);
+  const bannerBg = profile?.profile_bg_url
+    ? `url("${profile.profile_bg_url}")`
+    : resolveBackground(profile?.equipped_background, frameMap);
   const frameGrad = resolveFrame(profile?.equipped_frame, frameMap);
   const nameColorVal = resolveNameColor(profile?.equipped_name_color, frameMap);
 
@@ -322,12 +372,60 @@ function ProfilContent() {
 
       <div className="card" style={{ marginTop: '14px' }}>
         <h3>Avatar</h3>
-        <p>PNG, JPG veya WEBP, en fazla 2 MB.</p>
+        <p style={{ fontSize: '.88rem', margin: '4px 0 10px' }}>
+          PNG, JPG veya WEBP, en fazla 2 MB.{' '}
+          {gifActive ? (
+            <span className="tag" style={{ color: 'var(--accent)', borderColor: 'var(--accent)', marginLeft: '6px' }}>
+              ✨ VIP: Hareketli GIF Avatar Açık
+            </span>
+          ) : (
+            <span style={{ color: 'var(--text-dim)', fontSize: '.8rem', display: 'block', marginTop: '4px' }}>
+              (Hareketli GIF avatar sadece VIP ve yetkili üyelere açıktır)
+            </span>
+          )}
+        </p>
         <div className="field" style={{ marginTop: '12px' }}>
-          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadAvatar} />
+          <input
+            type="file"
+            accept={gifActive ? 'image/png,image/jpeg,image/webp,image/gif' : 'image/png,image/jpeg,image/webp'}
+            onChange={uploadAvatar}
+          />
         </div>
         {profile?.avatar_url && <button type="button" className="btn btn-ghost" onClick={removeAvatar}>Avatarı kaldır</button>}
         {msg.avatar && <p style={{ marginTop: '10px', color: 'var(--text-dim)', fontSize: '.85rem' }}>{msg.avatar}</p>}
+      </div>
+
+      {/* Özel Profil Arka Planı (VIP) Kartı */}
+      <div className="card" style={{ marginTop: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+          <h3>Özel Profil Arka Planı (Görsel veya Hareketli GIF)</h3>
+          <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>VIP</span>
+        </div>
+        <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: '6px 0 8px' }}>
+          VIP üyeler kendi profillerine özel hareketli GIF veya yüksek kaliteli görsel arka plan yükleyebilir (en fazla 5 MB).
+        </p>
+        <p style={{ fontSize: '.8rem', color: '#e6455b', margin: '0 0 12px', fontWeight: 600 }}>
+          ⚠️ Kural: +18, müstehcen veya nefret söylemi içeren içerikler kesinlikle yasaktır ve hesap kapatma sebebidir.
+        </p>
+
+        {vipActive ? (
+          <div>
+            <div className="field">
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={uploadBackground} />
+            </div>
+            {profile?.profile_bg_url && (
+              <button type="button" className="btn btn-ghost" onClick={removeCustomBackground}>
+                Özel Arka Planı Kaldır
+              </button>
+            )}
+            {msg.bg && <p style={{ marginTop: '10px', color: 'var(--accent)', fontSize: '.85rem' }}>{msg.bg}</p>}
+          </div>
+        ) : (
+          <div style={{ background: 'var(--bg-2)', padding: '12px 14px', borderRadius: '10px', fontSize: '.85rem', color: 'var(--text-dim)' }}>
+            Özel ve hareketli GIF arka plan yükleyebilmek için VIP üyeliğe sahip olmalısın.{' '}
+            <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>VIP olmak için Mağaza &rarr;</a>
+          </div>
+        )}
       </div>
 
       <form className="card" style={{ marginTop: '14px' }} onSubmit={saveUsername}>
