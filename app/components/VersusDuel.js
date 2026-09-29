@@ -13,7 +13,7 @@ export default function VersusDuel({ characters = [] }) {
 
   const duelKey = `duel_${c1.id}_vs_${c2.id}`;
 
-  const [votes, setVotes] = useState({ left: 34, right: 28 });
+  const [votes, setVotes] = useState({ left: 0, right: 0 });
   const [hasVoted, setHasVoted] = useState(false);
   const [userChoice, setUserChoice] = useState(null);
 
@@ -51,8 +51,8 @@ export default function VersusDuel({ characters = [] }) {
   }
 
   const total = votes.left + votes.right;
-  const leftPct = Math.round((votes.left / total) * 100);
-  const rightPct = 100 - leftPct;
+  const leftPct = total > 0 ? Math.round((votes.left / total) * 100) : 0;
+  const rightPct = total > 0 ? 100 - leftPct : 0;
 
   return (
     <section className="section versus-section">
@@ -96,16 +96,22 @@ export default function VersusDuel({ characters = [] }) {
         {/* Ortadaki VS Amblemi ve Canlı Bar */}
         <div className="versus-divider">
           <div className="vs-emblem">VS</div>
-          <div className="vs-vote-bar">
-            <div className="vs-bar-track">
-              <div className="vs-bar-fill-left" style={{ width: `${leftPct}%` }} />
-              <div className="vs-bar-fill-right" style={{ width: `${rightPct}%` }} />
+          {hasVoted && total > 0 ? (
+            <div className="vs-vote-bar">
+              <div className="vs-bar-track">
+                <div className="vs-bar-fill-left" style={{ width: `${leftPct}%` }} />
+                <div className="vs-bar-fill-right" style={{ width: `${rightPct}%` }} />
+              </div>
+              <div className="vs-bar-labels">
+                <span className="left-pct">%{leftPct} ({votes.left} oy)</span>
+                <span className="right-pct">%{rightPct} ({votes.right} oy)</span>
+              </div>
             </div>
-            <div className="vs-bar-labels">
-              <span className="left-pct">%{leftPct} ({votes.left} oy)</span>
-              <span className="right-pct">%{rightPct} ({votes.right} oy)</span>
+          ) : (
+            <div style={{ textAlign: 'center', fontSize: '.8rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+              Sonuçları görmek için oy ver
             </div>
-          </div>
+          )}
         </div>
 
         {/* Sağ Karakter */}
