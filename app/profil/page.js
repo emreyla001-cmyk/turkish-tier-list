@@ -180,13 +180,13 @@ function ProfilContent() {
 
     say('avatar', 'Yükleniyor...');
     const fileExt = isGif ? 'gif' : (okTypes[file.type] || 'jpg');
-    const path = `${user.id}/${Date.now()}.${fileExt}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type || 'image/gif' });
+    const path = `avatars/${user.id}/${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage.from('character-media').upload(path, file, { contentType: file.type || 'image/gif', upsert: true });
     if (error) {
       say('avatar', 'Yüklenemedi: ' + (error.message || ''));
       return;
     }
-    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { data } = supabase.storage.from('character-media').getPublicUrl(path);
     const { error: err2 } = await supabase.from('profiles').update({ avatar_url: data?.publicUrl }).eq('id', user.id);
     say('avatar', err2 ? 'Kaydedilemedi.' : 'Avatarın güncellendi!');
     load();
@@ -219,13 +219,13 @@ function ProfilContent() {
     }
     say('bg', 'Arka plan yükleniyor...');
     const fileExt = isGif ? 'gif' : (okTypes[file.type] || 'jpg');
-    const path = `${user.id}/bg_${Date.now()}.${fileExt}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type || 'image/gif' });
+    const path = `backgrounds/${user.id}/bg_${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage.from('character-media').upload(path, file, { contentType: file.type || 'image/gif', upsert: true });
     if (error) {
       say('bg', 'Yüklenemedi: ' + (error.message || ''));
       return;
     }
-    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { data } = supabase.storage.from('character-media').getPublicUrl(path);
     const { error: err2 } = await supabase.from('profiles').update({ profile_bg_url: data?.publicUrl }).eq('id', user.id);
     say('bg', err2 ? 'Kaydedilemedi.' : 'Özel profil arka planın güncellendi!');
     load();
