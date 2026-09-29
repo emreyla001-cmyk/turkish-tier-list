@@ -2,6 +2,8 @@ import './globals.css';
 import NavAuth from './components/NavAuth';
 import Logo from './components/Logo';
 import Heartbeat from './components/Heartbeat';
+import SpotlightSearch from './components/SpotlightSearch';
+import MobileNav from './components/MobileNav';
 
 export const metadata = {
   title: {
@@ -9,10 +11,10 @@ export const metadata = {
     template: '%s | Turkish Tier List',
   },
   description:
-    'Türk dizi ve filmlerindeki karakterlerin güç, zeka, hız ve dayanıklılık sıralaması. Gerekçeleriyle incele, toplulukla tartış, karakter öner.',
+    'Türk dizi ve filmlerindeki karakterlerin güç, zeka, hız ve dayanıklılık sıralaması. Gerekçeleriyle incele, VS arenasında karşılaştır, toplulukla tartış.',
   openGraph: {
     title: 'Turkish Tier List',
-    description: 'Türk kurgusundaki karakterlerin güç sıralaması ve topluluk tartışmaları.',
+    description: 'Türk kurgusundaki karakterlerin güç sıralaması, VS düelloları ve topluluk tartışmaları.',
     type: 'website',
     locale: 'tr_TR',
   },
@@ -24,41 +26,66 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <Heartbeat />
         <header className="site-header">
           <div className="wrap nav">
-            <a href="/" className="brand"><Logo /> Turkish Tier List</a>
+            <div className="nav-brand-group">
+              <a href="/" className="brand">
+                <Logo /> <span>Turkish Tier List</span>
+              </a>
+            </div>
+
+            {/* Hızlı Arama Butonu (Ctrl+K) */}
+            <div className="nav-search-wrap">
+              <SpotlightSearch />
+            </div>
+
             <nav className="nav-links">
               <a href="/#karakterler">Karakterler</a>
+              <a href="/vs" className="nav-vs-link">⚔️ VS Arenası</a>
               <a href="/tier-sistemi">Tier Sistemi</a>
-              <a href="/karakter-oner">Karakter Öner</a>
               <a href="/sohbet">Sohbet</a>
               <NavAuth />
             </nav>
           </div>
         </header>
+
         <main>{children}</main>
+
         <footer className="site-footer">
           <div className="wrap">
             <div className="footer-grid">
               <div>
-                <a href="/" className="brand"><Logo id="logo-g2" /> Turkish Tier List</a>
-                <p>Türk dizi ve filmlerindeki karakterlerin güç sıralamasını gerekçeleriyle ortaya koyan, topluluk destekli bir başvuru sitesi.</p>
+                <a href="/" className="brand">
+                  <Logo id="logo-g2" /> Turkish Tier List
+                </a>
+                <p>
+                  Türk dizi, film ve kurgusal evrenlerindeki karakterlerin güç sıralamasını bilimsel scaling kurallarıyla ortaya koyan, topluluk destekli modern başvuru platformu.
+                </p>
               </div>
               <div className="footer-links">
-                <a href="/#karakterler">Karakterler</a>
-                <a href="/tier-sistemi">Tier Sistemi</a>
-                <a href="/karakter-oner">Karakter Öner</a>
-                <a href="/sohbet">Sohbet</a>
-                <a href="/kayit-ol">Kayıt Ol</a>
+                <a href="/#karakterler">Karakter Kataloğu</a>
+                <a href="/vs">VS Arenası (Düellolar)</a>
+                <a href="/tier-sistemi">Tier Sistemi Rehberi</a>
+                <a href="/karakter-oner">Yeni Karakter Öner</a>
+                <a href="/sohbet">Canlı Sohbet Odası</a>
+                <a href="/kayit-ol">Topluluğa Katıl</a>
               </div>
             </div>
-            <div className="footer-copy">© 2026 Turkish Tier List. Bu site resmî bir yapım veya yayıncı sitesi değildir; tüm karakter ve yapım hakları sahiplerine aittir.</div>
+            <div className="footer-copy">
+              © 2026 Turkish Tier List. Bu site resmî bir yapım veya yayıncı sitesi değildir; tüm karakter ve yapım hakları ilgili sahiplerine aittir.
+            </div>
           </div>
         </footer>
+
+        {/* Mobil Ekranlar İçin Alt Navigasyon Çubuğu */}
+        <MobileNav />
       </body>
     </html>
   );
