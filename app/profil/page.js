@@ -154,30 +154,41 @@ function ProfilContent() {
     if (!file) return;
     const isVip = isVipUser(profile);
     const gifAllowed = isVip || isFutureDate(profile?.avatar_gif_until);
+    const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+
+    if (isGif && !gifAllowed) {
+      say('avatar', 'Hareketli GIF avatar yüklemek VIP üyelere özeldir. Standart üyeler PNG, JPG veya WEBP yükleyebilir. VIP olmak için Mağaza\'yı ziyaret edebilirsin.');
+      return;
+    }
+
     const okTypes = gifAllowed ? { ...EXT, 'image/gif': 'gif' } : EXT;
-    if (!okTypes[file.type]) {
+    if (!okTypes[file.type] && !isGif) {
       say(
         'avatar',
         gifAllowed
           ? 'Sadece PNG, JPG, WEBP veya GIF yükleyebilirsin.'
-          : 'Hareketli avatar (GIF) kullanabilmek için VIP üyeliğe sahip olmalısın. Normal kullanıcılar PNG, JPG veya WEBP yükleyebilir.'
+          : 'Sadece PNG, JPG veya WEBP formatında görsel yükleyebilirsin.'
       );
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      say('avatar', 'Görsel en fazla 2 MB olabilir.');
+
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_SIZE) {
+      say('avatar', 'Avatar dosyası en fazla 10 MB olabilir.');
       return;
     }
+
     say('avatar', 'Yükleniyor...');
-    const path = `${user.id}/${Date.now()}.${okTypes[file.type]}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type });
+    const fileExt = isGif ? 'gif' : (okTypes[file.type] || 'jpg');
+    const path = `${user.id}/${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type || 'image/gif' });
     if (error) {
       say('avatar', 'Yüklenemedi: ' + (error.message || ''));
       return;
     }
     const { data } = supabase.storage.from('avatars').getPublicUrl(path);
     const { error: err2 } = await supabase.from('profiles').update({ avatar_url: data?.publicUrl }).eq('id', user.id);
-    say('avatar', err2 ? 'Kaydedilemedi.' : 'Avatarın güncellendi.');
+    say('avatar', err2 ? 'Kaydedilemedi.' : 'Avatarın güncellendi!');
     load();
   }
 
@@ -192,21 +203,24 @@ function ProfilContent() {
     if (!file) return;
     const isVip = isVipUser(profile);
     if (!isVip) {
-      say('bg', 'Özel profil arka planı veya hareketli GIF arka plan yüklemek sadece VIP üyelere açıktır.');
+      say('bg', 'Özel ve hareketli GIF profil arka planı yüklemek yalnızca VIP üyelere özeldir. VIP olmak için Mağaza\'yı ziyaret edebilirsin.');
       return;
     }
+    const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
     const okTypes = { ...EXT, 'image/gif': 'gif' };
-    if (!okTypes[file.type]) {
+    if (!okTypes[file.type] && !isGif) {
       say('bg', 'Sadece PNG, JPG, WEBP veya GIF formatında arka plan yükleyebilirsin.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      say('bg', 'Arka plan görseli en fazla 5 MB olabilir.');
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_SIZE) {
+      say('bg', 'Arka plan görseli en fazla 10 MB olabilir.');
       return;
     }
     say('bg', 'Arka plan yükleniyor...');
-    const path = `${user.id}/bg_${Date.now()}.${okTypes[file.type]}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type });
+    const fileExt = isGif ? 'gif' : (okTypes[file.type] || 'jpg');
+    const path = `${user.id}/bg_${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type || 'image/gif' });
     if (error) {
       say('bg', 'Yüklenemedi: ' + (error.message || ''));
       return;
@@ -430,7 +444,11 @@ function ProfilContent() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-2)', borderRadius: '10px', fontSize: '.88rem' }}>
                 <span style={{ color: 'var(--text-dim)' }}>Hareketli GIF Avatar:</span>
-                <strong>{gifActive ? (vipActive ? 'Aktif (VIP)' : formatDateSafe(profile?.avatar_gif_until)) : 'Kapalı'}</strong>
+                <strong>{gifActive ? (vipActive ? 'Aktif (💎 VIP - 10 MB)' : formatDateSafe(profile?.avatar_gif_until)) : 'Kapalı (VIP Gerekir)'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-2)', borderRadius: '10px', fontSize: '.88rem' }}>
+                <span style={{ color: 'var(--text-dim)' }}>Hareketli GIF Arka Plan:</span>
+                <strong>{vipActive ? 'Aktif (💎 VIP - 10 MB)' : 'Kapalı (VIP Gerekir)'}</strong>
               </div>
             </div>
           </div>
@@ -509,12 +527,28 @@ function ProfilContent() {
 
           {/* Avatar Güncelleme */}
           <div className="card">
-            <h3>Avatar Görseli</h3>
-            <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: '4px 0 12px' }}>
-              Profil resmini PNG, JPG veya WEBP olarak yükle (en fazla 2 MB).
-              {gifActive && (
-                <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)', marginLeft: '8px' }}>
-                  ✨ VIP: Hareketli GIF Avatar Açık
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <h3>Avatar Görseli</h3>
+              {gifActive ? (
+                <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'rgba(230, 179, 37, 0.1)' }}>
+                  💎 VIP: Hareketli GIF Avatar & 10 MB Açık
+                </span>
+              ) : (
+                <span className="tag" style={{ borderColor: 'var(--border)', color: 'var(--text-dim)' }}>
+                  Standart: 10 MB (GIF için VIP gerekir)
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: '6px 0 12px' }}>
+              Profil resmini PNG, JPG veya WEBP olarak yükle (en fazla 10 MB).{' '}
+              {gifActive ? (
+                <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                  ✨ VIP ayrıcalığın aktif: Hareketli GIF avatar yükleyebilirsin!
+                </span>
+              ) : (
+                <span>
+                  💎 Hareketli GIF avatar yüklemek <strong>VIP üyelere özeldir</strong>.{' '}
+                  <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>VIP Ol &rarr;</a>
                 </span>
               )}
             </p>
@@ -536,11 +570,13 @@ function ProfilContent() {
           {/* Özel Profil Arka Planı (VIP) */}
           <div className="card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-              <h3>Özel Profil Arka Planı (Görsel veya GIF)</h3>
-              <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>VIP</span>
+              <h3>Özel Profil Arka Planı (Görsel veya Hareketli GIF)</h3>
+              <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'rgba(230, 179, 37, 0.1)' }}>
+                💎 VIP Özel (10 MB)
+              </span>
             </div>
             <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: '6px 0 10px' }}>
-              VIP üyeler kendi profillerine özel hareketli GIF veya yüksek kaliteli görsel arka plan yükleyebilir (en fazla 5 MB).
+              VIP üyeler kendi profillerine özel hareketli GIF veya yüksek kaliteli görsel arka plan yükleyebilir (en fazla 10 MB).
             </p>
             {vipActive ? (
               <div>
@@ -555,9 +591,9 @@ function ProfilContent() {
                 {msg.bg && <p style={{ marginTop: '10px', color: 'var(--accent)', fontSize: '.85rem' }}>{msg.bg}</p>}
               </div>
             ) : (
-              <div style={{ background: 'var(--bg-2)', padding: '12px 16px', borderRadius: '12px', fontSize: '.85rem', color: 'var(--text-dim)' }}>
-                Özel ve hareketli GIF arka plan yükleyebilmek için VIP üyeliğe sahip olmalısın.{' '}
-                <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>VIP olmak için Mağaza &rarr;</a>
+              <div style={{ background: 'var(--bg-2)', padding: '14px 18px', borderRadius: '12px', fontSize: '.88rem', color: 'var(--text-dim)', border: '1px solid var(--border)' }}>
+                🔒 Özel ve hareketli GIF profil arka planı yüklemek <strong>VIP üyelere özeldir</strong> (en fazla 10 MB).{' '}
+                <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700, marginLeft: '6px' }}>VIP olmak için Mağaza &rarr;</a>
               </div>
             )}
           </div>
