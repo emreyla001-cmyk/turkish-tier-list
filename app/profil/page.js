@@ -63,6 +63,7 @@ function ProfilContent() {
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
   const [msg, setMsg] = useState({});
+  const frameMap = useFrameMap() || {};
   const say = (key, text) => setMsg((m) => ({ ...m, [key]: text }));
 
   async function load() {
@@ -196,7 +197,6 @@ function ProfilContent() {
   const vipActive = profile?.role === 'vip' || profile?.role === 'admin' || isFutureDate(profile?.vip_until);
   const tempColorActive = isFutureDate(profile?.name_color_until);
   const gifActive = isFutureDate(profile?.avatar_gif_until);
-  const frameMap = useFrameMap() || {};
   const currentXp = Number(profile?.xp) || 0;
   const level = levelFromXp(currentXp);
   const cur = xpForLevel(level);
