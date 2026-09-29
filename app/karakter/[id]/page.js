@@ -5,6 +5,7 @@ import { tierInfo } from '../../components/tiers';
 import UserBadge, { Avatar, NameTag } from '../../components/UserBadge';
 import ViewLogger from '../../components/ViewLogger';
 import StatRadar from '../../components/StatRadar';
+import { MemorialBanner } from '../../components/MemorialBadge';
 
 export const revalidate = 0;
 
@@ -156,6 +157,8 @@ export default async function CharacterPage({ params }) {
           </div>
         </div>
       </div>
+
+      <MemorialBanner characterName={character.name} seriesName={character.series} />
 
       {character.video_url && (
         <div className="video-card">

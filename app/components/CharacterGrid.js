@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import TierBadge from './TierBadge';
+import { MemorialPosterBadge } from './MemorialBadge';
 import { tierRank, tierNumber, GROUPS } from './tiers';
 
 export default function CharacterGrid({ characters = [] }) {
@@ -155,6 +156,7 @@ export default function CharacterGrid({ characters = [] }) {
                 <div className="poster-badges-top-left">
                   {isNew(c) && <span className="poster-new-tag">YENİ</span>}
                   {c.category && <span className="poster-cat-tag">{c.category}</span>}
+                  <MemorialPosterBadge characterName={c.name} seriesName={c.series} />
                 </div>
 
                 {/* Sağ Üst Tier Rozeti */}
