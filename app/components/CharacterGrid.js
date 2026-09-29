@@ -17,7 +17,18 @@ export default function CharacterGrid({ characters = [] }) {
       const n = tierNumber(c.tier);
       if (n !== null) set.add(n);
     });
-    return [...set].sort((a, b) => a - b); // Tier 0, 1, 2... en güçlüden sırayla
+    return [...set].sort((a, b) => a - b);
+  }, [characters]);
+
+  // Kategoriler ve her kategorideki karakter sayısı
+  const categoryStats = useMemo(() => {
+    const counts = { all: characters.length };
+    characters.forEach((c) => {
+      if (c.category) {
+        counts[c.category] = (counts[c.category] || 0) + 1;
+      }
+    });
+    return counts;
   }, [characters]);
 
   const categories = useMemo(() => {
@@ -48,7 +59,6 @@ export default function CharacterGrid({ characters = [] }) {
       return true;
     });
 
-    // Tier'ı belirlenmemiş karakterler her zaman sonda
     const cmp = (dir) => (a, b) => {
       const ra = tierRank(a.tier);
       const rb = tierRank(b.tier);
@@ -70,62 +80,107 @@ export default function CharacterGrid({ characters = [] }) {
     return items;
   }, [characters, q, sort, group, cat]);
 
+  // Kategori ikonları eşlemesi
+  function getCategoryIcon(cName) {
+    if (!cName || cName === 'all') return '🌟';
+    if (cName.includes('Mitoloji')) return '🐺';
+    if (cName.includes('Dizi') || cName.includes('Film')) return '🎬';
+    if (cName.includes('Çizgi') || cName.includes('Animasyon')) return '🎨';
+    if (cName.includes('Edebiyat') || cName.includes('Kitap')) return '📖';
+    return '⚡';
+  }
+
   return (
-    <div className="char-section-wrap">
-      {/* Orijinal Tier Filtre Çubuğu */}
-      <div className="char-toolbar">
-        <div className="toolbar-search">
-          <span className="search-icon-inline">🔍</span>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Karakter veya yapım ara..."
-          />
-          {q && (
+    <div className="char-section-wrap" id="karakterler">
+      {/* Modern Kategori ve Tier Sekmeleri */}
+      <div className="modern-filter-container">
+        {/* Üst Sekmeler: Evren & Kategori */}
+        <div className="modern-tabs-header-row">
+          <div className="modern-tabs-row">
             <button
               type="button"
-              className="clear-search-btn"
-              onClick={() => setQ('')}
+              className={`modern-tab-pill ${cat === 'all' ? 'active' : ''}`}
+              onClick={() => setCat('all')}
             >
-              ✕
+              <span>🌟</span>
+              <span>Tüm Evrenler</span>
+              <span className="modern-tab-badge">{characters.length}</span>
             </button>
-          )}
+            {categories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={`modern-tab-pill ${cat === c ? 'active' : ''}`}
+                onClick={() => setCat(c)}
+              >
+                <span>{getCategoryIcon(c)}</span>
+                <span>{c}</span>
+                <span className="modern-tab-badge">{categoryStats[c] || 0}</span>
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: '.84rem', color: 'var(--text-dim)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+            <span style={{ color: 'var(--accent)' }}>{list.length}</span> Karakter Listeleniyor
+          </div>
         </div>
 
-        <div className="toolbar-filters">
-          <select value={group} onChange={(e) => setGroup(e.target.value)}>
-            <option value="all">Tüm Tier&apos;lar</option>
-            {groups.map((n) => (
-              <option key={n} value={String(n)}>
-                Tier {n} · {GROUPS[n]?.[0] || 'Seviye'}
-              </option>
-            ))}
-          </select>
+        {/* Hızlı Tier Filtre Hapları */}
+        <div className="tier-pills-row">
+          <button
+            type="button"
+            className={`tier-pill-btn ${group === 'all' ? 'active' : ''}`}
+            onClick={() => setGroup('all')}
+          >
+            ⚡ Tüm Seviyeler
+          </button>
+          {groups.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`tier-pill-btn ${group === String(n) ? 'active' : ''}`}
+              onClick={() => setGroup(group === String(n) ? 'all' : String(n))}
+            >
+              Tier {n} · {GROUPS[n]?.[0] || `Kademe ${n}`}
+            </button>
+          ))}
+        </div>
 
-          {categories.length > 1 && (
-            <select value={cat} onChange={(e) => setCat(e.target.value)}>
-              <option value="all">Tüm Kategoriler</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+        {/* Canlı Arama ve Sıralama Çubuğu */}
+        <div className="char-toolbar">
+          <div className="toolbar-search">
+            <span className="search-icon-inline">🔍</span>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="İsim, yapım veya güç ara..."
+            />
+            {q && (
+              <button
+                type="button"
+                className="clear-search-btn"
+                onClick={() => setQ('')}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="toolbar-filters">
+            <select value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="strong">⚡ En Güçlüden Zayıfa (Tier)</option>
+              <option value="weak">🍃 En Zayıftan Güçlüye (Tier)</option>
+              <option value="new">✨ En Yeniler</option>
+              <option value="name">🔤 İsme Göre (A-Z)</option>
             </select>
-          )}
-
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="strong">Güçlüden Zayıfa (Tier)</option>
-            <option value="weak">Zayıftan Güçlüye (Tier)</option>
-            <option value="new">En Yeniler</option>
-            <option value="name">İsme Göre (A-Z)</option>
-          </select>
+          </div>
         </div>
       </div>
 
       {/* 3:4 Dikey Poster Izgarası */}
       {list.length === 0 ? (
         <div className="empty">
-          <p>Aramana veya filtrene uyan karakter bulunamadı.</p>
+          <p>Aramana veya seçtiğin filtrelere uyan karakter bulunamadı.</p>
           {(q || group !== 'all' || cat !== 'all') && (
             <button
               type="button"

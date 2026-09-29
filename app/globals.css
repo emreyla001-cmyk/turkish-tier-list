@@ -22,14 +22,58 @@ body {
   margin: 0;
   background: var(--bg);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(230, 69, 91, 0.07) 0px, transparent 40%),
-    radial-gradient(at 100% 0%, rgba(230, 179, 37, 0.06) 0px, transparent 40%),
-    radial-gradient(at 50% 100%, rgba(111, 191, 115, 0.04) 0px, transparent 40%);
+    radial-gradient(at 0% 0%, rgba(230, 69, 91, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(230, 179, 37, 0.1) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(99, 102, 241, 0.08) 0px, transparent 60%),
+    radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
   background-attachment: fixed;
   color: var(--text);
   font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: -150px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 179, 37, 0.16), transparent 70%);
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+  animation: pulseGlow 10s ease-in-out infinite alternate;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  bottom: -150px;
+  left: -100px;
+  width: 550px;
+  height: 550px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15), rgba(230, 69, 91, 0.08) 60%, transparent 80%);
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+  animation: pulseGlow 14s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.5; }
+  50% { transform: scale(1.15) translate(25px, -20px); opacity: 0.85; }
+  100% { transform: scale(1.05) translate(-15px, 20px); opacity: 0.6; }
+}
+
+@keyframes neonShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* Özel kaydırma çubuğu */
@@ -1128,4 +1172,325 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
     padding: 14px 16px;
   }
 }
+
+/* ========================================================
+   MODERN SEKMELER (CYBER TABS & FILTER PILLS)
+   ======================================================== */
+.modern-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.modern-tabs-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.modern-tabs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin;
+}
+
+.modern-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(18, 23, 35, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  font-size: .84rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 24px;
+  cursor: pointer;
+  white-space: nowrap;
+  backdrop-filter: blur(12px);
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.modern-tab-pill:hover {
+  background: rgba(30, 38, 58, 0.9);
+  color: #fff;
+  border-color: rgba(230, 179, 37, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px var(--accent-glow);
+}
+
+.modern-tab-pill.active {
+  background: linear-gradient(135deg, rgba(230, 179, 37, 0.25) 0%, rgba(230, 69, 91, 0.2) 100%);
+  border-color: #e6b325;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(230, 179, 37, 0.35), inset 0 0 12px rgba(230, 179, 37, 0.15);
+  transform: scale(1.02);
+}
+
+.modern-tab-badge {
+  font-size: .72rem;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: var(--accent);
+}
+
+.modern-tab-pill.active .modern-tab-badge {
+  background: #e6b325;
+  color: #111;
+}
+
+/* Tier Filtre Hapları */
+.tier-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.tier-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(14, 18, 27, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  font-size: .76rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .18s ease;
+}
+
+.tier-pill-btn:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #fff;
+}
+
+.tier-pill-btn.active {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: #818cf8;
+  color: #c7d2fe;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.35);
+}
+
+/* ========================================================
+   MODERN PROFİL SAYFASI VE SEKMELER (CYBER PROFILE DASHBOARD)
+   ======================================================== */
+.profile-dashboard {
+  max-width: 880px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-hero-cyber {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  padding: 32px 36px;
+  border: 1px solid rgba(230, 179, 37, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 35px rgba(230, 179, 37, 0.15);
+  background: linear-gradient(135deg, rgba(20, 25, 40, 0.95) 0%, rgba(10, 13, 20, 0.98) 100%);
+  margin-bottom: 24px;
+}
+
+.profile-hero-ambient {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.3;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.profile-hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.profile-user-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.profile-avatar-aura {
+  position: relative;
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(230, 179, 37, 0.4);
+  animation: avatarPulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes avatarPulse {
+  0% { box-shadow: 0 0 20px rgba(230, 179, 37, 0.3); }
+  100% { box-shadow: 0 0 35px rgba(230, 69, 91, 0.5); }
+}
+
+.profile-user-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.profile-username {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+/* Neon XP Track */
+.cyber-xp-container {
+  margin-top: 20px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 18px;
+}
+
+.cyber-xp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .84rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.cyber-xp-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cyber-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e6b325, #e6455b, #818cf8);
+  background-size: 200% 100%;
+  border-radius: 10px;
+  box-shadow: 0 0 16px rgba(230, 179, 37, 0.7);
+  animation: neonShimmer 3s linear infinite;
+  transition: width .5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Profil Sekmeleri (Segmented Tabs) */
+.profile-nav-tabs {
+  display: flex;
+  gap: 10px;
+  background: rgba(14, 18, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px;
+  border-radius: 18px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(16px);
+}
+
+.profile-nav-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all .22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-nav-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.profile-nav-tab.active {
+  background: linear-gradient(135deg, rgba(230, 179, 37, 0.22) 0%, rgba(230, 69, 91, 0.16) 100%);
+  color: #fff;
+  border: 1px solid rgba(230, 179, 37, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(230, 179, 37, 0.2);
+}
+
+/* Cyber Stat Kartları */
+.cyber-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.cyber-stat-card {
+  background: rgba(18, 23, 35, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+
+.cyber-stat-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(230, 179, 37, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px var(--accent-glow);
+}
+
+.cyber-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.cyber-stat-label {
+  font-size: .8rem;
+  color: var(--text-dim);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cyber-stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 640px) {
+  .profile-nav-tabs {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .profile-hero-cyber {
+    padding: 20px;
+  }
+}
+
 
