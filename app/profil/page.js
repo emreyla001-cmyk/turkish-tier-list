@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import UserBadge, { Avatar, levelFromXp, xpForLevel } from '../components/UserBadge';
 import { useFrameMap } from '../components/useFrameMap';
@@ -8,24 +8,54 @@ import TwoFactor from '../components/TwoFactor';
 
 const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Profil Hatası:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="card" style={{ margin: '14px 0', border: '1px solid #e6455b', padding: '16px' }}>
+          <h4 style={{ color: '#e6455b', margin: '0 0 8px' }}>Bu bölüm yüklenirken bir sorun oluştu</h4>
+          <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: 0 }}>
+            {this.state.error?.message || String(this.state.error)}
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function isFutureDate(dateVal) {
   if (!dateVal) return false;
-  const d = new Date(dateVal);
-  return !isNaN(d.getTime()) && d.getTime() > Date.now();
+  try {
+    const d = new Date(dateVal);
+    return !isNaN(d.getTime()) && d.getTime() > Date.now();
+  } catch {
+    return false;
+  }
 }
 
 function formatDateSafe(dateVal) {
   if (!dateVal) return '';
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return '';
   try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
     return d.toLocaleDateString('tr-TR');
   } catch {
     return '';
   }
 }
 
-export default function ProfilPage() {
+function ProfilContent() {
   const [user, setUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [username, setUsername] = useState('');
@@ -41,7 +71,7 @@ export default function ProfilPage() {
       setUser(u || null);
       if (!u) return;
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('id, username, avatar_url, role, xp, coins, vip_until, name_color_until, avatar_gif_until, equipped_frame, equipped_background')
         .eq('id', u.id)
@@ -174,37 +204,37 @@ export default function ProfilPage() {
   const xpDiff = Math.max(1, next - cur);
   const pct = Math.min(100, Math.max(0, Math.round(((currentXp - cur) / xpDiff) * 100)));
 
-  const Note = ({ k }) => (msg[k] ? <p style={{ marginTop: '10px', color: 'var(--text-dim)', fontSize: '.85rem' }}>{msg[k]}</p> : null);
-
-  const bannerBg = profile?.equipped_background ? frameMap[profile.equipped_background] : undefined;
-  const frameGrad = profile?.equipped_frame ? frameMap[profile.equipped_frame] : undefined;
+  const bannerBg = profile?.equipped_background && frameMap ? frameMap[profile.equipped_background] : undefined;
+  const frameGrad = profile?.equipped_frame && frameMap ? frameMap[profile.equipped_frame] : undefined;
 
   return (
     <div className="wrap" style={{ maxWidth: '640px' }}>
       <h1>Profil Ayarları</h1>
 
-      <div className="card profile-banner" style={bannerBg ? { backgroundImage: bannerBg } : undefined}>
-        <div className="profile-head">
-          <Avatar url={profile?.avatar_url} name={profile?.username || user?.email || '?'} size={72} frameGradient={frameGrad} />
-          <div>
-            <h3 style={{ margin: '0 0 6px' }}>{profile?.username || 'Kullanıcı'}</h3>
-            <UserBadge role={profile?.role || 'user'} xp={currentXp} vipActive={vipActive} />
+      <ErrorBoundary>
+        <div className="card profile-banner" style={bannerBg ? { backgroundImage: bannerBg } : undefined}>
+          <div className="profile-head">
+            <Avatar url={profile?.avatar_url} name={profile?.username || user?.email || '?'} size={72} frameGradient={frameGrad} />
+            <div>
+              <h3 style={{ margin: '0 0 6px' }}>{profile?.username || 'Kullanıcı'}</h3>
+              <UserBadge role={profile?.role || 'user'} xp={currentXp} vipActive={vipActive} />
+            </div>
           </div>
+          <div className="xp-track"><div className="xp-fill" style={{ width: `${pct}%` }} /></div>
+          <p style={{ marginTop: '6px', fontSize: '.8rem' }}>{currentXp} XP · Sonraki seviyeye {Math.max(0, next - currentXp)} XP</p>
+          <div className="status-grid">
+            <div><span>🪙 Tier Parası</span><strong>{profile?.coins ?? 0}</strong></div>
+            <div><span>💎 VIP</span><strong>{vipActive ? (profile?.vip_until ? `${formatDateSafe(profile.vip_until)} tarihine kadar` : 'Süresiz (rol)') : 'Yok'}</strong></div>
+            <div><span>🌈 Renkli İsim Hakkı</span><strong>{tempColorActive ? `${formatDateSafe(profile?.name_color_until)} tarihine kadar` : 'Yok'}</strong></div>
+            <div><span>🎞️ Hareketli Avatar Hakkı</span><strong>{gifActive ? `${formatDateSafe(profile?.avatar_gif_until)} tarihine kadar` : 'Yok'}</strong></div>
+          </div>
+          <p style={{ marginTop: '10px', fontSize: '.85rem', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+            <a href="/gorevler" style={{ color: 'var(--accent)', fontWeight: 700 }}>Görevler ve başarılar →</a>
+            <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>Mağaza →</a>
+            <a href="/cekilis" style={{ color: 'var(--accent)', fontWeight: 700 }}>Günlük çekiliş →</a>
+          </p>
         </div>
-        <div className="xp-track"><div className="xp-fill" style={{ width: `${pct}%` }} /></div>
-        <p style={{ marginTop: '6px', fontSize: '.8rem' }}>{currentXp} XP · Sonraki seviyeye {Math.max(0, next - currentXp)} XP</p>
-        <div className="status-grid">
-          <div><span>🪙 Tier Parası</span><strong>{profile?.coins ?? 0}</strong></div>
-          <div><span>💎 VIP</span><strong>{vipActive ? (profile?.vip_until ? `${formatDateSafe(profile.vip_until)} tarihine kadar` : 'Süresiz (rol)') : 'Yok'}</strong></div>
-          <div><span>🌈 Renkli İsim Hakkı</span><strong>{tempColorActive ? `${formatDateSafe(profile?.name_color_until)} tarihine kadar` : 'Yok'}</strong></div>
-          <div><span>🎞️ Hareketli Avatar Hakkı</span><strong>{gifActive ? `${formatDateSafe(profile?.avatar_gif_until)} tarihine kadar` : 'Yok'}</strong></div>
-        </div>
-        <p style={{ marginTop: '10px', fontSize: '.85rem', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-          <a href="/gorevler" style={{ color: 'var(--accent)', fontWeight: 700 }}>Görevler ve başarılar →</a>
-          <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>Mağaza →</a>
-          <a href="/cekilis" style={{ color: 'var(--accent)', fontWeight: 700 }}>Günlük çekiliş →</a>
-        </p>
-      </div>
+      </ErrorBoundary>
 
       <div className="card" style={{ marginTop: '14px' }}>
         <h3>Avatar</h3>
@@ -213,7 +243,7 @@ export default function ProfilPage() {
           <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadAvatar} />
         </div>
         {profile?.avatar_url && <button type="button" className="btn btn-ghost" onClick={removeAvatar}>Avatarı kaldır</button>}
-        <Note k="avatar" />
+        {msg.avatar && <p style={{ marginTop: '10px', color: 'var(--text-dim)', fontSize: '.85rem' }}>{msg.avatar}</p>}
       </div>
 
       <form className="card" style={{ marginTop: '14px' }} onSubmit={saveUsername}>
@@ -222,7 +252,7 @@ export default function ProfilPage() {
           <input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={20} required />
         </div>
         <button className="btn" type="submit">Kaydet</button>
-        <Note k="username" />
+        {msg.username && <p style={{ marginTop: '10px', color: 'var(--text-dim)', fontSize: '.85rem' }}>{msg.username}</p>}
       </form>
 
       <form className="card" style={{ marginTop: '14px' }} onSubmit={saveEmail}>
@@ -232,7 +262,7 @@ export default function ProfilPage() {
           <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="Yeni e-posta adresi" required />
         </div>
         <button className="btn" type="submit">E-postayı Değiştir</button>
-        <Note k="email" />
+        {msg.email && <p style={{ marginTop: '10px', color: 'var(--text-dim)', fontSize: '.85rem' }}>{msg.email}</p>}
       </form>
 
       <form className="card" style={{ marginTop: '14px' }} onSubmit={savePassword}>
@@ -244,10 +274,20 @@ export default function ProfilPage() {
           <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="Yeni şifre (tekrar)" autoComplete="new-password" required />
         </div>
         <button className="btn" type="submit">Şifreyi Değiştir</button>
-        <Note k="pw" />
+        {msg.pw && <p style={{ marginTop: '10px', color: 'var(--text-dim)', fontSize: '.85rem' }}>{msg.pw}</p>}
       </form>
 
-      <TwoFactor />
+      <ErrorBoundary>
+        <TwoFactor />
+      </ErrorBoundary>
     </div>
+  );
+}
+
+export default function ProfilPage() {
+  return (
+    <ErrorBoundary>
+      <ProfilContent />
+    </ErrorBoundary>
   );
 }

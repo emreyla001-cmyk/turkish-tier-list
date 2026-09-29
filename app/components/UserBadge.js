@@ -10,25 +10,30 @@ export const ROLES = {
 
 // Seviye n için gereken toplam XP: (n-1)^2 * 100
 export function levelFromXp(xp = 0) {
-  return Math.floor(Math.sqrt(Math.max(0, xp) / 100)) + 1;
+  const safeXp = Number(xp);
+  if (isNaN(safeXp) || safeXp < 0) return 1;
+  return Math.floor(Math.sqrt(safeXp / 100)) + 1;
 }
+
 export function xpForLevel(level) {
-  return (level - 1) * (level - 1) * 100;
+  const safeLvl = Math.max(1, Number(level) || 1);
+  return (safeLvl - 1) * (safeLvl - 1) * 100;
 }
 
 export default function UserBadge({ role = 'user', xp = 0, vipActive = false }) {
-  const [icon, label] = ROLES[role] || ROLES.user;
+  const safeRole = (role && ROLES[role]) ? role : 'user';
+  const [icon, label] = ROLES[safeRole] || ['👤', 'Kullanıcı'];
   return (
     <span className="user-badges">
-      <span className={`role-badge role-${role}`}>{icon} {label}</span>
-      {vipActive && role !== 'vip' && role !== 'admin' && <span className="role-badge role-vip">💎 VIP</span>}
+      <span className={`role-badge role-${safeRole}`}>{icon} {label}</span>
+      {vipActive && safeRole !== 'vip' && safeRole !== 'admin' && <span className="role-badge role-vip">💎 VIP</span>}
       <span className="level-badge">Sv. {levelFromXp(xp)}</span>
     </span>
   );
 }
 
 export function NameTag({ name, color }) {
-  return <span style={nameColorStyle(color)}>{name}</span>;
+  return <span style={nameColorStyle(color)}>{name || '?'}</span>;
 }
 
 export function Avatar({ url, name = '?', size = 34, frameGradient }) {
