@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import TierBadge from '../../components/TierBadge';
 import { Avatar } from '../../components/UserBadge';
 import { getDailyPlays, incrementDailyPlay, MAX_DAILY_PLAYS } from '../../lib/dailyLimit';
+import { addCoins, addXP } from '../../lib/wallet';
 
 export default function KarakterBilmecePage() {
   const [config, setConfig] = useState(null);
@@ -116,13 +117,8 @@ export default function KarakterBilmecePage() {
       const finalXp = config?.cift_odul ? 500 : 250;
 
       try {
-        const { data: p } = await supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle();
-        if (p) {
-          await supabase.from('profiles').update({
-            coins: (p.coins || 0) + finalCoins,
-            xp: (p.xp || 0) + finalXp,
-          }).eq('id', user.id);
-        }
+        await addCoins(user, finalCoins);
+        await addXP(user, finalXp);
       } catch (e) {
         console.error('Ödül verilemedi:', e);
       }

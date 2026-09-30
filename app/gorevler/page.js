@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { levelFromXp, xpForLevel } from '../components/UserBadge';
+import { getEffectiveXP, addXP } from '../lib/wallet';
 
 export default function GorevlerPage() {
   const [user, setUser] = useState(undefined);
@@ -25,18 +26,32 @@ export default function GorevlerPage() {
       supabase.from('achievements').select('*').order('sort'),
       supabase.from('user_achievements').select('achievement_id').eq('user_id', u.id),
     ]);
-    setXp(p.data?.xp || 0);
+    setXp(getEffectiveXP(u, p.data));
     setStats(s.data);
     setQuests(q.data || []);
     setAchs(a.data || []);
     setEarned(new Set((ua.data || []).map((r) => r.achievement_id)));
   }
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    load();
+    const handleXpUpdate = (e) => {
+      if (e?.detail?.xp !== undefined) setXp(e.detail.xp);
+    };
+    window.addEventListener('xp-updated', handleXpUpdate);
+    return () => window.removeEventListener('xp-updated', handleXpUpdate);
+  }, []);
 
   async function claim(id) {
     setMsg(null);
     const { data, error } = await supabase.rpc('claim_quest', { quest: id });
-    setMsg(error ? error.message : `+${data} XP kazandın!`);
+    if (error) {
+      setMsg(error.message);
+    } else {
+      const earnedXp = Number(data) || 50;
+      await addXP(user, earnedXp, xp);
+      setMsg(`+${earnedXp} XP kazandın!`);
+    }
     load();
   }
 

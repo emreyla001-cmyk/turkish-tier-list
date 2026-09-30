@@ -4,14 +4,34 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import UserBadge, { Avatar, NameTag, levelFromXp, xpForLevel } from '../components/UserBadge';
 import { useFrameMap } from '../components/useFrameMap';
-import { resolveBackground, resolveFrame, resolveNameColor } from '../components/cosmetics';
+import { resolveBackground, resolveFrame, resolveNameColor, KNOWN_BACKGROUNDS, KNOWN_FRAMES, KNOWN_NAME_COLORS } from '../components/cosmetics';
 import TwoFactor from '../components/TwoFactor';
 import TierBadge from '../components/TierBadge';
 import { getCardRarity, getStarInfo } from '../lib/cardRarity';
 import { getLeagueForTrophies } from '../lib/cardGameEngine';
 import { CoinIcon, EnergyIcon, TrophyIcon, ShieldIcon, CrownIcon } from '../components/CyberIcons';
+import { getEffectiveCoins, getEffectiveXP } from '../lib/wallet';
 
 const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
+
+const BACKGROUND_NAMES = {
+  bg_aurora: 'Aurora Kuzey Işıkları',
+  bg_sunset: 'Gün Batımı Kızıllığı',
+  bg_forest: 'Gece Ormanı',
+  bg_cosmic: 'Derin Kozmik Nebula (VIP)',
+  bg_cyber_neon: 'Siber Şehir Neonu',
+  bg_tengri_gold: 'Tengri Altını',
+  bg_blood_moon: 'Kanlı Ay Teması',
+  bg_matrix: 'Matrix Kod Teması',
+  bg_void: 'Kozmik Hiçlik (Void)',
+  bg_synthwave: '80ler Synthwave',
+  bg_aurora_borealis: 'Dans Eden Kuzey Işıkları',
+  bg_magma_core: 'Dünya Çekirdeği & Magma',
+  bg_galaxy_cluster: 'Galaksi Kümesi',
+  bg_zen_bamboo: 'Sisli Zen Bambu Bahçesi',
+  bg_cyber_grid: 'Tron Siber Izgara',
+  bg_crimson_nebula: 'Bordo Yıldız Beşiği',
+};
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -88,6 +108,7 @@ function ProfilContent() {
   const [profile, setProfile] = useState(null);
   const [userBadges, setUserBadges] = useState([]);
   const [showcaseCards, setShowcaseCards] = useState([]);
+  const [ownedItems, setOwnedItems] = useState(new Set());
   const [trophies, setTrophies] = useState(150);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'cosmetics' | 'flex' | 'security'
   const [username, setUsername] = useState('');
@@ -106,6 +127,11 @@ function ProfilContent() {
 
       const userTrophies = Number(u.user_metadata?.trophies) || 150;
       setTrophies(userTrophies);
+
+      // Sahip olunan mağaza eşyalarını yükle
+      const metaOwned = Array.isArray(u.user_metadata?.owned_items) ? u.user_metadata.owned_items : [];
+      const localOwned = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(`user_owned_${u.id}`) || '[]') : [];
+      setOwnedItems(new Set([...metaOwned, ...localOwned]));
 
       // Rozetleri getir
       fetch(`/api/badges?userId=${u.id}`)
@@ -148,37 +174,41 @@ function ProfilContent() {
         .eq('id', u.id)
         .maybeSingle();
 
+      const effectiveCoins = getEffectiveCoins(u, data);
+      const effectiveXp = getEffectiveXP(u, data);
+      const localFrame = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_frame_${u.id}`) : null;
+      const localBg = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_background_${u.id}`) : null;
+      const localNameColor = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_name_color_${u.id}`) : null;
+      const localBgUntil = typeof window !== 'undefined' ? localStorage.getItem(`user_profile_bg_until_${u.id}`) : null;
+      const localGifUntil = typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_gif_until_${u.id}`) : null;
+
       const fallbackProfile = {
         id: u.id,
         username: u.user_metadata?.username || u.email?.split('@')[0] || 'Kullanıcı',
         avatar_url: u.user_metadata?.avatar_url || null,
         role: 'user',
-        xp: 0,
-        coins: 0,
+        xp: effectiveXp,
+        coins: effectiveCoins,
         vip_until: null,
         name_color_until: null,
-        avatar_gif_until: u.user_metadata?.avatar_gif_until || null,
-        profile_bg_until: u.user_metadata?.profile_bg_until || null,
-        equipped_frame: null,
-        equipped_background: null,
-        equipped_name_color: null,
+        avatar_gif_until: u.user_metadata?.avatar_gif_until || localGifUntil || null,
+        profile_bg_until: u.user_metadata?.profile_bg_until || localBgUntil || null,
+        equipped_frame: u.user_metadata?.equipped_frame || localFrame || null,
+        equipped_background: u.user_metadata?.equipped_background || localBg || null,
+        equipped_name_color: u.user_metadata?.equipped_name_color || localNameColor || null,
         profile_bg_url: u.user_metadata?.profile_bg_url || null,
       };
 
-      const prof = data ? { ...fallbackProfile, ...data } : fallbackProfile;
+      const prof = data ? { ...fallbackProfile, ...data, xp: effectiveXp, coins: effectiveCoins } : fallbackProfile;
       if (!prof.profile_bg_url && u.user_metadata?.profile_bg_url) {
         prof.profile_bg_url = u.user_metadata.profile_bg_url;
       }
-      if (!prof.profile_bg_until && u.user_metadata?.profile_bg_until) {
-        prof.profile_bg_until = u.user_metadata.profile_bg_until;
+      if (!prof.profile_bg_until) {
+        prof.profile_bg_until = u.user_metadata?.profile_bg_until || localBgUntil || null;
       }
-      if (!prof.avatar_gif_until && u.user_metadata?.avatar_gif_until) {
-        prof.avatar_gif_until = u.user_metadata.avatar_gif_until;
+      if (!prof.avatar_gif_until) {
+        prof.avatar_gif_until = u.user_metadata?.avatar_gif_until || localGifUntil || null;
       }
-
-      const localFrame = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_frame_${u.id}`) : null;
-      const localBg = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_background_${u.id}`) : null;
-      const localNameColor = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_name_color_${u.id}`) : null;
 
       if (!prof.equipped_frame) prof.equipped_frame = u.user_metadata?.equipped_frame || localFrame || null;
       if (!prof.equipped_background) prof.equipped_background = u.user_metadata?.equipped_background || localBg || null;
@@ -198,7 +228,36 @@ function ProfilContent() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const handleProfileSync = (e) => {
+      if (e?.detail) {
+        setProfile((prev) => {
+          if (!prev) return prev;
+          const next = { ...prev };
+          if (e.detail.coins !== undefined) next.coins = e.detail.coins;
+          if (e.detail.xp !== undefined) next.xp = e.detail.xp;
+          if (e.detail.equipped_frame !== undefined) next.equipped_frame = e.detail.equipped_frame;
+          if (e.detail.equipped_background !== undefined) next.equipped_background = e.detail.equipped_background;
+          if (e.detail.equipped_name_color !== undefined) next.equipped_name_color = e.detail.equipped_name_color;
+          if (e.detail.profile_bg_until !== undefined) next.profile_bg_until = e.detail.profile_bg_until;
+          if (e.detail.avatar_gif_until !== undefined) next.avatar_gif_until = e.detail.avatar_gif_until;
+          if (e.detail.avatar_url !== undefined) next.avatar_url = e.detail.avatar_url;
+          return next;
+        });
+      }
+    };
+    window.addEventListener('profile-updated', handleProfileSync);
+    window.addEventListener('coins-updated', handleProfileSync);
+    window.addEventListener('xp-updated', handleProfileSync);
+    window.addEventListener('cosmetics-updated', handleProfileSync);
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileSync);
+      window.removeEventListener('coins-updated', handleProfileSync);
+      window.removeEventListener('xp-updated', handleProfileSync);
+      window.removeEventListener('cosmetics-updated', handleProfileSync);
+    };
+  }, []);
 
   async function saveUsername(e) {
     e.preventDefault();
@@ -389,6 +448,22 @@ function ProfilContent() {
     say('email', error ? error.message : 'Onay bağlantısı gönderildi. E-posta değişikliği, gelen kutundaki linke tıklayınca tamamlanır.');
   }
 
+  async function equipCosmetic(column, value) {
+    if (!user) return;
+    try { await supabase.auth.updateUser({ data: { [column]: value } }); } catch {}
+    try { await supabase.from('profiles').update({ [column]: value }).eq('id', user.id); } catch {}
+    if (typeof window !== 'undefined') {
+      if (value) {
+        localStorage.setItem(`user_${column}_${user.id}`, value);
+      } else {
+        localStorage.removeItem(`user_${column}_${user.id}`);
+      }
+      window.dispatchEvent(new CustomEvent('profile-updated', { detail: { [column]: value } }));
+      window.dispatchEvent(new CustomEvent('cosmetics-updated', { detail: { [column]: value } }));
+    }
+    setProfile((prev) => (prev ? { ...prev, [column]: value } : prev));
+  }
+
   async function unequipCosmetic(column) {
     if (!user) return;
     try { await supabase.auth.updateUser({ data: { [column]: null } }); } catch {}
@@ -421,26 +496,63 @@ function ProfilContent() {
   const xpDiff = Math.max(1, next - cur);
   const pct = Math.min(100, Math.max(0, Math.round(((currentXp - cur) / xpDiff) * 100)));
 
-  // Eğer VIP veya 30 Günlük hak yoksa / süresi dolduysa, özel yüklenen görsel gösterilmez (varsayılana döner)
-  const bannerBg = (bgActive && profile?.profile_bg_url)
-    ? `url("${profile.profile_bg_url}")`
-    : resolveBackground(profile?.equipped_background, frameMap);
+  // Arka Plan Belirleme:
+  // 1. Mağazadan seçilen arka plan teması (equipped_background)
+  // 2. Özel yüklenen hareketli GIF/Görsel (profile_bg_url - VIP/30 Günlük)
+  const activeBgTheme = profile?.equipped_background ? resolveBackground(profile.equipped_background, frameMap) : null;
+  const customBgUrl = (bgActive && profile?.profile_bg_url) ? `url("${profile.profile_bg_url}")` : null;
+  const bannerBg = activeBgTheme || customBgUrl || null;
   const frameGrad = resolveFrame(profile?.equipped_frame, frameMap);
   const nameColorVal = resolveNameColor(profile?.equipped_name_color, frameMap);
 
   return (
-    <div className="wrap profile-dashboard" style={{ paddingBottom: '70px' }}>
+    <div className="wrap profile-dashboard" style={{ paddingBottom: '70px', position: 'relative' }}>
+      {/* Arka plan ambient atmosfer ışıltısı */}
+      {bannerBg && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '100vw',
+            height: '450px',
+            background: bannerBg,
+            backgroundSize: 'cover',
+            filter: 'blur(75px)',
+            opacity: 0.15,
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+      )}
+
       {/* 🚀 Fütüristik Cyber Profil Başlığı */}
       <ErrorBoundary>
-        <div className="profile-hero-cyber">
+        <div
+          className="profile-hero-cyber"
+          style={{
+            position: 'relative',
+            background: bannerBg || 'linear-gradient(135deg, rgba(20, 25, 40, 0.95) 0%, rgba(10, 13, 20, 0.98) 100%)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            borderColor: bannerBg ? 'var(--accent)' : 'rgba(230, 179, 37, 0.35)',
+            boxShadow: bannerBg ? '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(230, 179, 37, 0.25)' : undefined,
+          }}
+        >
           {bannerBg && (
             <div
-              className="profile-hero-ambient"
-              style={{ backgroundImage: bannerBg }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(180deg, rgba(6, 9, 18, 0.3) 0%, rgba(6, 9, 18, 0.82) 100%)',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
             />
           )}
 
-          <div className="profile-hero-content">
+          <div className="profile-hero-content" style={{ position: 'relative', zIndex: 2 }}>
             <div className="profile-user-row">
               <div className="profile-avatar-aura">
                 <Avatar
@@ -755,21 +867,88 @@ function ProfilContent() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-2)', padding: '12px 16px', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '1.4rem' }}>🌄</span>
-                  <div>
-                    <strong style={{ fontSize: '.9rem' }}>Profil Arka Planı</strong>
-                    <div style={{ fontSize: '.8rem', color: 'var(--text-dim)' }}>
-                      {profile?.equipped_background ? 'Mağaza Arka Planı Aktif' : 'Standart'}
+              {/* Arka Plan Durumu & Kuşanma */}
+              <div style={{ background: 'var(--bg-2)', padding: '16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>🌄</span>
+                    <div>
+                      <strong style={{ fontSize: '.95rem' }}>Profil Arka Planı</strong>
+                      <div style={{ fontSize: '.82rem', color: 'var(--text-dim)', marginTop: '2px' }}>
+                        {profile?.equipped_background ? (
+                          <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                            {BACKGROUND_NAMES[profile.equipped_background] || profile.equipped_background} (Aktif)
+                          </span>
+                        ) : profile?.profile_bg_url ? (
+                          <span style={{ color: '#00f0ff', fontWeight: 600 }}>Özel Yüklenen Arka Plan (Aktif)</span>
+                        ) : (
+                          'Varsayılan Cyber Teması'
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {profile?.equipped_background && (
+                    <button type="button" className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: '.78rem' }} onClick={() => unequipCosmetic('equipped_background')}>
+                      Temayı Kaldır (Varsayılan)
+                    </button>
+                  )}
                 </div>
-                {profile?.equipped_background && (
-                  <button type="button" className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: '.78rem' }} onClick={() => unequipCosmetic('equipped_background')}>
-                    Kaldır
-                  </button>
-                )}
+
+                {/* Sahip Olunan Arka Planlar Koleksiyonu */}
+                <div style={{ marginTop: '8px' }}>
+                  <p style={{ fontSize: '.8rem', color: 'var(--text-dim)', marginBottom: '8px', fontWeight: 600 }}>
+                    Koleksiyonundaki Arka Planlar:
+                  </p>
+                  {Object.keys(KNOWN_BACKGROUNDS).filter((bgId) => ownedItems.has(bgId) || (bgId === 'bg_cosmic' && vipActive)).length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                      {Object.keys(KNOWN_BACKGROUNDS)
+                        .filter((bgId) => ownedItems.has(bgId) || (bgId === 'bg_cosmic' && vipActive))
+                        .map((bgId) => {
+                          const isCur = profile?.equipped_background === bgId;
+                          return (
+                            <div
+                              key={bgId}
+                              style={{
+                                padding: '8px',
+                                borderRadius: '10px',
+                                border: isCur ? '2px solid var(--accent)' : '1px solid var(--border)',
+                                background: 'var(--bg-3)',
+                                textAlign: 'center',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  height: '42px',
+                                  borderRadius: '6px',
+                                  background: resolveBackground(bgId, frameMap),
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                }}
+                              />
+                              <span style={{ fontSize: '.74rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {BACKGROUND_NAMES[bgId] || bgId}
+                              </span>
+                              <button
+                                type="button"
+                                className={`btn ${isCur ? 'btn-ghost' : ''}`}
+                                style={{ fontSize: '.72rem', padding: '4px 8px' }}
+                                onClick={() => (isCur ? unequipCosmetic('equipped_background') : equipCosmetic('equipped_background', bgId))}
+                              >
+                                {isCur ? '✓ Kuşanıldı' : 'Kullan'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--border)', fontSize: '.8rem', color: 'var(--text-dim)' }}>
+                      Henüz satın alınmış mağaza teman yok.{' '}
+                      <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>Kozmetik Mağazası'ndan incele &rarr;</a>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <p style={{ marginTop: '14px', fontSize: '.84rem' }}>

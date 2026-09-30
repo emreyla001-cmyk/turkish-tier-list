@@ -7,6 +7,7 @@ import { getCardRarity } from '../../lib/cardRarity';
 import { cardAudio } from '../../lib/cardAudio';
 import { getBotTierByTrophies, selectBotCard } from '../../lib/cardAIEngine';
 import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon } from '../../components/CyberIcons';
+import { addCoins, addXP } from '../../lib/wallet';
 
 export default function DraftDuelPage() {
   const [user, setUser] = useState(null);
@@ -189,12 +190,8 @@ export default function DraftDuelPage() {
     if (!user) return;
 
     try {
-      const { data: p } = await supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle();
-      const newCoins = (p?.coins || 0) + 1500;
-      const newXp = (p?.xp || 0) + 600;
-
-      await supabase.from('profiles').update({ coins: newCoins, xp: newXp }).eq('id', user.id);
-      await supabase.auth.updateUser({ data: { coins: newCoins, xp: newXp } });
+      await addCoins(user, 1500);
+      await addXP(user, 600, profile?.xp);
 
       // Klana puan kazandır
       await fetch('/api/clans', {
@@ -202,10 +199,6 @@ export default function DraftDuelPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'contribute_cp', user_id: user.id, points: 300 }),
       }).catch(() => {});
-
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: newCoins } }));
-      }
     } catch (err) {
       console.error('Reward claim error:', err);
     }

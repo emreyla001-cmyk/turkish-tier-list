@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import TierBadge from '../../components/TierBadge';
 import { tierRank } from '../../components/tiers';
 import { getDailyPlays, incrementDailyPlay, MAX_DAILY_PLAYS } from '../../lib/dailyLimit';
+import { addCoins, addXP } from '../../lib/wallet';
 
 export default function KimAlirPage() {
   const [config, setConfig] = useState(null);
@@ -122,14 +123,8 @@ export default function KimAlirPage() {
         const finalCoins = config?.cift_odul ? earnedCoins * 2 : earnedCoins;
         const finalXp = config?.cift_odul ? 700 : 350;
 
-        supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle().then(({ data: p }) => {
-          if (p) {
-            supabase.from('profiles').update({
-              coins: (p.coins || 0) + finalCoins,
-              xp: (p.xp || 0) + finalXp,
-            }).eq('id', user.id);
-          }
-        });
+        addCoins(user, finalCoins);
+        addXP(user, finalXp);
       }
     }
   }, [finished]);
