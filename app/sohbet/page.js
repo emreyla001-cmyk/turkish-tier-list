@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import UserBadge, { Avatar, NameTag } from '../components/UserBadge';
 import { useFrameMap } from '../components/useFrameMap';
+import UserProfileModal from '../components/UserProfileModal';
 
 const SELECT = 'id, user_id, content, created_at, profiles(username, avatar_url, role, xp, equipped_frame, equipped_name_color, vip_until)';
 
@@ -21,6 +22,7 @@ export default function SohbetPage() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [error, setError] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const boxRef = useRef(null);
 
   useEffect(() => {
@@ -84,10 +86,16 @@ export default function SohbetPage() {
               url={m.profiles?.avatar_url}
               name={m.profiles?.username || '?'}
               frameGradient={frameMap ? (frameMap[m.profiles?.equipped_frame] || m.profiles?.equipped_frame) : m.profiles?.equipped_frame}
+              onClick={() => setSelectedUser(m.user_id)}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="msg-head">
-                <span className="msg-name">
+                <span
+                  className="msg-name"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setSelectedUser(m.user_id)}
+                  title="Profili Gör / Moderatör İşlemleri"
+                >
                   <NameTag
                     name={m.profiles?.username || 'kullanıcı'}
                     color={frameMap ? (frameMap[m.profiles?.equipped_name_color] || m.profiles?.equipped_name_color) : m.profiles?.equipped_name_color}
@@ -104,6 +112,15 @@ export default function SohbetPage() {
           </div>
         ))}
       </div>
+
+      {/* Kullanıcı Profili & Hızlı Moderasyon Modalı */}
+      {selectedUser && (
+        <UserProfileModal
+          userId={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          currentViewerRole={me?.role || 'user'}
+        />
+      )}
 
       {error && <p style={{ color: 'var(--accent-2)', fontSize: '.85rem' }}>{error}</p>}
 

@@ -36,7 +36,7 @@ export function NameTag({ name, color }) {
   return <span style={nameColorStyle(color)}>{name || '?'}</span>;
 }
 
-export function Avatar({ url, name = '?', size = 34, frameGradient }) {
+export function Avatar({ url, name = '?', size = 34, frameGradient, onClick, style }) {
   const safeName = (name && typeof name === 'string' && name.trim().length > 0) ? name.trim() : '?';
   const activeFrame = resolveFrame(frameGradient);
 
@@ -51,15 +51,24 @@ export function Avatar({ url, name = '?', size = 34, frameGradient }) {
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
+        cursor: onClick ? 'pointer' : undefined,
+        ...style,
       }
-    : { width: size, height: size, flexShrink: 0, display: 'inline-flex' };
+    : { width: size, height: size, flexShrink: 0, display: 'inline-flex', cursor: onClick ? 'pointer' : undefined, ...style };
 
   const inner = url ? (
-    <img className="avatar" src={url} alt={safeName} style={{ width: size, height: size }} />
+    <img
+      className="avatar"
+      src={url}
+      alt={safeName}
+      style={{ width: size, height: size, cursor: onClick ? 'pointer' : undefined }}
+      onClick={onClick}
+    />
   ) : (
     <span
       className="avatar avatar-fallback"
-      style={{ width: size, height: size, fontSize: size * 0.42 }}
+      style={{ width: size, height: size, fontSize: size * 0.42, cursor: onClick ? 'pointer' : undefined }}
+      onClick={onClick}
     >
       {safeName.charAt(0).toLocaleUpperCase('tr')}
     </span>
@@ -68,7 +77,7 @@ export function Avatar({ url, name = '?', size = 34, frameGradient }) {
   if (!activeFrame) return inner;
 
   return (
-    <span style={wrapStyle}>
+    <span style={wrapStyle} onClick={onClick}>
       <span
         style={{
           width: size,
