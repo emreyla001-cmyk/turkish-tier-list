@@ -72,6 +72,29 @@ export default function KarakterOnerPage() {
         <p style={{ color: 'var(--text-dim)', fontSize: '.88rem' }}>
           Dizi, film, kitap, roman, çizgi roman, Türk mitolojisi, destan ya da masal... Karakter gerçek ve bilinen bir esere ait olmalı. Gönderdiğin öneri editör onayından geçtikten sonra yayınlanır.
         </p>
+
+        {/* Katkıcı Ödülü Bilgilendirme Kutusu */}
+        <div
+          style={{
+            margin: '14px 0 20px',
+            padding: '12px 16px',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.05))',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <span style={{ fontSize: '2rem' }}>🌟</span>
+          <div>
+            <strong style={{ color: '#f59e0b', fontSize: '.92rem' }}>Katkıcı Ödül Programı:</strong>
+            <p style={{ margin: '2px 0 0', fontSize: '.82rem', color: 'var(--text-dim)' }}>
+              Önerdiğin karakter incelenip onaylandığında profiline kalıcı <span style={{ color: '#f59e0b', fontWeight: 700 }}>"🌟 Evren Katkıcısı"</span> rozeti, <strong style={{ color: '#fef08a' }}>1.000 Tier Parası</strong> ve <strong style={{ color: '#86efac' }}>500 XP</strong> otomatik tanımlanır!
+            </p>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label>Karakter Adı *</label>

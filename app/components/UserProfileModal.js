@@ -35,6 +35,7 @@ function getRemainingTimeText(untilDate) {
 
 export default function UserProfileModal({ userId, onClose, currentViewerRole = 'user' }) {
   const [profile, setProfile] = useState(null);
+  const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState(null);
   const [coinAmount, setCoinAmount] = useState('500');
@@ -47,6 +48,13 @@ export default function UserProfileModal({ userId, onClose, currentViewerRole = 
     if (!userId) return;
     setLoading(true);
     try {
+      fetch(`/api/badges?userId=${userId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.badgeIds) setBadges(d.badgeIds);
+        })
+        .catch(() => {});
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -245,7 +253,7 @@ export default function UserProfileModal({ userId, onClose, currentViewerRole = 
                       <NameTag name={profile.username || 'Kullanıcı'} color={nameColor} />
                     </h2>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap' }}>
-                      <UserBadge role={profile.role} xp={currentXp} vipActive={vipActive} />
+                      <UserBadge role={profile.role} xp={currentXp} vipActive={vipActive} badges={badges} />
                       {isBanned && (
                         <span className="tag" style={{ background: '#e6455b', color: '#fff', fontWeight: 800 }}>
                           🔨 YASAKLI
