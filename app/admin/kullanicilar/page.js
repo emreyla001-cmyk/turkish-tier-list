@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import AdminGuard from '../../components/AdminGuard';
-import UserBadge, { ROLES } from '../../components/UserBadge';
+import UserBadge, { Avatar, ROLES } from '../../components/UserBadge';
+import UserProfileModal from '../../components/UserProfileModal';
 
 function timeLeft(iso) {
   if (!iso) return null;
@@ -18,6 +19,7 @@ function Users() {
   const [items, setItems] = useState([]);
   const [msg, setMsg] = useState(null);
   const [open, setOpen] = useState(null); // genişletilmiş kullanıcı id'si
+  const [modalUserId, setModalUserId] = useState(null);
   const [amount, setAmount] = useState('1000');
   const [bulkAmount, setBulkAmount] = useState('1000');
   const [muteMin, setMuteMin] = useState('60');
@@ -28,7 +30,7 @@ function Users() {
 
   async function load() {
     const [{ data: us }, { data: it }] = await Promise.all([
-      supabase.from('profiles').select('id, username, role, xp, coins, vip_until, muted_until, banned_until, ban_reason').order('created_at', { ascending: true }),
+      supabase.from('profiles').select('id, username, avatar_url, role, xp, coins, vip_until, muted_until, banned_until, ban_reason, equipped_frame').order('created_at', { ascending: true }),
       supabase.from('shop_items').select('id, name, kind').order('sort'),
     ]);
     setUsers(us || []);
@@ -90,7 +92,21 @@ function Users() {
           return (
             <div key={u.id} style={{ borderBottom: '1px solid var(--border)', padding: '14px 0' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span className="who" style={{ minWidth: '110px' }}>{u.username}</span>
+                <Avatar
+                  url={u.avatar_url}
+                  name={u.username}
+                  size={32}
+                  frameGradient={u.equipped_frame}
+                  onClick={() => setModalUserId(u.id)}
+                />
+                <span
+                  className="who"
+                  style={{ minWidth: '110px', cursor: 'pointer', fontWeight: 700 }}
+                  onClick={() => setModalUserId(u.id)}
+                  title="Hızlı Moderatör Kartını Aç"
+                >
+                  {u.username} ↗
+                </span>
                 <UserBadge role={u.role} xp={u.xp} />
                 <span className="tag">🪙 {u.coins}</span>
                 {u.banned_until && new Date(u.banned_until) > new Date() && <span className="tag" style={{ borderColor: 'var(--accent-2)', color: 'var(--accent-2)' }}>Yasaklı · {timeLeft(u.banned_until)}</span>}
@@ -155,6 +171,17 @@ function Users() {
           );
         })}
       </div>
+
+      {modalUserId && (
+        <UserProfileModal
+          userId={modalUserId}
+          onClose={() => {
+            setModalUserId(null);
+            load();
+          }}
+          currentViewerRole="admin"
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { supabase } from '../../../lib/supabaseClient';
 import CommentForm from '../../components/CommentForm';
+import CommentList from '../../components/CommentList';
 import TierBadge from '../../components/TierBadge';
 import { tierInfo } from '../../components/tiers';
 import UserBadge, { Avatar, NameTag } from '../../components/UserBadge';
@@ -210,40 +211,7 @@ export default async function CharacterPage({ params }) {
           </p>
         </div>
 
-        {comments.length === 0 && (
-          <p style={{ color: 'var(--text-dim)', margin: '18px 0' }}>
-            Henüz yorum yapılmamış. İlk tartışmayı sen başlat!
-          </p>
-        )}
-
-        <div className="comments-stream">
-          {comments.map((c) => (
-            <div className="comment msg" key={c.id}>
-              <Avatar
-                url={c.profiles?.avatar_url}
-                name={c.profiles?.username || '?'}
-                frameGradient={frameMap[c.profiles?.equipped_frame]}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="msg-head">
-                  <span className="msg-name">
-                    <NameTag
-                      name={c.profiles?.username || 'kullanıcı'}
-                      color={c.profiles?.equipped_name_color}
-                    />
-                  </span>
-                  <UserBadge
-                    role={c.profiles?.role}
-                    xp={c.profiles?.xp}
-                    vipActive={c.profiles?.vip_until && new Date(c.profiles.vip_until) > new Date()}
-                  />
-                  <span className="msg-time">{new Date(c.created_at).toLocaleDateString('tr-TR')}</span>
-                </div>
-                <p className="comment-text">{c.content}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <CommentList comments={comments} frameMap={frameMap} />
 
         <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
           <CommentForm characterId={character.id} />

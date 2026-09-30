@@ -15,8 +15,16 @@ export default function AdminHome() {
             <p>Bekleyen karakter önerilerini onayla veya reddet</p>
           </a>
           <a href="/admin/kullanicilar" className="card">
-            <h3>Kullanıcılar</h3>
-            <p>Moderatör, VIP ve admin rollerini yönet</p>
+            <h3>👥 Kullanıcılar & Moderasyon</h3>
+            <p>Moderatör, VIP ve admin rollerini yönet, ceza ver</p>
+          </a>
+          <a href="/admin/magaza" className="card">
+            <h3>🛍️ Mağaza & Fiyat Yönetimi</h3>
+            <p>Kozmetiklerin ve GIF haklarının altın fiyatlarını düzenle</p>
+          </a>
+          <a href="/admin/cekilis" className="card">
+            <h3>🎡 Çarkıfelek & Ödül Oranları</h3>
+            <p>Hediye çarkındaki ödülleri ve kazanma olasılıklarını (%2 vb.) ayarla</p>
           </a>
         </div>
       </div>
