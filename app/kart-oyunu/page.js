@@ -6,6 +6,7 @@ import TierBadge from '../components/TierBadge';
 import { getLeagueForTrophies } from '../lib/cardGameEngine';
 import { cardAudio } from '../lib/cardAudio';
 import { getCardRarity, getStarInfo, MAX_STARS } from '../lib/cardRarity';
+import { getStamina, buyStaminaPotion, POTION_COST, POTION_REFILL } from '../lib/stamina';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -17,6 +18,8 @@ export default function KartOyunuHub() {
   const [myDeck, setMyDeck] = useState([]); // 5 kart id'si
   const [cardUpgrades, setCardUpgrades] = useState({}); // { [id]: { stars: 1..5, shards: number } }
   const [trophies, setTrophies] = useState(100);
+  const [pityCount, setPityCount] = useState(0);
+  const [stamina, setStamina] = useState({ current: 10, max: 10 });
   const [openedPackCards, setOpenedPackCards] = useState(null);
   const [opening, setOpening] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -61,6 +64,10 @@ export default function KartOyunuHub() {
 
         setCardUpgrades(metaUpgrades);
 
+        const curPity = Number(u.user_metadata?.gacha_pity) || 0;
+        setPityCount(curPity);
+        setStamina(getStamina(u));
+
         // Başlangıç hediyesi: Eğer kartı yoksa en az 5 başlangıç kartı hediye et
         if (metaCards.length === 0 && allChars.length >= 5) {
           const starterCards = allChars.slice(0, 5).map((c) => c.id);
@@ -86,6 +93,25 @@ export default function KartOyunuHub() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function handleBuyPotion() {
+    if (!user) return;
+    const currentCoins = user.user_metadata?.coins !== undefined
+      ? Number(user.user_metadata.coins)
+      : Number(profile?.coins || 0);
+
+    const res = await buyStaminaPotion(user, currentCoins);
+    if (res.success) {
+      setStamina({ current: res.current, max: 10 });
+      setProfile((p) => ({ ...p, coins: res.newCoins }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: res.newCoins } }));
+      }
+      setMsg({ text: `🧪 Enerji İksiri kullanıldı! Mevcut enerjin: ${res.current}/10`, type: 'success' });
+    } else {
+      setMsg({ text: res.error, type: 'error' });
+    }
+  }
 
   // Paket Açılımı Fonksiyonu (Kopya Kart ve Parça / Shard Sistemi)
   async function handleOpenPack(pack) {
@@ -121,12 +147,30 @@ export default function KartOyunuHub() {
       let pool = characters.filter((c) => pack.tierFilter.includes(c.tier));
       if (pool.length === 0) pool = characters;
 
-      // 3 kart çek
+      // Pity (Şanssızlık Koruması) Mekaniği: 10. pakette (pityCount >= 9) kesin SSR veya UR!
+      const isPityActive = pityCount >= 9;
       const drawn = [];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         const rand = pool[Math.floor(Math.random() * pool.length)];
         drawn.push(rand);
       }
+
+      if (isPityActive) {
+        const highTierPool = characters.filter((c) => {
+          const r = getCardRarity(c.tier).code;
+          return r === 'UR' || r === 'SSR';
+        });
+        const guaranteedPool = highTierPool.length > 0 ? highTierPool : pool;
+        const guaranteedCard = guaranteedPool[Math.floor(Math.random() * guaranteedPool.length)];
+        drawn.push(guaranteedCard);
+      } else {
+        drawn.push(pool[Math.floor(Math.random() * pool.length)]);
+      }
+
+      // Pity güncelleme
+      const hasHighRarity = drawn.some((c) => ['UR', 'SSR'].includes(getCardRarity(c.tier).code));
+      const nextPity = hasHighRarity ? 0 : Math.min(10, pityCount + 1);
+      setPityCount(nextPity);
 
       // 3. Kopya Kart ve Parça (Shard) Hesabı
       const updatedUpgrades = { ...cardUpgrades };
@@ -182,6 +226,7 @@ export default function KartOyunuHub() {
           card_collection: newCollection,
           card_upgrades: updatedUpgrades,
           coins: finalCoins,
+          gacha_pity: nextPity,
         },
       });
 
@@ -524,19 +569,65 @@ export default function KartOyunuHub() {
             })}
           </div>
 
+          {/* ENERJİ (STAMINA) DURUMU */}
+          <div
+            style={{
+              marginTop: '20px',
+              padding: '14px 20px',
+              background: 'rgba(234, 179, 8, 0.08)',
+              border: '1px solid rgba(234, 179, 8, 0.3)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.6rem' }}>⚡</span>
+              <div>
+                <strong style={{ fontSize: '.95rem', color: stamina.current > 0 ? '#86efac' : '#ef4444' }}>
+                  Enerjin: {stamina.current} / {stamina.max}
+                </strong>
+                <span style={{ fontSize: '.78rem', color: 'var(--text-dim)', display: 'block' }}>
+                  Her maç 1 enerji tüketir. Saat başı 1 enerji otomatik yenilenir.
+                </span>
+              </div>
+            </div>
+
+            {stamina.current < stamina.max && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={handleBuyPotion}
+                style={{ fontSize: '.82rem', padding: '6px 14px', borderColor: '#f59e0b', color: '#f59e0b', fontWeight: 800 }}
+              >
+                🧪 Enerji İksiri Al (+5 Enerji - 300 TP)
+              </button>
+            )}
+          </div>
+
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
             <a
-              href="/kart-oyunu/savas"
+              href={stamina.current > 0 ? '/kart-oyunu/savas' : '#'}
+              onClick={(e) => {
+                if (stamina.current <= 0) {
+                  e.preventDefault();
+                  setMsg({ text: '⚠️ Enerjin kalmadı! Enerji İksiri alabilir ya da saat başı yenilenmesini bekleyebilirsin.', type: 'error' });
+                }
+              }}
               className="btn"
               style={{
                 padding: '14px 40px',
                 fontSize: '1.15rem',
                 fontWeight: 900,
-                background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                color: '#111',
+                background: stamina.current > 0 ? 'linear-gradient(135deg, var(--accent), var(--accent-2))' : '#3f3f46',
+                color: stamina.current > 0 ? '#111' : '#a1a1aa',
+                cursor: stamina.current > 0 ? 'pointer' : 'not-allowed',
               }}
             >
-              ⚔️ Bu Desteyle Arenaya Gir
+              {stamina.current > 0 ? '⚔️ Bu Desteyle Arenaya Gir (1 ⚡)' : '⚡ Enerji Tükendi'}
             </a>
           </div>
         </div>
@@ -573,6 +664,44 @@ export default function KartOyunuHub() {
                 🪙 {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
               </strong>
             </div>
+          </div>
+
+          {/* PITY (ACIMA / GARANTİ) ÇUBUĞU */}
+          <div
+            className="card"
+            style={{
+              marginBottom: '20px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(245, 158, 11, 0.12))',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              borderRadius: '14px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.4rem' }}>🛡️</span>
+                <strong style={{ color: '#fef08a', fontSize: '.95rem' }}>
+                  Pity (Şanssızlık Koruması) Barı: {pityCount} / 10
+                </strong>
+              </div>
+              <span className="tag" style={{ background: pityCount >= 9 ? '#ef4444' : 'rgba(245, 158, 11, 0.2)', color: pityCount >= 9 ? '#fff' : '#f59e0b', fontWeight: 800 }}>
+                {pityCount >= 9 ? '🔥 SIRADAKİ ÇEKİLİŞTE KESİN SSR / UR!' : '10\'da Kesin SSR / UR Garanti'}
+              </span>
+            </div>
+            <div style={{ width: '100%', height: '10px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  width: `${Math.min(100, (pityCount / 10) * 100)}%`,
+                  height: '100%',
+                  background: pityCount >= 9 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #eab308, #f59e0b)',
+                  transition: 'width 0.4s ease',
+                  boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)',
+                }}
+              />
+            </div>
+            <p style={{ margin: '8px 0 0', fontSize: '.78rem', color: 'var(--text-dim)' }}>
+              Üst üste 9 paket açılımında SSR veya UR çıkmazsa, 10. paket çekilişinde 3. kart %100 garantili SSR ya da UR seviyesinde gelir. Herhangi bir SSR/UR çıktığında bar sıfırlanır.
+            </p>
           </div>
 
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
