@@ -30,6 +30,10 @@ export default function AdminHome() {
             <h3>🎮 Etkinlikler & Mini Oyunlar</h3>
             <p>Karakter bilmece ve VS quiz oyunlarını dilediğin an aç/kapat</p>
           </a>
+          <a href="/admin/ligler" className="card">
+            <h3>🏆 Ligler & Kart Paketleri</h3>
+            <p>Kupa liglerinin isimlerini, rütbeleri ve kart paketi fiyatlarını düzenle</p>
+          </a>
         </div>
       </div>
     </AdminGuard>
