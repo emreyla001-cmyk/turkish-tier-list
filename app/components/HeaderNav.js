@@ -118,6 +118,13 @@ export default function HeaderNav() {
 
         {openDropdown === 'activity' && (
           <div className="nav-dropdown-menu">
+            <a href="/oyunlar" onClick={closeDropdown} className="dropdown-item">
+              <span className="dropdown-icon">🎮</span>
+              <div>
+                <strong style={{ color: 'var(--accent)' }}>Mini Oyunlar & Quiz</strong>
+                <p>Karakter Bilmece & Kim Alır Düellosu</p>
+              </div>
+            </a>
             <a href="/magaza" onClick={closeDropdown} className="dropdown-item">
               <span className="dropdown-icon">🛍️</span>
               <div>

@@ -26,6 +26,10 @@ export default function AdminHome() {
             <h3>🎡 Çarkıfelek & Ödül Oranları</h3>
             <p>Hediye çarkındaki ödülleri ve kazanma olasılıklarını (%2 vb.) ayarla</p>
           </a>
+          <a href="/admin/etkinlikler" className="card">
+            <h3>🎮 Etkinlikler & Mini Oyunlar</h3>
+            <p>Karakter bilmece ve VS quiz oyunlarını dilediğin an aç/kapat</p>
+          </a>
         </div>
       </div>
     </AdminGuard>
