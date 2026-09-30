@@ -112,6 +112,7 @@ export function Avatar({ url, name = '?', size = 34, frameGradient, onClick, sty
       >
         <span
           className="avatar-animated-frame-spinner"
+          aria-hidden="true"
           style={{
             position: 'absolute',
             inset: 0,

@@ -7,7 +7,7 @@ import { Avatar, NameTag } from '../components/UserBadge';
 import { deductCoins, getEffectiveCoins, getEffectiveXP, addXP } from '../lib/wallet';
 import { CoinIcon, CrownIcon, EnergyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
 import TierBadge from '../components/TierBadge';
-import { GACHA_PACKS, drawCardsFromPack } from '../lib/gachaEngine';
+import { GACHA_PACKS, drawCardsFromPack, getPackOddsText } from '../lib/gachaEngine';
 import { cardAudio } from '../lib/cardAudio';
 import { getCardRarity, getStarInfo } from '../lib/cardRarity';
 
@@ -222,6 +222,17 @@ const CATALOG_ITEMS = [
     vip_only: false,
     is_animated: true,
     sort: 25,
+  },
+  {
+    id: 'frame_gokturk_runes',
+    kind: 'frame',
+    name: 'Göktürk Runik Aurası',
+    price: 10000,
+    value: 'frame_gokturk_runes',
+    description: 'Turkuaz ve altın ışıkla dönen, Göktürk runik motiflerinden ilham alan animasyonlu çerçeve.',
+    vip_only: false,
+    is_animated: true,
+    sort: 25.5,
   },
   {
     id: 'frame_gold',
@@ -1233,7 +1244,7 @@ export default function MagazaPage() {
                 <span>🃏</span> Tier Kart Paketleri (Gacha Pazarı)
               </h2>
               <p style={{ margin: '4px 0 0', color: 'var(--text-dim)', fontSize: '.88rem' }}>
-                Güç seviyesi arttıkça çıkma oranı düşen gerçek gacha motoru! Her paket anında TP nakit iade ve XP kazandırır.
+                Temel oranlar kart başınadır; SR garanti slotunda R ihtimali SR’a aktarılır. Paket SSR ihtimali kart sayısına göre hesaplanır. 10 paket SSR/UR çıkmazsa son kart SSR garantilidir. Her paket TP iadesi ve XP kazandırır.
               </p>
             </div>
             <a href="/kart-oyunu" className="btn btn-ghost" style={{ fontSize: '.84rem' }}>
@@ -1275,6 +1286,9 @@ export default function MagazaPage() {
                   </div>
                   <div style={{ fontSize: '.7rem', color: 'var(--text-dim)', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '6px', margin: '8px 0' }}>
                     {pack.ratesText}
+                  </div>
+                  <div style={{ fontSize: '.7rem', color: '#f0abfc', fontWeight: 700, margin: '4px 0 8px' }}>
+                    {getPackOddsText(pack)}
                   </div>
                   <div style={{ margin: '14px 0', fontSize: '1.25rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                     <CoinIcon size={20} /> {pack.price.toLocaleString('tr-TR')}

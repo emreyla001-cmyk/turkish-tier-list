@@ -17,8 +17,8 @@ export const GACHA_PACKS = [
     badge: '🥉 Başlangıç',
     badgeColor: '#cd7f32',
     desc: '3 Karakter Kartı. Sokak ve çaylak seviyesindeki kahramanlar. (+150 TP İade)',
-    ratesText: 'R: %75 · SR: %22 · SSR: %2.9 · UR: %0.1',
-    rates: { R: 0.75, SR: 0.22, SSR: 0.029, UR: 0.001 },
+    ratesText: 'Kart başına — R: %74,95 · SR: %22 · SSR: %3 · UR: %0,05',
+    rates: { R: 0.7495, SR: 0.22, SSR: 0.03, UR: 0.0005 },
     guaranteedMinRarity: null,
   },
   {
@@ -32,8 +32,8 @@ export const GACHA_PACKS = [
     badge: '🛡️ 1x SR Garanti',
     badgeColor: '#94a3b8',
     desc: '4 Karakter Kartı. En az 1x SR (Elite) kart garantilidir. SSR şansa bağlıdır. (+400 TP İade)',
-    ratesText: 'R: %65 · SR: %31 · SSR: %3.8 · UR: %0.2',
-    rates: { R: 0.65, SR: 0.31, SSR: 0.038, UR: 0.002 },
+    ratesText: 'Temel oran — R: %64,85 · SR: %31 · SSR: %4 · UR: %0,15',
+    rates: { R: 0.6485, SR: 0.31, SSR: 0.04, UR: 0.0015 },
     guaranteedMinRarity: 'SR',
     guaranteedCount: 1,
   },
@@ -47,9 +47,9 @@ export const GACHA_PACKS = [
     xpReward: 600,
     badge: '⚔️ 1x SR Garanti',
     badgeColor: '#f59e0b',
-    desc: '5 Karakter Kartı. 1x SR garantilidir. 2-3 pakette ortalama 1 SSR şansı yakalanır. (+1.000 TP İade)',
-    ratesText: 'R: %56 · SR: %38 · SSR: %5.5 · UR: %0.5',
-    rates: { R: 0.56, SR: 0.38, SSR: 0.055, UR: 0.005 },
+    desc: '5 Karakter Kartı. En az 1x SR (Elite) kart garantilidir. (+1.000 TP İade)',
+    ratesText: 'Temel oran — R: %54,2 · SR: %38 · SSR: %7,5 · UR: %0,3',
+    rates: { R: 0.542, SR: 0.38, SSR: 0.075, UR: 0.003 },
     guaranteedMinRarity: 'SR',
     guaranteedCount: 1,
   },
@@ -63,9 +63,9 @@ export const GACHA_PACKS = [
     xpReward: 1500,
     badge: '💎 1x SR Garanti (Yüksek Şans)',
     badgeColor: '#00f0ff',
-    desc: '6 Karakter Kartı. 1x SR garantilidir. %7.2 SSR şansıyla ortalama 2 pakette 1 SSR kovalanır. (+2.500 TP İade)',
-    ratesText: 'R: %48 · SR: %44 · SSR: %7.2 · UR: %0.8',
-    rates: { R: 0.48, SR: 0.44, SSR: 0.072, UR: 0.008 },
+    desc: '6 Karakter Kartı. En az 1x SR (Elite) kart garantilidir. (+2.500 TP İade)',
+    ratesText: 'Temel oran — R: %46,15 · SR: %44 · SSR: %9,5 · UR: %0,35',
+    rates: { R: 0.4615, SR: 0.44, SSR: 0.095, UR: 0.0035 },
     guaranteedMinRarity: 'SR',
     guaranteedCount: 1,
   },
@@ -79,13 +79,21 @@ export const GACHA_PACKS = [
     xpReward: 3500,
     badge: '👑 2x SR Garanti (Zirve Havuz)',
     badgeColor: '#eab308',
-    desc: '7 Karakter Kartı. 2x SR garantilidir. Zirve SSR (%9.5) ve UR (%1.5) ihtimaline sahip ilahi paket. (+6.000 TP İade)',
-    ratesText: 'R: %40 · SR: %49 · SSR: %9.5 · UR: %1.5',
-    rates: { R: 0.40, SR: 0.49, SSR: 0.095, UR: 0.015 },
+    desc: '7 Karakter Kartı. En az 2x SR (Elite) kart garantilidir. (+6.000 TP İade)',
+    ratesText: 'Temel oran — R: %40 · SR: %49 · SSR: %10,5 · UR: %0,5',
+    rates: { R: 0.40, SR: 0.49, SSR: 0.105, UR: 0.005 },
     guaranteedMinRarity: 'SR',
     guaranteedCount: 2,
   },
 ];
+
+// Paket içindeki her kartın bağımsız SSR oranından, pity hariç paket şansını hesaplar.
+export function getPackOddsText(pack) {
+  const cardCount = pack.cardCount || 3;
+  const ssrChance = 1 - Math.pow(1 - (pack.rates?.SSR || 0), cardCount);
+  const formattedChance = (ssrChance * 100).toLocaleString('tr-TR', { maximumFractionDigits: 1 });
+  return `Paket başına en az 1 SSR: yaklaşık %${formattedChance} (pity hariç)`;
+}
 
 /**
  * Ağırlıklı Rastgele Kart Çekilişi (MLA / AFK Arena Tarzı Gacha)
@@ -177,9 +185,9 @@ export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpg
   for (let slot = 0; slot < cardCount; slot++) {
     let targetRarity;
 
-    // 1. Son slotta Pity aktifse (10 paket boyunca hiç SSR çıkmadıysa) 1 SSR garanti!
+    // 1. Onuncu paketin son slotunda pity: nadirlik havuzundaki gerçek SSR kart garantilenir.
     if (slot === cardCount - 1 && isPityActive) {
-      targetRarity = Math.random() < 0.02 ? 'UR' : 'SSR';
+      targetRarity = 'SSR';
     }
     // 2. Paketin garantili SR slotları (Örn: Gümüş'te 1 SR, Tengri'de 2 SR)
     else if (slot < guaranteedSlots) {
