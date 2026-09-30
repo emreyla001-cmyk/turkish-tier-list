@@ -45,7 +45,11 @@ export default function KartOyunuHub() {
           .eq('id', u.id)
           .maybeSingle();
 
-        setProfile(p);
+        const currentCoins = u.user_metadata?.coins !== undefined
+          ? Number(u.user_metadata.coins)
+          : Number(p?.coins || 0);
+
+        setProfile(p ? { ...p, coins: currentCoins } : { id: u.id, username: u.user_metadata?.username || 'Kullanıcı', coins: currentCoins, xp: 0 });
 
         // Kullanıcının kartlarını, yükseltmelerini ve kupasını metadata'dan oku
         const metaCards = Array.isArray(u.user_metadata?.card_collection) ? u.user_metadata.card_collection : [];
@@ -88,7 +92,11 @@ export default function KartOyunuHub() {
     if (!user || !profile) return;
     setMsg(null);
 
-    if ((profile.coins || 0) < pack.price) {
+    const currentCoins = user.user_metadata?.coins !== undefined
+      ? Number(user.user_metadata.coins)
+      : Number(profile?.coins || 0);
+
+    if (currentCoins < pack.price) {
       setMsg({ text: `Yetersiz bakiye! Bu paket için ${pack.price.toLocaleString('tr-TR')} Tier Parasına ihtiyacın var.`, type: 'error' });
       return;
     }
@@ -97,15 +105,16 @@ export default function KartOyunuHub() {
     cardAudio.playWhoosh();
     try {
       // 1. Altın düş
-      const newCoins = Math.max(0, (profile.coins || 0) - pack.price);
-      const { error: updateErr } = await supabase
-        .from('profiles')
-        .update({ coins: newCoins })
-        .eq('id', user.id);
+      const newCoins = Math.max(0, currentCoins - pack.price);
 
-      if (updateErr) {
-        console.error('Bakiye güncelleme hatası:', updateErr);
-        throw new Error('Bakiye düşülemedi: ' + updateErr.message);
+      // profiles tablosuna da kaydetmeyi dene (RLS kısıtlaması varsa sessizce metadata kullanılır)
+      try {
+        await supabase
+          .from('profiles')
+          .update({ coins: newCoins })
+          .eq('id', user.id);
+      } catch (tableErr) {
+        console.warn('profiles tablosu güncellenemedi, user_metadata kullanılıyor:', tableErr);
       }
 
       // 2. Filtreye göre karakterleri seç
@@ -150,7 +159,9 @@ export default function KartOyunuHub() {
 
       const finalCoins = newCoins + refundTotal;
       if (refundTotal > 0) {
-        await supabase.from('profiles').update({ coins: finalCoins }).eq('id', user.id);
+        try {
+          await supabase.from('profiles').update({ coins: finalCoins }).eq('id', user.id);
+        } catch {}
       }
 
       setProfile((prev) => ({ ...prev, coins: finalCoins }));

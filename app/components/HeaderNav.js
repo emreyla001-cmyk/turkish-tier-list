@@ -23,10 +23,14 @@ export default function HeaderNav() {
           .eq('id', data.user.id)
           .maybeSingle();
         if (mounted) {
-          setProfile(p || {
+          const effectiveCoins = data.user.user_metadata?.coins !== undefined
+            ? Number(data.user.user_metadata.coins)
+            : Number(p?.coins || 0);
+
+          setProfile(p ? { ...p, coins: effectiveCoins } : {
             username: data.user.user_metadata?.username || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url || null,
-            coins: 0,
+            coins: effectiveCoins,
             role: 'user',
           });
         }
@@ -44,7 +48,10 @@ export default function HeaderNav() {
               .select('id, username, avatar_url, role, coins, is_admin, equipped_frame, equipped_name_color')
               .eq('id', ud.user.id)
               .maybeSingle();
-            if (p && mounted) setProfile(p);
+            const effectiveCoins = ud.user.user_metadata?.coins !== undefined
+              ? Number(ud.user.user_metadata.coins)
+              : Number(p?.coins || 0);
+            if (mounted) setProfile(p ? { ...p, coins: effectiveCoins } : null);
           }
         });
       }

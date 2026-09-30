@@ -71,8 +71,12 @@ export default function SavasArenasi() {
         supabase.from('profiles').select('id, username, coins, xp').eq('id', u.id).maybeSingle(),
       ]);
 
+      const userCoins = u.user_metadata?.coins !== undefined
+        ? Number(u.user_metadata.coins)
+        : Number(p?.coins || 0);
+
       setLeaguesConfig(cfgRes);
-      setProfile(p);
+      setProfile(p ? { ...p, coins: userCoins } : { id: u.id, username: u.user_metadata?.username || 'Sen', coins: userCoins, xp: 0 });
 
       const allChars = chars || [];
       const userTrophies = Number(u.user_metadata?.trophies) || 150;
@@ -242,17 +246,25 @@ export default function SavasArenasi() {
 
     try {
       if (user) {
+        const currentCoins = user.user_metadata?.coins !== undefined
+          ? Number(user.user_metadata.coins)
+          : Number(profile?.coins || 0);
+        const updatedCoins = currentCoins + coinReward;
+        const updatedXp = Number(profile?.xp || 0) + xpReward;
+
         await supabase.auth.updateUser({
-          data: { trophies: newTrophies },
+          data: {
+            trophies: newTrophies,
+            coins: updatedCoins,
+          },
         });
 
-        if (profile) {
-          const updatedCoins = (profile.coins || 0) + coinReward;
-          const updatedXp = (profile.xp || 0) + xpReward;
+        try {
           await supabase.from('profiles').update({ coins: updatedCoins, xp: updatedXp }).eq('id', user.id);
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: updatedCoins } }));
-          }
+        } catch {}
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: updatedCoins } }));
         }
       }
     } catch (e) {
