@@ -6,6 +6,8 @@ import TierBadge from '../../components/TierBadge';
 import { calculateTrophyChange, getLeagueForTrophies, simulateCardClash, calculateSeriesSynergy } from '../../lib/cardGameEngine';
 import { cardAudio } from '../../lib/cardAudio';
 import { getCardRarity, getStarInfo } from '../../lib/cardRarity';
+import { getStamina, consumeStamina, buyStaminaPotion, POTION_COST } from '../../lib/stamina';
+import { getBotTierByTrophies, selectBotCard, BOT_TIERS } from '../../lib/cardAIEngine';
 
 const BOT_NAMES = [
   'Gölge Gladyatör',
@@ -53,6 +55,25 @@ export default function SavasArenasi() {
 
   // Maç Sonu Verileri
   const [matchSummary, setMatchSummary] = useState(null);
+  const [stamina, setStamina] = useState({ current: 10, max: 10 });
+
+  async function handleBuyPotionInArena() {
+    if (!user) return;
+    const currentCoins = user.user_metadata?.coins !== undefined
+      ? Number(user.user_metadata.coins)
+      : Number(profile?.coins || 0);
+
+    const res = await buyStaminaPotion(user, currentCoins);
+    if (res.success) {
+      setStamina({ current: res.current, max: 10 });
+      setProfile((p) => ({ ...p, coins: res.newCoins }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: res.newCoins } }));
+      }
+      setGameState('matchmaking');
+      initArena();
+    }
+  }
 
   async function initArena() {
     setLoading(true);
@@ -64,6 +85,16 @@ export default function SavasArenasi() {
         setLoading(false);
         return;
       }
+
+      // Enerji / Stamina Kontrolü
+      const stam = getStamina(u);
+      setStamina(stam);
+      if (stam.current < 1) {
+        setGameState('no_energy');
+        setLoading(false);
+        return;
+      }
+      await consumeStamina(u, 1);
 
       const [cfgRes, { data: chars }, { data: p }] = await Promise.all([
         fetch('/api/leagues').then((r) => r.json()),
@@ -101,10 +132,11 @@ export default function SavasArenasi() {
       setPlayerDeck(playerDeckCards);
       setPlayerRemainingHand([...playerDeckCards]);
 
-      // Rakip Bot
+      // Rakip Bot (4 Kademeli Kural Tabanlı Bot Zekası)
       const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
       const trophyVariation = Math.floor(Math.random() * 70) - 30;
       const botTrophies = Math.max(20, userTrophies + trophyVariation);
+      const botTier = getBotTierByTrophies(botTrophies);
 
       const shuffled = [...allChars].sort(() => 0.5 - Math.random());
       const botCards = shuffled.slice(0, 5);
@@ -113,6 +145,7 @@ export default function SavasArenasi() {
         name: botName,
         trophies: botTrophies,
         deck: botCards,
+        tier: botTier,
       });
       setOpponentRemainingHand([...botCards]);
 
@@ -141,8 +174,18 @@ export default function SavasArenasi() {
     setActivePlayerCard(card);
     setPlayerRemainingHand((prev) => prev.filter((c) => c.id !== card.id));
 
-    // Rakip de kalan kartlarından birini stratejik olarak seçer
-    const oppCard = opponentRemainingHand[Math.floor(Math.random() * opponentRemainingHand.length)];
+    // Rakip Bot: Kural tabanlı stratejik kart seçimi (Chump, Standard, Veteran, Grandmaster)
+    const botTier = opponent?.tier || getBotTierByTrophies(opponent?.trophies || 100);
+    const oppCard = selectBotCard({
+      botTier,
+      remainingHand: opponentRemainingHand,
+      playerCard: card,
+      playerRemainingHand: playerRemainingHand.filter((c) => c.id !== card.id),
+      roundNumber: currentRound,
+      playerScore,
+      botScore: opponentScore,
+    }) || opponentRemainingHand[0];
+
     setActiveOpponentCard(oppCard);
     setOpponentRemainingHand((prev) => prev.filter((c) => c.id !== oppCard.id));
 
@@ -306,6 +349,40 @@ export default function SavasArenasi() {
     );
   }
 
+  if (gameState === 'no_energy') {
+    return (
+      <div className="wrap" style={{ maxWidth: '580px', marginTop: '40px' }}>
+        <div className="card" style={{ padding: '36px', textAlign: 'center', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '12px' }}>⚡</div>
+          <h2 style={{ color: '#ef4444', margin: '0 0 8px' }}>Enerjin Kalmadı! (0/10)</h2>
+          <p style={{ color: 'var(--text-dim)', fontSize: '.92rem', lineHeight: 1.5, margin: '0 0 20px' }}>
+            Kart Arenasında maç yapabilmek için en az 1 enerjiye ihtiyacın var. Saat başı 1 enerji otomatik yenilenir veya Tier Parası ile anında Enerji İksiri (+5 Enerji) içebilirsin.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              type="button"
+              className="btn"
+              onClick={handleBuyPotionInArena}
+              style={{
+                padding: '12px',
+                fontWeight: 800,
+                fontSize: '.95rem',
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                boxShadow: '0 0 20px rgba(245, 158, 11, 0.3)',
+              }}
+            >
+              🧪 Enerji İksiri İç (+5 Enerji - 300 TP)
+            </button>
+            <a href="/kart-oyunu" className="btn btn-ghost" style={{ padding: '10px' }}>
+              &larr; Kart Hub'ına Dön
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const playerLeague = getLeagueForTrophies(playerTrophies, leaguesConfig.leagues);
   const opponentLeague = getLeagueForTrophies(opponent?.trophies || 100, leaguesConfig.leagues);
 
@@ -375,8 +452,22 @@ export default function SavasArenasi() {
           {/* Rakip Tarafı */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff' }}>
-                {opponent?.name}
+              <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                <span>{opponent?.name}</span>
+                {opponent?.tier && (
+                  <span
+                    className="tag"
+                    title={opponent.tier.desc}
+                    style={{
+                      fontSize: '.7rem',
+                      fontWeight: 800,
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    {opponent.tier.badge} {opponent.tier.name}
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: '.8rem', color: opponentLeague.color }}>
                 🏆 {opponent?.trophies} Kupa ({opponentLeague.name})

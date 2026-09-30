@@ -6,6 +6,9 @@ import UserBadge, { Avatar, NameTag, levelFromXp, xpForLevel } from '../componen
 import { useFrameMap } from '../components/useFrameMap';
 import { resolveBackground, resolveFrame, resolveNameColor } from '../components/cosmetics';
 import TwoFactor from '../components/TwoFactor';
+import TierBadge from '../components/TierBadge';
+import { getCardRarity, getStarInfo } from '../lib/cardRarity';
+import { getLeagueForTrophies } from '../lib/cardGameEngine';
 
 const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
 
@@ -83,7 +86,9 @@ function ProfilContent() {
   const [user, setUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [userBadges, setUserBadges] = useState([]);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'cosmetics' | 'security'
+  const [showcaseCards, setShowcaseCards] = useState([]);
+  const [trophies, setTrophies] = useState(150);
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'cosmetics' | 'flex' | 'security'
   const [username, setUsername] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -98,6 +103,9 @@ function ProfilContent() {
       setUser(u || null);
       if (!u) return;
 
+      const userTrophies = Number(u.user_metadata?.trophies) || 150;
+      setTrophies(userTrophies);
+
       // Rozetleri getir
       fetch(`/api/badges?userId=${u.id}`)
         .then((res) => res.json())
@@ -105,6 +113,33 @@ function ProfilContent() {
           if (d?.badgeIds) setUserBadges(d.badgeIds);
         })
         .catch(() => {});
+
+      // Flex Vitrini Kartlarını Getir
+      const cardIds = Array.isArray(u.user_metadata?.card_collection) ? u.user_metadata.card_collection : [];
+      const upgrades = u.user_metadata?.card_upgrades || {};
+      if (cardIds.length > 0) {
+        supabase
+          .from('characters')
+          .select('id, name, series, tier, power_score, speed_score, durability_score, image_url')
+          .in('id', cardIds.slice(0, 30))
+          .then(({ data: chars }) => {
+            if (chars && chars.length > 0) {
+              const enriched = chars.map((c) => {
+                const up = upgrades[c.id] || { stars: 1, awakened: 0 };
+                const starInfo = getStarInfo(up.stars || 1, up.awakened || 0);
+                const rarity = getCardRarity(c.tier);
+                return { ...c, ...up, starInfo, rarity };
+              });
+              enriched.sort((a, b) => {
+                const scoreA = (a.awakened || 0) * 10 + (a.stars || 1);
+                const scoreB = (b.awakened || 0) * 10 + (b.stars || 1);
+                return scoreB - scoreA;
+              });
+              setShowcaseCards(enriched.slice(0, 3));
+            }
+          })
+          .catch(() => {});
+      }
 
       const { data } = await supabase
         .from('profiles')
@@ -479,6 +514,14 @@ function ProfilContent() {
         </button>
         <button
           type="button"
+          className={`profile-nav-tab ${activeTab === 'flex' ? 'active' : ''}`}
+          onClick={() => setActiveTab('flex')}
+        >
+          <span>👑</span>
+          <span>Flex Vitrini</span>
+        </button>
+        <button
+          type="button"
           className={`profile-nav-tab ${activeTab === 'security' ? 'active' : ''}`}
           onClick={() => setActiveTab('security')}
         >
@@ -797,7 +840,261 @@ function ProfilContent() {
         </div>
       )}
 
-      {/* 3. SEKME: GÜVENLİK & HESAP AYARLARI */}
+      {/* 3. SEKME: FLEX VİTRİNİ (Steam / LoL Tarzı Prestij Sergisi) */}
+      {activeTab === 'flex' && (
+        <div style={{ display: 'grid', gap: '20px' }}>
+          {/* Vitrin Üst Başlığı */}
+          <div
+            className="card"
+            style={{
+              padding: '20px 24px',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(121, 40, 202, 0.08))',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#fef08a' }}>
+                  <span>👑</span> Profil Flex Vitrini
+                </h2>
+                <p style={{ color: 'var(--text-dim)', fontSize: '.88rem', margin: '4px 0 0' }}>
+                  Steam ve LoL profil vitrinlerinden ilham alındı. En nadir uyanmış kartların ve onur başarımların burada parlar!
+                </p>
+              </div>
+              <a href="/kart-oyunu" className="btn" style={{ fontWeight: 800, fontSize: '.84rem', padding: '8px 18px' }}>
+                🃏 Kart Arenasına Git &rarr;
+              </a>
+            </div>
+          </div>
+
+          {/* En Güçlü 3 Kart Vitrini */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🃏</span> Vitrindeki En Güçlü Uyanmış Kartların
+              </h3>
+              <span className="tag" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fef08a', fontWeight: 800 }}>
+                {showcaseCards.length} / 3 Kart Sergileniyor
+              </span>
+            </div>
+
+            {showcaseCards.length === 0 ? (
+              <div style={{ padding: '36px', textAlign: 'center', background: 'var(--bg-2)', borderRadius: '12px' }}>
+                <span style={{ fontSize: '2.5rem' }}>🎴</span>
+                <h4 style={{ margin: '10px 0 4px' }}>Henüz Kart Vitrinin Boş</h4>
+                <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: 0 }}>
+                  Kart Arenasında paket açıp karakterlerini uyandırdıkça en görkemli 3 kartın otomatik olarak burada sergilenecektir.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+                {showcaseCards.map((card, idx) => {
+                  const sInfo = card.starInfo;
+                  const rarity = card.rarity;
+                  return (
+                    <div
+                      key={card.id || idx}
+                      className="card"
+                      style={{
+                        padding: '16px',
+                        background: 'linear-gradient(135deg, rgba(24, 24, 27, 0.9), rgba(9, 9, 11, 0.95))',
+                        border: rarity?.cardBorder || '1px solid var(--border)',
+                        borderRadius: '16px',
+                        boxShadow: rarity?.glow || 'none',
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      {/* Üst Rozetler */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span
+                          className="tag"
+                          style={{
+                            background: rarity?.badgeBg || '#18181b',
+                            color: '#fff',
+                            fontWeight: 900,
+                            fontSize: '.74rem',
+                            letterSpacing: '.5px',
+                          }}
+                        >
+                          {rarity?.code} • {rarity?.name}
+                        </span>
+                        <TierBadge tier={card.tier} />
+                      </div>
+
+                      {/* Kart Görseli */}
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '140px',
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          background: '#09090b',
+                          marginBottom: '10px',
+                          position: 'relative',
+                        }}
+                      >
+                        {card.image_url ? (
+                          <img
+                            src={card.image_url}
+                            alt={card.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-dim)' }}>
+                            Görsel Yok
+                          </div>
+                        )}
+                        {sInfo?.isMax && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              bottom: '6px',
+                              right: '6px',
+                              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                              color: '#000',
+                              fontWeight: 900,
+                              fontSize: '.68rem',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              boxShadow: '0 0 10px rgba(245, 158, 11, 0.8)',
+                            }}
+                          >
+                            👑 MAKSİMUM
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Karakter Bilgileri */}
+                      <div>
+                        <h4 style={{ margin: '0 0 2px', fontSize: '1.05rem', color: '#fff' }}>{card.name}</h4>
+                        <span style={{ fontSize: '.78rem', color: 'var(--text-dim)', display: 'block', marginBottom: '8px' }}>
+                          {card.series}
+                        </span>
+
+                        {/* Yıldız & Uyanış Seviyesi */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                          <span style={{ fontSize: '1.1rem', letterSpacing: '2px' }}>{sInfo?.starString}</span>
+                          <span className="tag" style={{ fontSize: '.7rem', fontWeight: 800 }}>
+                            {sInfo?.statusText}
+                          </span>
+                        </div>
+
+                        {/* Güç İstatistikleri */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.78rem', background: 'var(--bg-2)', padding: '6px 10px', borderRadius: '8px' }}>
+                          <span style={{ color: 'var(--text-dim)' }}>Güç: <strong style={{ color: '#fff' }}>{card.power_score || 5}</strong></span>
+                          <span style={{ color: 'var(--text-dim)' }}>Hız: <strong style={{ color: '#fff' }}>{card.speed_score || 5}</strong></span>
+                          <span style={{ color: 'var(--text-dim)' }}>Dayanıklılık: <strong style={{ color: '#fff' }}>{card.durability_score || 5}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Rekabetçi İstatistikler Vitrini */}
+          <div className="card">
+            <h3>Rekabetçi Profil İstatistikleri</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '14px' }}>
+              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '1.8rem' }}>🏆</span>
+                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '4px' }}>Kart Kupası</div>
+                <strong style={{ fontSize: '1.2rem', color: '#fef08a' }}>{trophies} Kupa</strong>
+              </div>
+              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '1.8rem' }}>🪙</span>
+                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '4px' }}>Tier Parası Bakiyesi</div>
+                <strong style={{ fontSize: '1.2rem', color: '#fef08a' }}>{(profile?.coins || 0).toLocaleString('tr-TR')}</strong>
+              </div>
+              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '1.8rem' }}>⚡</span>
+                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '4px' }}>Hesap Seviyesi</div>
+                <strong style={{ fontSize: '1.2rem', color: '#a5b4fc' }}>Seviye {level}</strong>
+              </div>
+              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '1.8rem' }}>🌟</span>
+                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '4px' }}>Kazanılan Rozetler</div>
+                <strong style={{ fontSize: '1.2rem', color: '#86efac' }}>{userBadges.length} Rozet</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* 5816 Kanunu Uyumlu Milli & Kültürel Onur Rozetleri Vitrini */}
+          <div
+            className="card"
+            style={{
+              border: '1px solid rgba(225, 29, 72, 0.4)',
+              background: 'linear-gradient(135deg, rgba(225, 29, 72, 0.08), rgba(9, 9, 11, 0.95))',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '1.8rem' }}>🇹🇷</span>
+              <div>
+                <h3 style={{ margin: 0, color: '#f43f5e' }}>Milli Kültür & Onur Başarımları</h3>
+                <span style={{ fontSize: '.8rem', color: 'var(--text-dim)' }}>
+                  5816 Sayılı Kanun Uyumlu • Şans Kutusu ve Ticaret Dışı • Yalnızca Onurlu Başarımlarla Kazanılır
+                </span>
+              </div>
+            </div>
+            <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', lineHeight: 1.5, margin: '8px 0 16px' }}>
+              Atatürk, Türk Bayrağı ve kadim destan figürlerimiz sitemizde <strong>asla şans kutularına (gacha) konulmaz veya parayla alınıp satılamaz.</strong> Bu kutsal semboller, yalnızca bilmeceleri kesintisiz çözerek veya kültürel katkı sağlayarak profilinize kalıcı olarak işlenen şeref nişanlarıdır.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+              <div
+                style={{
+                  padding: '14px',
+                  borderRadius: '10px',
+                  background: userBadges.includes('onur_muhafizi') ? 'rgba(225, 29, 72, 0.2)' : 'var(--bg-2)',
+                  border: userBadges.includes('onur_muhafizi') ? '1px solid #f43f5e' : '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <span style={{ fontSize: '2rem' }}>🇹🇷</span>
+                <div>
+                  <strong style={{ fontSize: '.88rem', color: userBadges.includes('onur_muhafizi') ? '#f43f5e' : 'var(--text-dim)' }}>
+                    Cumhuriyet & Kültür Muhafızı
+                  </strong>
+                  <p style={{ margin: '2px 0 0', fontSize: '.76rem', color: 'var(--text-dim)' }}>
+                    Günün Karakterini kesintisiz doğru bilerek milli destan serisini tamamlayan elit üye nişanı.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '14px',
+                  borderRadius: '10px',
+                  background: userBadges.includes('katkici') ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-2)',
+                  border: userBadges.includes('katkici') ? '1px solid #f59e0b' : '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <span style={{ fontSize: '2rem' }}>🌟</span>
+                <div>
+                  <strong style={{ fontSize: '.88rem', color: userBadges.includes('katkici') ? '#f59e0b' : 'var(--text-dim)' }}>
+                    Evren Katkıcısı Rozeti
+                  </strong>
+                  <p style={{ margin: '2px 0 0', fontSize: '.76rem', color: 'var(--text-dim)' }}>
+                    Karakter önerme havuzuna eser kazandıran usta kurgu yazarı nişanı.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. SEKME: GÜVENLİK & HESAP AYARLARI */}
       {activeTab === 'security' && (
         <div style={{ display: 'grid', gap: '18px' }}>
           <form className="card" onSubmit={saveUsername}>
