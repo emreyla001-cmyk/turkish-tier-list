@@ -8,7 +8,7 @@ import { cardAudio } from '../lib/cardAudio';
 import { getCardRarity, getStarInfo, MAX_STARS } from '../lib/cardRarity';
 import { getStamina, buyStaminaPotion, POTION_COST, POTION_REFILL } from '../lib/stamina';
 import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
-import { GACHA_PACKS, drawCardsFromPack } from '../lib/gachaEngine';
+import { GACHA_PACKS, drawCardsFromPack, getPackOddsText } from '../lib/gachaEngine';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -683,6 +683,9 @@ export default function KartOyunuHub() {
                   </div>
                   <div style={{ fontSize: '.7rem', color: 'var(--text-dim)', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '6px', margin: '8px 0' }}>
                     {pack.ratesText}
+                  </div>
+                  <div style={{ fontSize: '.7rem', color: '#f0abfc', fontWeight: 700, margin: '4px 0 8px' }}>
+                    {getPackOddsText(pack)}
                   </div>
                   <div style={{ margin: '14px 0', fontSize: '1.25rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                     <CoinIcon size={20} /> {pack.price.toLocaleString('tr-TR')}

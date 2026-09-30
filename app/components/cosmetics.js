@@ -23,6 +23,7 @@ export const KNOWN_FRAMES = {
   frame_galaxy_rift: 'linear-gradient(135deg,#ec4899,#8b5cf6,#3b82f6,#06b6d4)',
   frame_dark_matter: 'linear-gradient(135deg,#09090b,#701a75,#4c1d95,#f43f5e)',
   frame_radioactive: 'linear-gradient(135deg,#84cc16,#eab308,#22c55e,#a3e635)',
+  frame_gokturk_runes: 'linear-gradient(135deg,#0e7490,#facc15,#164e63,#22d3ee)',
 };
 
 // 🌟 Gerçek 360° Dönen ve Nabız Yayan Hareketli Çerçeve Motoru (Conic-Gradient + Box-Shadow Glow)
@@ -122,6 +123,12 @@ export const ANIMATED_FRAMES_INFO = {
     glow: '0 0 18px rgba(132, 204, 22, 0.85)',
     speed: '1.8s',
     name: 'Radyoaktif Plazma',
+  },
+  frame_gokturk_runes: {
+    conic: 'conic-gradient(from 0deg, #22d3ee, #facc15, #164e63, #0e7490, #67e8f9, #22d3ee)',
+    glow: '0 0 18px rgba(34, 211, 238, 0.8)',
+    speed: '3.4s',
+    name: 'Göktürk Runik Aurası',
   },
 };
 
