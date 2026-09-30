@@ -175,6 +175,15 @@ function ProfilContent() {
       if (!prof.avatar_gif_until && u.user_metadata?.avatar_gif_until) {
         prof.avatar_gif_until = u.user_metadata.avatar_gif_until;
       }
+
+      const localFrame = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_frame_${u.id}`) : null;
+      const localBg = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_background_${u.id}`) : null;
+      const localNameColor = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_name_color_${u.id}`) : null;
+
+      if (!prof.equipped_frame) prof.equipped_frame = u.user_metadata?.equipped_frame || localFrame || null;
+      if (!prof.equipped_background) prof.equipped_background = u.user_metadata?.equipped_background || localBg || null;
+      if (!prof.equipped_name_color) prof.equipped_name_color = u.user_metadata?.equipped_name_color || localNameColor || null;
+
       setProfile(prof);
       setUsername(prof.username || '');
     } catch (err) {
@@ -381,7 +390,15 @@ function ProfilContent() {
   }
 
   async function unequipCosmetic(column) {
-    await supabase.from('profiles').update({ [column]: null }).eq('id', user.id);
+    if (!user) return;
+    try { await supabase.auth.updateUser({ data: { [column]: null } }); } catch {}
+    try { await supabase.from('profiles').update({ [column]: null }).eq('id', user.id); } catch {}
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`user_${column}_${user.id}`);
+      window.dispatchEvent(new CustomEvent('profile-updated', { detail: { [column]: null } }));
+      window.dispatchEvent(new CustomEvent('cosmetics-updated', { detail: { [column]: null } }));
+    }
+    setProfile((prev) => (prev ? { ...prev, [column]: null } : prev));
     load();
   }
 

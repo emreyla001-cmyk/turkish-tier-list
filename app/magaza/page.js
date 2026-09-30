@@ -14,14 +14,13 @@ import { getCardRarity, getStarInfo } from '../lib/cardRarity';
 const KIND_LABEL = {
   packs: '🃏 Tier Kart Paketleri (Gacha)',
   special_permit: '⚡ Özel Haklar (GIF & Arka Plan)',
-  frame: 'Avatar Çerçeveleri',
-  name_color: 'İsim Renkleri & Efektler',
-  background: 'Profil Arka Planları',
-  avatar: 'Özel Karakter Avatarları',
+  frame: '🖼️ Hareketli Avatar Çerçeveleri',
+  name_color: '🎨 İsim Renkleri & Efektler',
+  background: '🌄 Profil Arka Planları',
 };
-const KIND_ORDER = ['packs', 'special_permit', 'frame', 'name_color', 'background', 'avatar'];
+const KIND_ORDER = ['packs', 'special_permit', 'frame', 'name_color', 'background'];
 
-// Genişletilmiş Mağaza Kataloğu (Yeni renkli avatarlar, hareketli arkaplanlar, hareketli isimler)
+// Genişletilmiş Mağaza Kataloğu (360° Dönen Hareketli Çerçeveler, Canlı Arkaplanlar, Hareketli İsimler)
 const CATALOG_ITEMS = [
   // 1. Özel 30 Günlük Haklar (30.000 Altın)
   {
@@ -47,66 +46,17 @@ const CATALOG_ITEMS = [
     sort: 2,
   },
 
-  // 2. Çerçeveler (Klasik & Yeni Hareketli Çerçeveler)
-  {
-    id: 'frame_gold',
-    kind: 'frame',
-    name: 'Altın Çerçeve',
-    price: 2000,
-    value: 'linear-gradient(135deg,#f4d35e,#e6b325)',
-    description: 'Klasik parlak altın kaplama çerçeve.',
-    vip_only: false,
-    sort: 10,
-  },
-  {
-    id: 'frame_sapphire',
-    kind: 'frame',
-    name: 'Safir Çerçeve',
-    price: 2500,
-    value: 'linear-gradient(135deg,#5b8ce6,#1f3a8a)',
-    description: 'Derin okyanus mavisi safir çerçeve.',
-    vip_only: false,
-    sort: 11,
-  },
-  {
-    id: 'frame_emerald',
-    kind: 'frame',
-    name: 'Zümrüt Çerçeve',
-    price: 2500,
-    value: 'linear-gradient(135deg,#6fbf73,#1f6b3a)',
-    description: 'Zümrüt yeşili asil çerçeve.',
-    vip_only: false,
-    sort: 12,
-  },
-  {
-    id: 'frame_ruby',
-    kind: 'frame',
-    name: 'Yakut Çerçeve',
-    price: 2000,
-    value: 'linear-gradient(135deg,#e6455b,#8a1f2d)',
-    description: 'Kırmızı yakut taşı kaplaması.',
-    vip_only: false,
-    sort: 13,
-  },
-  {
-    id: 'frame_cosmic',
-    kind: 'frame',
-    name: 'Kozmik Çerçeve',
-    price: 6000,
-    value: 'linear-gradient(135deg,#9b59e6,#e6455b,#5b8ce6)',
-    description: 'Galaktik enerji yayan çok renkli kozmik çerçeve.',
-    vip_only: true,
-    sort: 14,
-  },
+  // 2. Çerçeveler (360° Dönen Hareketli & Klasik Çerçeveler)
   {
     id: 'frame_cyber_pulse',
     kind: 'frame',
     name: 'Siber Nabız (Cyber Pulse)',
     price: 7500,
     value: 'frame_cyber_pulse',
-    description: 'Neon mavi ve mor ışık akışıyla parlayan hareketli siber çerçeve.',
+    description: 'Neon mavi ve mor lazer akışıyla 360° kesintisiz dönen ve parlayan hareketli siber çerçeve.',
     vip_only: false,
-    sort: 15,
+    is_animated: true,
+    sort: 10,
   },
   {
     id: 'frame_dragon_fire',
@@ -114,19 +64,10 @@ const CATALOG_ITEMS = [
     name: 'Ejderha Ateşi (Dragon Fire)',
     price: 8500,
     value: 'frame_dragon_fire',
-    description: 'Alev kırmızısı ve lav sarısı hareketli plazma çerçeve.',
+    description: 'Alev kırmızısı ve akkor sarı plazma ışığıyla 360° dönen ve lav aurası yayan çerçeve.',
     vip_only: false,
-    sort: 16,
-  },
-  {
-    id: 'frame_obsidian',
-    kind: 'frame',
-    name: 'Obsidyen Zırh',
-    price: 4000,
-    value: 'frame_obsidian',
-    description: 'Karanlık mat çelik ve obsidyen zırh kaplama.',
-    vip_only: false,
-    sort: 17,
+    is_animated: true,
+    sort: 11,
   },
   {
     id: 'frame_tengri_aura',
@@ -134,8 +75,75 @@ const CATALOG_ITEMS = [
     name: 'Tengri Aurası',
     price: 9000,
     value: 'frame_tengri_aura',
-    description: 'Eski Türk mitolojisinden ilahi altın ışıltılı kutsal hale.',
+    description: 'Eski Türk mitolojisinden ilahi altın ışıltısıyla dönen kutsal gök tanrısı halesi.',
     vip_only: false,
+    is_animated: true,
+    sort: 12,
+  },
+  {
+    id: 'frame_thunder_storm',
+    kind: 'frame',
+    name: 'Fırtına Şimşeği (Thunder Storm)',
+    price: 8000,
+    value: 'frame_thunder_storm',
+    description: 'Elektrik sarısı ve fırtına mavisi 360° hızla çakan yıldırımlarla dönen elektrik çerçevesi.',
+    vip_only: false,
+    is_animated: true,
+    sort: 13,
+  },
+  {
+    id: 'frame_void_abyss',
+    kind: 'frame',
+    name: 'Hiçlik Boşluğu (Void Abyss)',
+    price: 7000,
+    value: 'frame_void_abyss',
+    description: 'Karanlık mor ve neon fuşya kozmik çekim aurasıyla dönen boyutsal yarık.',
+    vip_only: false,
+    is_animated: true,
+    sort: 14,
+  },
+  {
+    id: 'frame_frost_bite',
+    kind: 'frame',
+    name: 'Buzul Kristali (Frost Bite)',
+    price: 6000,
+    value: 'frame_frost_bite',
+    description: 'Kutup mavisi donmuş buz kristalleri ve beyaz ayaz parıltısıyla dönen buzul çerçeve.',
+    vip_only: false,
+    is_animated: true,
+    sort: 15,
+  },
+  {
+    id: 'frame_blood_eclipse',
+    kind: 'frame',
+    name: 'Kanlı Tutulma (Blood Eclipse)',
+    price: 9500,
+    value: 'frame_blood_eclipse',
+    description: 'Koyu bordo ve kan alevi gibi 360° dönen ve kırmızı aura yayan mistik tutulma.',
+    vip_only: false,
+    is_animated: true,
+    sort: 16,
+  },
+  {
+    id: 'frame_samurai_gold',
+    kind: 'frame',
+    name: 'Samuray Onuru & Altın Varak',
+    price: 8500,
+    value: 'frame_samurai_gold',
+    description: 'Koyu kırmızı ve saf altın varak işlemeli savaşçı aurasıyla dönen asil çerçeve.',
+    vip_only: false,
+    is_animated: true,
+    sort: 17,
+  },
+  {
+    id: 'frame_hologram_prism',
+    kind: 'frame',
+    name: 'Sonsuzluk Prizması (Holo Prism)',
+    price: 12000,
+    value: 'frame_hologram_prism',
+    description: 'Tüm renk tayfını 360° yansıtan ve parlayan 3D holografik prizma çerçeve.',
+    vip_only: true,
+    is_animated: true,
     sort: 18,
   },
   {
@@ -144,69 +152,10 @@ const CATALOG_ITEMS = [
     name: 'Matrix Kod Akışı',
     price: 5000,
     value: 'frame_neon_matrix',
-    description: 'Yeşil dijital veri ve siber kod çerçevesi.',
+    description: 'Yeşil dijital veri ve siber kod akışıyla 360° dönen terminal çerçevesi.',
     vip_only: false,
+    is_animated: true,
     sort: 19,
-  },
-  {
-    id: 'frame_void_abyss',
-    kind: 'frame',
-    name: 'Hiçlik Boşluğu (Void Abyss)',
-    price: 7000,
-    value: 'frame_void_abyss',
-    description: 'Karanlık mor ve neon fuşya kozmik çekim aurası.',
-    vip_only: false,
-    sort: 20,
-  },
-  {
-    id: 'frame_frost_bite',
-    kind: 'frame',
-    name: 'Buzul Kristali (Frost Bite)',
-    price: 6000,
-    value: 'frame_frost_bite',
-    description: 'Kutup mavisi donmuş buz kristalleri ve beyaz ayaz.',
-    vip_only: false,
-    sort: 21,
-  },
-  {
-    id: 'frame_thunder_storm',
-    kind: 'frame',
-    name: 'Fırtına Şimşeği (Thunder Storm)',
-    price: 8000,
-    value: 'frame_thunder_storm',
-    description: 'Elektrik sarısı ve fırtına mavisi çakan yıldırımlar.',
-    vip_only: false,
-    sort: 22,
-  },
-  {
-    id: 'frame_blood_eclipse',
-    kind: 'frame',
-    name: 'Kanlı Tutulma (Blood Eclipse)',
-    price: 9500,
-    value: 'frame_blood_eclipse',
-    description: 'Koyu bordo ve kan alevi gibi parlayan mistik tutulma.',
-    vip_only: false,
-    sort: 23,
-  },
-  {
-    id: 'frame_samurai_gold',
-    kind: 'frame',
-    name: 'Samuray Onuru & Altın Varak',
-    price: 8500,
-    value: 'frame_samurai_gold',
-    description: 'Koyu kırmızı ve saf altın varak işlemeli savaşçı çerçevesi.',
-    vip_only: false,
-    sort: 24,
-  },
-  {
-    id: 'frame_hologram_prism',
-    kind: 'frame',
-    name: 'Sonsuzluk Prizması (Holo Prism)',
-    price: 12000,
-    value: 'frame_hologram_prism',
-    description: 'Tüm renk tayfını yansıtan 3D holografik prizma çerçeve.',
-    vip_only: true,
-    sort: 25,
   },
   {
     id: 'frame_emerald_serpent',
@@ -214,9 +163,10 @@ const CATALOG_ITEMS = [
     name: 'Zümrüt Ejder Pulu',
     price: 6500,
     value: 'frame_emerald_serpent',
-    description: 'Pırlanta parlaklığında zümrüt yeşili ejder zırhı.',
+    description: 'Pırlanta parlaklığında zümrüt yeşili ejder aurasıyla dönen mistik çerçeve.',
     vip_only: false,
-    sort: 26,
+    is_animated: true,
+    sort: 20,
   },
   {
     id: 'frame_celestial_star',
@@ -224,9 +174,104 @@ const CATALOG_ITEMS = [
     name: 'Kozmik Süpernova',
     price: 10000,
     value: 'frame_celestial_star',
-    description: 'Yıldız patlaması beyazı ve derin mor süpernova aurası.',
+    description: 'Yıldız patlaması beyazı ve derin mor süpernova aurasıyla dönen galaktik halka.',
+    vip_only: false,
+    is_animated: true,
+    sort: 21,
+  },
+  {
+    id: 'frame_phoenix_sun',
+    kind: 'frame',
+    name: 'Anka Güneşi (Phoenix Sun)',
+    price: 9000,
+    value: 'frame_phoenix_sun',
+    description: 'Küllerinden doğan Anka kuşunun kızıl güneş ışınlarıyla 360° dönen alev çemberi.',
+    vip_only: false,
+    is_animated: true,
+    sort: 22,
+  },
+  {
+    id: 'frame_galaxy_rift',
+    kind: 'frame',
+    name: 'Galaksi Yarığı (Galaxy Rift)',
+    price: 11000,
+    value: 'frame_galaxy_rift',
+    description: 'Sonsuz uzay boşluğunda pembe, mor ve mavi yıldız tozlarıyla parlayan dönen portal.',
+    vip_only: false,
+    is_animated: true,
+    sort: 23,
+  },
+  {
+    id: 'frame_dark_matter',
+    kind: 'frame',
+    name: 'Karanlık Madde (Dark Matter)',
+    price: 8500,
+    value: 'frame_dark_matter',
+    description: 'Işığı yutan karanlık madde ve koyu fuşya yerçekimi dalgasıyla dönen kara delik.',
+    vip_only: false,
+    is_animated: true,
+    sort: 24,
+  },
+  {
+    id: 'frame_radioactive',
+    kind: 'frame',
+    name: 'Radyoaktif Plazma',
+    price: 7000,
+    value: 'frame_radioactive',
+    description: 'Nükleer yeşil ve plazma sarısı reaktör enerjisiyle hızla dönen radyoaktif çerçeve.',
+    vip_only: false,
+    is_animated: true,
+    sort: 25,
+  },
+  {
+    id: 'frame_gold',
+    kind: 'frame',
+    name: 'Altın Çerçeve (Klasik)',
+    price: 2000,
+    value: 'frame_gold',
+    description: 'Klasik parlak altın kaplama çerçeve.',
+    vip_only: false,
+    sort: 26,
+  },
+  {
+    id: 'frame_sapphire',
+    kind: 'frame',
+    name: 'Safir Çerçeve (Klasik)',
+    price: 2500,
+    value: 'frame_sapphire',
+    description: 'Derin okyanus mavisi safir çerçeve.',
     vip_only: false,
     sort: 27,
+  },
+  {
+    id: 'frame_emerald',
+    kind: 'frame',
+    name: 'Zümrüt Çerçeve (Klasik)',
+    price: 2500,
+    value: 'frame_emerald',
+    description: 'Zümrüt yeşili asil çerçeve.',
+    vip_only: false,
+    sort: 28,
+  },
+  {
+    id: 'frame_ruby',
+    kind: 'frame',
+    name: 'Yakut Çerçeve (Klasik)',
+    price: 2000,
+    value: 'frame_ruby',
+    description: 'Kırmızı yakut taşı kaplaması.',
+    vip_only: false,
+    sort: 29,
+  },
+  {
+    id: 'frame_obsidian',
+    kind: 'frame',
+    name: 'Obsidyen Zırh (Klasik)',
+    price: 4000,
+    value: 'frame_obsidian',
+    description: 'Karanlık mat çelik ve obsidyen zırh kaplama.',
+    vip_only: false,
+    sort: 30,
   },
 
   // 3. İsim Renkleri & Hareketli Efektler
@@ -552,68 +597,6 @@ const CATALOG_ITEMS = [
     vip_only: false,
     sort: 65,
   },
-
-  // 5. Özel Karakter Avatarları (Hazır Prestijli Profil Portreleri)
-  {
-    id: 'avatar_cyber_samurai',
-    kind: 'avatar',
-    name: 'Siber Samuray',
-    price: 3000,
-    value: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&q=80',
-    description: 'Neon maskeli ve katanalı siber savaşçı avatarı.',
-    vip_only: false,
-    sort: 80,
-  },
-  {
-    id: 'avatar_neon_wolf',
-    kind: 'avatar',
-    name: 'Bozkır Neon Kurdu',
-    price: 4000,
-    value: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=300&q=80',
-    description: 'Bozkırın asil ruhunu taşıyan parlayan kurt avatarı.',
-    vip_only: false,
-    sort: 81,
-  },
-  {
-    id: 'avatar_cosmic_divine',
-    kind: 'avatar',
-    name: 'Kozmik İlahi Varlık',
-    price: 6000,
-    value: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80',
-    description: 'Yıldız tozu ve ışık aurasıyla parıldayan yüce varlık.',
-    vip_only: false,
-    sort: 82,
-  },
-  {
-    id: 'avatar_phoenix_fire',
-    kind: 'avatar',
-    name: 'Ateş Ankası',
-    price: 4500,
-    value: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&q=80',
-    description: 'Küllerinden yeniden doğan parlayan anka kuşu.',
-    vip_only: false,
-    sort: 83,
-  },
-  {
-    id: 'avatar_shadow_ninja',
-    kind: 'avatar',
-    name: 'Gölge Suikastçısı',
-    price: 3500,
-    value: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=300&q=80',
-    description: 'Karanlıkta gizlenen ve sessizce vuran gölge ustası.',
-    vip_only: false,
-    sort: 84,
-  },
-  {
-    id: 'avatar_golden_dragon',
-    kind: 'avatar',
-    name: 'Altın Ejderha Hükümdarı',
-    price: 8000,
-    value: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300&q=80',
-    description: 'Göklerin efendisi, altın pullu kutsal ejderha avatarı.',
-    vip_only: true,
-    sort: 85,
-  },
 ];
 
 function isFutureDate(dateStr) {
@@ -650,7 +633,6 @@ export default function MagazaPage() {
   const [previewFrame, setPreviewFrame] = useState(null);
   const [previewBg, setPreviewBg] = useState(null);
   const [previewNameColor, setPreviewNameColor] = useState(null);
-  const [previewAvatar, setPreviewAvatar] = useState(null);
 
   async function load() {
     try {
@@ -704,16 +686,25 @@ export default function MagazaPage() {
         ]);
 
         const metaOwned = Array.isArray(u.user_metadata?.owned_items) ? u.user_metadata.owned_items : [];
-        const invSet = new Set([...(inv || []).map((r) => r.item_id), ...metaOwned]);
+        const localOwned = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(`user_owned_${u.id}`) || '[]') : [];
+        const invSet = new Set([...(inv || []).map((r) => r.item_id), ...metaOwned, ...localOwned]);
+
+        const localFrame = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_frame_${u.id}`) : null;
+        const localBg = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_background_${u.id}`) : null;
+        const localNameColor = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_name_color_${u.id}`) : null;
 
         const effectiveCoins = getEffectiveCoins(u, p);
-        const prof = p ? { ...p, coins: effectiveCoins } : {
+        const prof = {
+          ...(p || {}),
           id: u.id,
-          username: u.user_metadata?.username || u.email?.split('@')[0] || 'Kullanıcı',
-          avatar_url: u.user_metadata?.avatar_url || null,
+          username: p?.username || u.user_metadata?.username || u.email?.split('@')[0] || 'Kullanıcı',
+          avatar_url: p?.avatar_url || u.user_metadata?.avatar_url || null,
           coins: effectiveCoins,
-          xp: 0,
-          role: 'user',
+          xp: p?.xp || 0,
+          role: p?.role || 'user',
+          equipped_frame: p?.equipped_frame || u.user_metadata?.equipped_frame || localFrame || null,
+          equipped_background: p?.equipped_background || u.user_metadata?.equipped_background || localBg || null,
+          equipped_name_color: p?.equipped_name_color || u.user_metadata?.equipped_name_color || localNameColor || null,
         };
 
         if (u.user_metadata?.profile_bg_until) {
@@ -730,13 +721,27 @@ export default function MagazaPage() {
 
   useEffect(() => {
     load();
-    const handleCoinsUpdated = (e) => {
-      if (e?.detail?.coins !== undefined) {
-        setProfile((prev) => (prev ? { ...prev, coins: e.detail.coins } : prev));
+    const handleSync = (e) => {
+      if (e?.detail) {
+        setProfile((prev) => {
+          if (!prev) return prev;
+          const next = { ...prev };
+          if (e.detail.coins !== undefined) next.coins = e.detail.coins;
+          if (e.detail.equipped_frame !== undefined) next.equipped_frame = e.detail.equipped_frame;
+          if (e.detail.equipped_background !== undefined) next.equipped_background = e.detail.equipped_background;
+          if (e.detail.equipped_name_color !== undefined) next.equipped_name_color = e.detail.equipped_name_color;
+          return next;
+        });
       }
     };
-    window.addEventListener('coins-updated', handleCoinsUpdated);
-    return () => window.removeEventListener('coins-updated', handleCoinsUpdated);
+    window.addEventListener('coins-updated', handleSync);
+    window.addEventListener('profile-updated', handleSync);
+    window.addEventListener('cosmetics-updated', handleSync);
+    return () => {
+      window.removeEventListener('coins-updated', handleSync);
+      window.removeEventListener('profile-updated', handleSync);
+      window.removeEventListener('cosmetics-updated', handleSync);
+    };
   }, []);
 
   const isVip = profile?.role === 'vip' || profile?.role === 'admin' || isFutureDate(profile?.vip_until);
@@ -757,7 +762,7 @@ export default function MagazaPage() {
     setOpeningPackId(pack.id);
     cardAudio.playWhoosh();
     try {
-      const deductRes = await deductCoins(user.id, pack.price, currentCoins);
+      const deductRes = await deductCoins(user, pack.price, currentCoins);
       if (!deductRes.success) {
         setMsg({ text: deductRes.error || 'Bakiye düşülemedi', type: 'error' });
         setOpeningPackId(null);
@@ -814,7 +819,7 @@ export default function MagazaPage() {
 
     try {
       const currentCoins = profile.coins || 0;
-      const deductRes = await deductCoins(user.id, item.price, currentCoins);
+      const deductRes = await deductCoins(user, item.price, currentCoins);
       if (!deductRes.success) {
         setMsg({ text: deductRes.error || 'Yetersiz bakiye!', type: 'error' });
         setLoadingAction(null);
@@ -879,24 +884,32 @@ export default function MagazaPage() {
 
     try {
       const currentCoins = profile.coins || 0;
-      const deductRes = await deductCoins(user.id, item.price, currentCoins);
+      const deductRes = await deductCoins(user, item.price, currentCoins);
       if (!deductRes.success) {
         setMsg({ text: deductRes.error || 'Yetersiz bakiye!', type: 'error' });
         setLoadingAction(null);
         return;
       }
 
+      // Envanter tablosuna ekle
       try {
         await supabase.from('user_inventory').insert({ user_id: user.id, item_id: item.id });
       } catch {}
 
+      // Metadata envanterine ekle
       const prevOwned = Array.isArray(user.user_metadata?.owned_items) ? user.user_metadata.owned_items : [];
-      if (!prevOwned.includes(item.id)) {
-        await supabase.auth.updateUser({ data: { owned_items: [...prevOwned, item.id] } });
+      const updatedOwned = Array.from(new Set([...prevOwned, item.id]));
+      await supabase.auth.updateUser({ data: { owned_items: updatedOwned } });
+
+      // LocalStorage envanterine ekle
+      if (typeof window !== 'undefined') {
+        const localList = JSON.parse(localStorage.getItem(`user_owned_${user.id}`) || '[]');
+        localStorage.setItem(`user_owned_${user.id}`, JSON.stringify(Array.from(new Set([...localList, item.id]))));
       }
 
+      setOwned((prev) => new Set([...prev, item.id]));
       setProfile((prev) => ({ ...prev, coins: deductRes.newCoins }));
-      setMsg({ text: `"${item.name}" başarıyla satın alındı ve kuşanıldı!`, type: 'success' });
+      setMsg({ text: `"${item.name}" başarıyla satın alındı ve otomatik kuşanıldı! 🎉`, type: 'success' });
       await equip(item, false);
     } catch (e) {
       setMsg({ text: e.message || 'Satın alma başarısız oldu.', type: 'error' });
@@ -912,24 +925,6 @@ export default function MagazaPage() {
     setLoadingAction(item.id);
     setMsg(null);
 
-    if (item.kind === 'avatar') {
-      const targetVal = profile?.avatar_url === item.value ? null : item.value;
-      try {
-        await supabase.auth.updateUser({ data: { avatar_url: targetVal } });
-        try { await supabase.from('profiles').update({ avatar_url: targetVal }).eq('id', user.id); } catch {}
-        setProfile((prev) => ({ ...prev, avatar_url: targetVal }));
-        window.dispatchEvent(new CustomEvent('profile-updated', { detail: { avatar_url: targetVal } }));
-        if (showSuccessMsg) {
-          setMsg({ text: targetVal ? `"${item.name}" avatar olarak ayarlandı!` : 'Avatar kaldırıldı.', type: 'success' });
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingAction(null);
-      }
-      return;
-    }
-
     const kindToColumn = {
       frame: 'equipped_frame',
       background: 'equipped_background',
@@ -942,20 +937,51 @@ export default function MagazaPage() {
       return;
     }
 
-    const isCurrentlyEquipped = profile && profile[col] === item.id;
+    const isCurrentlyEquipped = (profile && profile[col] === item.id) || (user?.user_metadata?.[col] === item.id);
     const targetValue = isCurrentlyEquipped ? null : item.id;
 
     try {
+      // 1. user_metadata'ya anında yaz
+      await supabase.auth.updateUser({ data: { [col]: targetValue } });
+
+      // 2. localStorage'a anında yaz
+      if (typeof window !== 'undefined') {
+        if (targetValue) {
+          localStorage.setItem(`user_${col}_${user.id}`, targetValue);
+        } else {
+          localStorage.removeItem(`user_${col}_${user.id}`);
+        }
+      }
+
+      // 3. profiles tablosuna da yaz
+      try {
+        await supabase.from('profiles').update({ [col]: targetValue }).eq('id', user.id);
+      } catch (err) {
+        console.warn('Profiles table update bypassed:', err);
+      }
+
+      // 4. RPC varsa dene
       try {
         await supabase.rpc('equip_item', { p_kind: item.kind, p_item: targetValue || '' });
       } catch {}
 
-      await supabase.from('profiles').update({ [col]: targetValue }).eq('id', user.id);
+      // 5. State'i hemen güncelle
+      setProfile((prev) => (prev ? { ...prev, [col]: targetValue } : prev));
+
+      // 6. Global eventleri ateşle (HeaderNav ve tüm açık sekmeler anında güncellenir)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('profile-updated', {
+          detail: { [col]: targetValue, coins: profile?.coins }
+        }));
+        window.dispatchEvent(new CustomEvent('cosmetics-updated', {
+          detail: { [col]: targetValue }
+        }));
+      }
 
       if (showSuccessMsg) {
         setMsg({
           text: targetValue
-            ? `"${item.name}" kuşandı! Profilinde ve sohbette artık aktif.`
+            ? `"${item.name}" kuşandı! Profilinde, sohbette ve sitede artık aktif. ✨`
             : `"${item.name}" çıkarıldı.`,
           type: 'success',
         });
@@ -964,7 +990,6 @@ export default function MagazaPage() {
       setMsg({ text: e.message || 'İşlem gerçekleştirilemedi.', type: 'error' });
     } finally {
       setLoadingAction(null);
-      await load();
     }
   }
 
@@ -976,8 +1001,6 @@ export default function MagazaPage() {
       setPreviewBg(previewBg === item.id ? null : item.id);
     } else if (item.kind === 'name_color') {
       setPreviewNameColor(previewNameColor === item.id ? null : item.id);
-    } else if (item.kind === 'avatar') {
-      setPreviewAvatar(previewAvatar === item.value ? null : item.value);
     }
   }
 
@@ -985,7 +1008,6 @@ export default function MagazaPage() {
     setPreviewFrame(null);
     setPreviewBg(null);
     setPreviewNameColor(null);
-    setPreviewAvatar(null);
   }
 
   if (user === undefined) return <div className="wrap empty">Mağaza yükleniyor...</div>;
@@ -1003,8 +1025,8 @@ export default function MagazaPage() {
   const displayFrame = previewFrame || profile?.equipped_frame;
   const displayBg = previewBg || profile?.equipped_background;
   const displayNameColor = previewNameColor || profile?.equipped_name_color;
-  const displayAvatar = previewAvatar || profile?.avatar_url;
-  const isPreviewing = previewFrame !== null || previewBg !== null || previewNameColor !== null || previewAvatar !== null;
+  const displayAvatar = profile?.avatar_url;
+  const isPreviewing = previewFrame !== null || previewBg !== null || previewNameColor !== null;
 
   const avatarGifRemaining = isVip ? 'Sınırsız (VIP)' : getRemainingTimeText(profile?.avatar_gif_until);
   const profileBgRemaining = isVip ? 'Sınırsız (VIP)' : getRemainingTimeText(profile?.profile_bg_until);
@@ -1018,7 +1040,7 @@ export default function MagazaPage() {
             <CrownIcon size={26} /> Kozmetik & Gacha Mağazası
           </h1>
           <p style={{ margin: '6px 0 0', color: 'var(--text-dim)', fontSize: '.94rem' }}>
-            Kart paketleri, hareketli çerçeveler, RGB isim efektleri, sinematik arka planlar ve prestijli avatarlar.
+            Kart paketleri, 360° dönen hareketli çerçeveler, RGB isim efektleri ve sinematik arka planlar.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -1069,8 +1091,7 @@ export default function MagazaPage() {
               <div style={{ display: 'flex', gap: '8px', marginTop: '8px', fontSize: '.8rem', color: 'var(--text-dim)', flexWrap: 'wrap' }}>
                 <span>Çerçeve: <strong>{displayFrame ? 'Seçili' : 'Yok'}</strong></span> ·
                 <span>İsim Rengi: <strong>{displayNameColor ? 'Seçili' : 'Varsayılan'}</strong></span> ·
-                <span>Arka Plan: <strong>{displayBg ? 'Seçili' : 'Varsayılan'}</strong></span> ·
-                <span>Avatar: <strong>{displayAvatar ? 'Seçili' : 'Varsayılan'}</strong></span>
+                <span>Arka Plan: <strong>{displayBg ? 'Seçili' : 'Varsayılan'}</strong></span>
               </div>
             </div>
           </div>
@@ -1334,8 +1355,17 @@ export default function MagazaPage() {
 
                     <div>
                       {/* Önizleme Alanı */}
-                      <div className="shop-preview" style={{ position: 'relative' }}>
-                        {it.kind === 'frame' && <span className="frame-demo" style={frameStyle(it.value)} />}
+                      <div className="shop-preview" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '74px' }}>
+                        {it.kind === 'frame' && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '6px' }}>
+                            <Avatar
+                              size={56}
+                              frameGradient={it.id}
+                              url={profile?.avatar_url}
+                              name={profile?.username || '?'}
+                            />
+                          </div>
+                        )}
                         {it.kind === 'background' && (
                           <span
                             className="bg-demo"
@@ -1347,20 +1377,6 @@ export default function MagazaPage() {
                             {profile?.username || 'Kullanıcı'}
                           </span>
                         )}
-                        {it.kind === 'avatar' && (
-                          <span
-                            style={{
-                              width: '64px',
-                              height: '64px',
-                              borderRadius: '50%',
-                              overflow: 'hidden',
-                              display: 'inline-block',
-                              border: '2px solid var(--accent)',
-                            }}
-                          >
-                            <img src={it.value} alt={it.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </span>
-                        )}
                         {it.kind === 'special_permit' && (
                           <span style={{ fontSize: '2.8rem' }}>
                             {it.id === 'avatar_gif_permit' ? '🎞️' : '🖼️'}
@@ -1369,8 +1385,13 @@ export default function MagazaPage() {
                       </div>
 
                       {/* Başlık ve Bilgiler */}
-                      <h3 style={{ marginTop: '12px', fontSize: '1.1rem' }}>
+                      <h3 style={{ marginTop: '12px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {it.name}{' '}
+                        {it.is_animated && (
+                          <span className="tag" style={{ background: 'linear-gradient(135deg, #00f0ff, #7000ff)', color: '#fff', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px' }}>
+                            ✨ 360° HAREKETLİ
+                          </span>
+                        )}
                         {it.vip_only && (
                           <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
                             VIP

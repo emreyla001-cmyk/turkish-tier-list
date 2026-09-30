@@ -18,48 +18,58 @@ export default function HeaderNav() {
       if (!mounted) return;
       setUser(data?.user || null);
       if (data?.user) {
+        const u = data.user;
         const { data: p } = await supabase
           .from('profiles')
           .select('id, username, avatar_url, role, coins, is_admin, equipped_frame, equipped_name_color')
-          .eq('id', data.user.id)
+          .eq('id', u.id)
           .maybeSingle();
         if (mounted) {
-          const effectiveCoins = data.user.user_metadata?.coins !== undefined
-            ? Number(data.user.user_metadata.coins)
+          const effectiveCoins = u.user_metadata?.coins !== undefined
+            ? Number(u.user_metadata.coins)
             : Number(p?.coins || 0);
 
-          setProfile(p ? { ...p, coins: effectiveCoins } : {
-            username: data.user.user_metadata?.username || data.user.email?.split('@')[0],
-            avatar_url: data.user.user_metadata?.avatar_url || null,
+          const localFrame = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_frame_${u.id}`) : null;
+          const localNameColor = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_name_color_${u.id}`) : null;
+
+          const activeFrame = p?.equipped_frame || u.user_metadata?.equipped_frame || localFrame || null;
+          const activeNameColor = p?.equipped_name_color || u.user_metadata?.equipped_name_color || localNameColor || null;
+
+          setProfile(p ? {
+            ...p,
+            coins: effectiveCoins,
+            equipped_frame: activeFrame,
+            equipped_name_color: activeNameColor,
+          } : {
+            id: u.id,
+            username: u.user_metadata?.username || u.email?.split('@')[0],
+            avatar_url: u.user_metadata?.avatar_url || null,
             coins: effectiveCoins,
             role: 'user',
+            equipped_frame: activeFrame,
+            equipped_name_color: activeNameColor,
           });
         }
       }
     });
 
-    const handleCoinsUpdated = (e) => {
-      if (e?.detail?.coins !== undefined) {
-        setProfile((prev) => (prev ? { ...prev, coins: e.detail.coins } : prev));
-      } else if (mounted) {
-        supabase.auth.getUser().then(async ({ data: ud }) => {
-          if (ud?.user) {
-            const { data: p } = await supabase
-              .from('profiles')
-              .select('id, username, avatar_url, role, coins, is_admin, equipped_frame, equipped_name_color')
-              .eq('id', ud.user.id)
-              .maybeSingle();
-            const effectiveCoins = ud.user.user_metadata?.coins !== undefined
-              ? Number(ud.user.user_metadata.coins)
-              : Number(p?.coins || 0);
-            if (mounted) setProfile(p ? { ...p, coins: effectiveCoins } : null);
-          }
+    const handleProfileSync = (e) => {
+      if (e?.detail) {
+        setProfile((prev) => {
+          if (!prev) return prev;
+          const updated = { ...prev };
+          if (e.detail.coins !== undefined) updated.coins = e.detail.coins;
+          if (e.detail.equipped_frame !== undefined) updated.equipped_frame = e.detail.equipped_frame;
+          if (e.detail.equipped_name_color !== undefined) updated.equipped_name_color = e.detail.equipped_name_color;
+          if (e.detail.avatar_url !== undefined) updated.avatar_url = e.detail.avatar_url;
+          return updated;
         });
       }
     };
 
-    window.addEventListener('coins-updated', handleCoinsUpdated);
-    window.addEventListener('profile-updated', handleCoinsUpdated);
+    window.addEventListener('coins-updated', handleProfileSync);
+    window.addEventListener('profile-updated', handleProfileSync);
+    window.addEventListener('cosmetics-updated', handleProfileSync);
 
     const handleClickOutside = (e) => {
       if (navRef.current && !navRef.current.contains(e.target)) {
@@ -70,8 +80,9 @@ export default function HeaderNav() {
     return () => {
       mounted = false;
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('coins-updated', handleCoinsUpdated);
-      window.removeEventListener('profile-updated', handleCoinsUpdated);
+      window.removeEventListener('coins-updated', handleProfileSync);
+      window.removeEventListener('profile-updated', handleProfileSync);
+      window.removeEventListener('cosmetics-updated', handleProfileSync);
     };
   }, []);
 
