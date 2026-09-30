@@ -8,17 +8,17 @@ import { getStarInfo } from './cardRarity';
 export const GACHA_PACKS = [
   {
     id: 'pack_bronze',
-    name: 'Bronz Paket (Sokak Savaşçısı)',
+    name: 'Bronz Paket (Sokak Dövüşçüsü)',
     price: 1500,
     icon: '🥉',
     cardCount: 3,
-    cashback: 150,
-    xpReward: 100,
-    badge: 'Giriş Seviye',
+    cashback: 200,
+    xpReward: 150,
+    badge: '🥉 Başlangıç Paketi',
     badgeColor: '#cd7f32',
-    desc: '3 Karakter Kartı içerir. Sokak ve çaylak seviyesindeki kahramanlar. (+150 TP İade)',
-    ratesText: 'R: %72 · SR: %23 · SSR: %4.5 · UR: %0.5',
-    rates: { R: 0.72, SR: 0.23, SSR: 0.045, UR: 0.005 },
+    desc: '3 Karakter Kartı içerir. Sokak ve çaylak seviyesindeki savaşçılar ile destene temel at. (+200 TP İade)',
+    ratesText: 'R: %75 · SR: %20 · SSR: %4 · UR: %1',
+    rates: { R: 0.75, SR: 0.20, SSR: 0.04, UR: 0.01 },
     guaranteedMinRarity: null,
   },
   {
@@ -27,60 +27,80 @@ export const GACHA_PACKS = [
     price: 4000,
     icon: '🥈',
     cardCount: 4,
-    cashback: 400,
-    xpReward: 250,
-    badge: '1 SR Garanti',
+    cashback: 600,
+    xpReward: 400,
+    badge: '🛡️ 1x SR Garanti',
     badgeColor: '#94a3b8',
-    desc: '4 Karakter Kartı içerir. Bina ve mahalle yıkan kudretli dövüşçüler (En az 1 SR Garanti + 400 TP İade).',
-    ratesText: 'R: %50 · SR: %38 · SSR: %10.5 · UR: %1.5',
-    rates: { R: 0.50, SR: 0.38, SSR: 0.105, UR: 0.015 },
+    desc: '4 Karakter Kartı içerir. Bina ve mahalle yıkan kudretli dövüşçüler (En az 1x SR Garanti + 600 TP İade).',
+    ratesText: 'R: %55 · SR: %32 · SSR: %10 · UR: %3',
+    rates: { R: 0.55, SR: 0.32, SSR: 0.10, UR: 0.03 },
     guaranteedMinRarity: 'SR',
+    guaranteedCount: 1,
   },
   {
     id: 'pack_gold',
-    name: 'Altın Paket (Kasaba & Şehir Baronu)',
-    price: 9000,
+    name: 'Altın Paket (Şehir & Savaş Baronu)',
+    price: 9500,
     icon: '🥇',
     cardCount: 5,
-    cashback: 1000,
-    xpReward: 600,
-    badge: 'Yüksek SSR İhtimali',
+    cashback: 1500,
+    xpReward: 900,
+    badge: '⚔️ Yüksek SSR İhtimali',
     badgeColor: '#f59e0b',
-    desc: '5 Karakter Kartı içerir. Şehir ve ordu ölçeğinde efsaneleşmiş savaşçılar (5 Kart + 1.000 TP İade).',
-    ratesText: 'R: %30 · SR: %47 · SSR: %19 · UR: %4',
-    rates: { R: 0.30, SR: 0.47, SSR: 0.19, UR: 0.04 },
+    desc: '5 Karakter Kartı içerir. Şehir ve ordu ölçeğinde efsaneleşmiş savaşçılar (1x SR+ Garanti + 1.500 TP İade).',
+    ratesText: 'R: %35 · SR: %45 · SSR: %15 · UR: %5',
+    rates: { R: 0.35, SR: 0.45, SSR: 0.15, UR: 0.05 },
     guaranteedMinRarity: 'SR',
+    guaranteedCount: 1,
   },
   {
     id: 'pack_mega',
-    name: 'Mega Efsanevi Paket (Bozkır Alpi)',
-    price: 20000,
+    name: 'Platin & Efsanevi Bozkır Paketi (Alpler)',
+    price: 22000,
     icon: '💎',
     cardCount: 6,
-    cashback: 2500,
-    xpReward: 1500,
-    badge: '1 SSR Garanti!',
+    cashback: 3500,
+    xpReward: 2000,
+    badge: '💎 1x SSR Garanti!',
     badgeColor: '#00f0ff',
-    desc: '6 Karakter Kartı içerir. Kıta ve gezegen seviyesinde devasa varlıklar (1 Garanti SSR + 2.500 TP İade).',
-    ratesText: 'R: %18 · SR: %42 · SSR: %32 · UR: %8',
-    rates: { R: 0.18, SR: 0.42, SSR: 0.32, UR: 0.08 },
+    desc: '6 Karakter Kartı içerir. Kıta ve gezegen seviyesinde devasa Türk kurgu kahramanları (1x Kesin SSR + 3.500 TP İade).',
+    ratesText: 'R: %20 · SR: %40 · SSR: %30 · UR: %10',
+    rates: { R: 0.20, SR: 0.40, SSR: 0.30, UR: 0.10 },
     guaranteedMinRarity: 'SSR',
+    guaranteedCount: 1,
   },
   {
     id: 'pack_cosmic',
     name: 'Kozmik & İlahi Tanrılar Paketi (Tengri Divanı)',
-    price: 45000,
+    price: 48000,
     icon: '👑',
     cardCount: 7,
-    cashback: 6000,
-    xpReward: 3500,
-    badge: '2 SSR veya UR Garanti!',
-    badgeColor: '#ff007f',
-    desc: '7 Karakter Kartı içerir. Evren, boyut ve kozmik gerçeklik büken tanrılar (2 SSR/UR Garanti + 6.000 TP İade).',
-    ratesText: 'R: %10 · SR: %33 · SSR: %42 · UR: %15',
-    rates: { R: 0.10, SR: 0.33, SSR: 0.42, UR: 0.15 },
+    cashback: 8500,
+    xpReward: 4500,
+    badge: '👑 2x SSR/UR Garanti!',
+    badgeColor: '#eab308',
+    desc: '7 Karakter Kartı içerir. Evren, boyut ve kozmik gerçeklik büken kadim tanrılar (2x SSR veya UR Garanti + 8.500 TP İade).',
+    ratesText: 'R: %5 · SR: %30 · SSR: %45 · UR: %20',
+    rates: { R: 0.05, SR: 0.30, SSR: 0.45, UR: 0.20 },
     guaranteedMinRarity: 'SSR',
     guaranteedCount: 2,
+  },
+  {
+    id: 'pack_chaos_throne',
+    name: 'Mitik Kaos Tahtı Paketi (Mutlak Hükümdarlar)',
+    price: 85000,
+    icon: '🌌',
+    cardCount: 8,
+    cashback: 18000,
+    xpReward: 8000,
+    badge: '🔥 1x UR + 2x SSR Garanti!',
+    badgeColor: '#ff007f',
+    desc: '8 Karakter Kartı içerir. Sıradan (R) kartlar elenmiştir! (1x Kesin UR + 2x SSR Garanti + 18.000 TP İade).',
+    ratesText: 'R: %0 · SR: %20 · SSR: %50 · UR: %30',
+    rates: { R: 0.00, SR: 0.20, SSR: 0.50, UR: 0.30 },
+    guaranteedMinRarity: 'SSR',
+    guaranteedCount: 3,
+    guaranteedURCount: 1,
   },
 ];
 
@@ -172,6 +192,7 @@ export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpg
   // Garantili slot sayısı ve tipi
   const guaranteedMin = pack.guaranteedMinRarity || null;
   const guaranteedSlots = pack.guaranteedCount || (guaranteedMin ? 1 : 0);
+  const guaranteedUR = pack.guaranteedURCount || 0;
 
   for (let slot = 0; slot < cardCount; slot++) {
     let targetRarity;
@@ -180,11 +201,15 @@ export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpg
     if (slot === cardCount - 1 && isPityActive) {
       targetRarity = Math.random() < 0.25 ? 'UR' : 'SSR';
     }
-    // 2. Paketin kendi garantili slotları (Örn: Mega Paket'te en az 1 SSR, Kozmik'te 2 SSR/UR)
+    // 2. Özel Kesin UR slotu (Örn: Kaos Tahtı'nda kesin 1 UR)
+    else if (slot < guaranteedUR) {
+      targetRarity = 'UR';
+    }
+    // 3. Paketin kendi garantili slotları (Örn: Mega Paket'te en az 1 SSR, Kozmik'te 2 SSR/UR)
     else if (slot < guaranteedSlots) {
       targetRarity = rollRaritySlot(pack.rates, guaranteedMin);
     }
-    // 3. Normal rastgele gacha slotu (güç seviyesi arttıkça çıkma oranı düşen formül)
+    // 4. Normal rastgele gacha slotu (güç seviyesi arttıkça çıkma oranı düşen formül)
     else {
       targetRarity = rollRaritySlot(pack.rates);
     }
