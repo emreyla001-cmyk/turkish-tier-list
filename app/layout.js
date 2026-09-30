@@ -2,6 +2,7 @@ import './globals.css';
 import HeaderNav from './components/HeaderNav';
 import Logo from './components/Logo';
 import Heartbeat from './components/Heartbeat';
+import BanGuard from './components/BanGuard';
 import SpotlightSearch from './components/SpotlightSearch';
 import MobileNav from './components/MobileNav';
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Heartbeat />
+        <BanGuard />
         <header className="site-header">
           <div className="wrap nav">
             <div className="nav-brand-group">

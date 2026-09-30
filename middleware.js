@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 
 /**
- * TURKISH TIER LIST - MERKEZİ GÜVENLİK YAZILIMI (WAF & RATE LIMITER)
- * Next.js Edge Runtime üzerinde her isteği anlık olarak filtreler:
- * 1. SQL Injection Engelleme
- * 2. Cross-Site Scripting (XSS) Engelleme
- * 3. Dizin Tarama (Path Traversal & Probe) Engelleme
- * 4. Kötü Niyetli Bot & Tarayıcı (Scanner) Engelleme
- * 5. DDoS & Brute-Force Rate Limiting (Kayan Zaman Pencereli IP Sınırlama)
- * 6. OWASP Güvenlik Başlıkları (Security Headers)
+ * TURKISH TIER LIST - MERKEZİ PROFESYONEL GÜVENLİK YAZILIMI (IPS & WAF)
+ * Next.js Edge seviyesinde çalışan aktif sızma engelleme ve anti-hile zırhı:
+ * 1. Otomatik Kalıcı Yasaklama (Active Honeypot & Auto Perma-Ban)
+ * 2. Cihaz / IP / Çerez Seviyesinde Kara Liste İnfazı
+ * 3. SQL Injection & XSS Anında Engelleme
+ * 4. Kötü Niyetli Bot & Scanner İmhası
+ * 5. DDoS & Brute-Force Rate Limiting
+ * 6. OWASP Güvenlik Başlıkları
  */
+
+// Otomatik kalıcı banlanan IP adresleri (Bellek İnfaz Listesi)
+const PERMANENT_IP_BLACKLIST = new Set();
 
 // Kötü niyetli otomatik güvenlik açığı tarayıcıları ve bot imzaları
 const BLOCKED_USER_AGENTS = [
@@ -28,29 +31,27 @@ const BLOCKED_USER_AGENTS = [
   'zgrab',
 ];
 
-// Yasaklı dosya yolları ve hassas sistem dosyalarını arayan saldırgan filtreleri
-const BLOCKED_PATH_PATTERNS = [
+// Aktif Güvenlik Tuzakları (Honeypot). Bu yollardan birine istek atan kişi / bot anında kalıcı olarak banlanır.
+const HONEYPOT_TRAP_PATTERNS = [
+  /\/api\/admin\/free-coins/i,
+  /\/api\/dev\/god-mode/i,
+  /\/admin\/exploit/i,
   /\/\.env/i,
   /\/\.git/i,
   /\/\.aws/i,
   /\/wp-admin/i,
   /\/wp-login/i,
-  /\/wp-content/i,
   /\/phpmyadmin/i,
   /\/pma/i,
   /\/actuator/i,
-  /\/swagger/i,
-  /\/api-docs/i,
-  /\/shell/i,
-  /\/eval-stdin/i,
   /\/etc\/passwd/i,
-  /\.\.\//, // Path traversal
-  /%2e%2e%2f/i, // Encoded path traversal
+  /\.\.\//, // Dizin atlama saldırısı
+  /%2e%2e%2f/i,
 ];
 
-// SQL Injection ve XSS saldırı kalıpları (URL ve Query Parametreleri için)
+// SQL Injection ve XSS saldırı kalıpları (URL ve Parametreler için)
 const ATTACK_PARAM_PATTERNS = [
-  /(\%27)|(\')|(\-\-)|(\%23)|(#)/i, // Basic SQL comment / quote
+  /(\%27)|(\')|(\-\-)|(\%23)|(#)/i,
   /(union(\s+all)?\s+select)/i,
   /(exec(\s+all)?\s+xp_)/i,
   /(waitfor\s+delay)/i,
@@ -65,29 +66,23 @@ const ATTACK_PARAM_PATTERNS = [
   /document\.cookie/i,
 ];
 
-// In-Memory Rate Limiting (Kayan pencere sayacı)
-// Bellek şişmesini önlemek için periyodik temizlenir
+// In-Memory Rate Limiter
 const rateLimitMap = new Map();
-const CLEANUP_INTERVAL = 60 * 1000; // 1 dakika
+const CLEANUP_INTERVAL = 60 * 1000;
 let lastCleanup = Date.now();
 
 function getRateLimitRule(pathname) {
   if (pathname.startsWith('/api/')) {
-    // API rotaları: 10 saniyede en fazla 40 istek
     return { limit: 40, windowMs: 10 * 1000 };
   }
   if (pathname === '/giris-yap' || pathname === '/kayit-ol') {
-    // Giriş ve Kayıt (Brute force koruması): 30 saniyede en fazla 15 istek
     return { limit: 15, windowMs: 30 * 1000 };
   }
-  // Genel sayfalar: 10 saniyede en fazla 120 istek (normal insan hızının çok üstü)
   return { limit: 120, windowMs: 10 * 1000 };
 }
 
 function checkRateLimit(ip, pathname) {
   const now = Date.now();
-
-  // Periyodik eski kayıt temizliği
   if (now - lastCleanup > CLEANUP_INTERVAL) {
     for (const [key, data] of rateLimitMap.entries()) {
       if (now - data.resetTime > 60000) {
@@ -122,7 +117,7 @@ export function middleware(request) {
     request.headers.get('x-real-ip') ||
     '127.0.0.1';
 
-  // Statik dosyalara ve iç Next.js varlıklarına gereksiz filtre uygulamayı atla
+  // Statik dosyaları ve iç Next.js kaynaklarını es geç
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/static/') ||
@@ -131,46 +126,68 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  // 1. Kötü Niyetli Scanner / Bot Engelleme
+  // 1. KARA LİSTE KONTROLÜ (Daha önce banlanmış cihazlar ve IP'ler anında engellenir)
+  const isBannedCookie = request.cookies.get('ttl_banned')?.value === '1';
+  const isBannedIp = PERMANENT_IP_BLACKLIST.has(ip);
+
+  if (isBannedCookie || isBannedIp) {
+    if (pathname !== '/yasaklandi') {
+      const banUrl = new URL('/yasaklandi', request.url);
+      banUrl.searchParams.set('reason', 'Kalıcı Güvenlik İhracı (Perma-Ban): Bu cihaz / IP yasaklanmıştır.');
+      const res = NextResponse.redirect(banUrl);
+      res.cookies.set('ttl_banned', '1', { maxAge: 315360000, path: '/' });
+      return res;
+    }
+    return NextResponse.next();
+  }
+
+  // 2. AKTİF GÜVENLİK TUZAKLARI (HONEYPOT TRAPS - ANINDA PERMA-BAN)
+  for (const trap of HONEYPOT_TRAP_PATTERNS) {
+    if (trap.test(pathname)) {
+      console.error(`🚨 [GÜVENLİK ALARMI] Saldırgan tuzağa düştü! Anında Kalıcı Ban (Perma-Ban): IP=${ip} Yol=${pathname}`);
+      PERMANENT_IP_BLACKLIST.add(ip);
+
+      const banUrl = new URL('/yasaklandi', request.url);
+      banUrl.searchParams.set('reason', `Güvenlik Tuzağı Tetiklendi: Yetkisiz sistem dosyası/açık arama teşebbüsü (${pathname})`);
+      const res = NextResponse.redirect(banUrl);
+      res.cookies.set('ttl_banned', '1', { maxAge: 315360000, path: '/' });
+      return res;
+    }
+  }
+
+  // 3. KÖTÜ NİYETLİ OTOMATİK BOT VE SCANNER TESPİTİ
   const lowerUA = userAgent.toLowerCase();
   for (const bot of BLOCKED_USER_AGENTS) {
     if (lowerUA.includes(bot)) {
-      console.warn(`[GÜVENLİK DUVARI] Zararlı bot engellendi: IP=${ip} UA=${userAgent}`);
-      return new NextResponse('Erişim Reddedildi: Güvenlik politikası ihlali.', {
+      console.warn(`[GÜVENLİK DUVARI] Zararlı bot kalıcı engellendi: IP=${ip} UA=${userAgent}`);
+      PERMANENT_IP_BLACKLIST.add(ip);
+      return new NextResponse('Erişim Kalıcı Olarak Engellendi: Güvenlik ihlali.', {
         status: 403,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
     }
   }
 
-  // 2. Dizin Tarama (Path Traversal) ve Hassas Dosya Probları
-  for (const pattern of BLOCKED_PATH_PATTERNS) {
-    if (pattern.test(pathname)) {
-      console.warn(`[GÜVENLİK DUVARI] Hassas dosya tarama teşebbüsü engellendi: IP=${ip} Path=${pathname}`);
-      return new NextResponse('Erişim Reddedildi: Geçersiz istek rotası.', {
-        status: 403,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
-    }
-  }
-
-  // 3. URL ve Query Parametrelerinde SQLi & XSS Taraması
+  // 4. SQL INJECTION VE XSS SALDIRI TESPİTİ (ANINDA PERMA-BAN)
   const fullUrlQuery = decodeURIComponent(search || '');
   for (const attackPattern of ATTACK_PARAM_PATTERNS) {
     if (attackPattern.test(fullUrlQuery) || attackPattern.test(pathname)) {
-      console.warn(`[GÜVENLİK DUVARI] SQLi / XSS saldırı örüntüsü tespit edildi: IP=${ip} URL=${pathname}${search}`);
-      return new NextResponse('Hatalı İstek: Güvenlik filtresi tarafından şüpheli içerik tespit edildi.', {
-        status: 400,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
+      console.error(`🚨 [GÜVENLİK ALARMI] SQLi / XSS saldırı teşebbüsü tespit edildi! Perma-ban uygulandı: IP=${ip} Param=${fullUrlQuery}`);
+      PERMANENT_IP_BLACKLIST.add(ip);
+
+      const banUrl = new URL('/yasaklandi', request.url);
+      banUrl.searchParams.set('reason', 'SQL Injection / XSS Kod Çalıştırma Teşebbüsü');
+      const res = NextResponse.redirect(banUrl);
+      res.cookies.set('ttl_banned', '1', { maxAge: 315360000, path: '/' });
+      return res;
     }
   }
 
-  // 4. Rate Limiting (DDoS & Brute-Force Koruması)
+  // 5. DDoS & BRUTE-FORCE RATE LIMITING
   const rateLimitResult = checkRateLimit(ip, pathname);
   if (!rateLimitResult.allowed) {
-    console.warn(`[GÜVENLİK DUVARI] Rate limit aşıldı: IP=${ip} Path=${pathname}`);
-    return new NextResponse('Çok Fazla İstek: Kısa sürede çok fazla istek gönderdiniz. Lütfen biraz bekleyin.', {
+    console.warn(`[GÜVENLİK DUVARI] Aşırı istek (Rate Limit): IP=${ip} Yol=${pathname}`);
+    return new NextResponse('Çok Fazla İstek: Kısa sürede anormal sayıda istek gönderdiniz. Lütfen bekleyin.', {
       status: 429,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
@@ -179,28 +196,15 @@ export function middleware(request) {
     });
   }
 
-  // 5. OWASP Güvenlik Başlıklarını Ekle
+  // 6. OWASP GÜVENLİK BAŞLIKLARINI EKLE
   const response = NextResponse.next();
-
-  // Clickjacking saldırılarına karşı koruma (Sitenin başka siteler içine iframe ile gömülmesini engeller)
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-
-  // Tarayıcıların dosya MIME türünü yanlış yorumlamasını engeller
   response.headers.set('X-Content-Type-Options', 'nosniff');
-
-  // Referrer sızıntılarını sınırlar
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-  // Donanım izinlerini (kamera, mikrofon) tamamen kapatır
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
-
-  // Tarayıcı XSS filtresini aktif eder
   response.headers.set('X-XSS-Protection', '1; mode=block');
-
-  // HTTPS zorunluluğu (HSTS)
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
 
-  // Admin sayfaları için tarayıcı önbelleğe almayı devre dışı bırak
   if (pathname.startsWith('/admin')) {
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
@@ -211,14 +215,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Aşağıdaki yollar dışındaki tüm rotaları filtreler:
-     * - api/auth/callback (Supabase auth redirect)
-     * - _next/static (statik dosyalar)
-     * - _next/image (görsel optimizasyonu)
-     * - favicon.ico, icon.svg vb.
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
