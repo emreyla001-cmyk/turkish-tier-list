@@ -200,6 +200,63 @@ export default function OyunlarHubPage() {
               </button>
             )}
           </div>
+
+          {/* 3. OYUN KARTI: Draft Duel (1v1 Clash Royale Modu) */}
+          <div
+            className="card"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              padding: '24px',
+              position: 'relative',
+              borderColor: '#8b5cf6',
+              boxShadow: '0 0 25px rgba(139, 92, 246, 0.15)',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <span style={{ fontSize: '2.5rem' }}>🃏</span>
+                <span
+                  className="tag"
+                  style={{
+                    background: 'rgba(139, 92, 246, 0.25)',
+                    color: '#c084fc',
+                    fontWeight: 800,
+                  }}
+                >
+                  🔥 YENİ MOD
+                </span>
+              </div>
+
+              <h2 style={{ fontSize: '1.3rem', margin: '0 0 8px' }}>Draft Duel (1v1 Taktik Modu)</h2>
+              <p style={{ color: 'var(--text-dim)', fontSize: '.88rem', lineHeight: 1.5, margin: '0 0 16px' }}>
+                Clash Royale tarzı taktiksel kart seçimi! Her tur 2 karttan birini kendine al, diğerini rakibe ver. Sürpriz Joker kartıyla 5v5 strateji savaşını kazan!
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                <span className="coin-pill" style={{ fontSize: '.8rem' }}>
+                  🪙 600 Tier Parası
+                </span>
+                <span className="tag" style={{ fontSize: '.8rem' }}>⚡ 300 XP</span>
+                <span className="tag" style={{ fontSize: '.8rem', color: '#86efac' }}>🛡️ +150 Klan CP</span>
+              </div>
+            </div>
+
+            <a
+              href="/oyunlar/draft-duel"
+              className="btn"
+              style={{
+                width: '100%',
+                textAlign: 'center',
+                fontWeight: 800,
+                background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                color: '#fff',
+              }}
+            >
+              🃏 Draft Düellosuna Başla →
+            </a>
+          </div>
         </div>
       )}
     </div>
