@@ -8,6 +8,7 @@ import { cardAudio } from '../lib/cardAudio';
 import { getCardRarity, getStarInfo, MAX_STARS } from '../lib/cardRarity';
 import { getStamina, buyStaminaPotion, POTION_COST, POTION_REFILL } from '../lib/stamina';
 import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
+import { GACHA_PACKS, drawCardsFromPack } from '../lib/gachaEngine';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -21,8 +22,8 @@ export default function KartOyunuHub() {
   const [trophies, setTrophies] = useState(100);
   const [pityCount, setPityCount] = useState(0);
   const [stamina, setStamina] = useState({ current: 10, max: 10 });
-  const [openedPackCards, setOpenedPackCards] = useState(null);
-  const [opening, setOpening] = useState(false);
+  const [packResult, setPackResult] = useState(null);
+  const [openingPackId, setOpeningPackId] = useState(null);
   const [msg, setMsg] = useState(null);
 
   async function load() {
@@ -128,118 +129,50 @@ export default function KartOyunuHub() {
       return;
     }
 
-    setOpening(true);
+    setOpeningPackId(pack.id);
     cardAudio.playWhoosh();
     try {
       // 1. Altın düş
       const newCoins = Math.max(0, currentCoins - pack.price);
 
-      // profiles tablosuna da kaydetmeyi dene (RLS kısıtlaması varsa sessizce metadata kullanılır)
+      // 2. Ağırlıklı Gacha Motoru ile Kartları Çek (Güç arttıkça düşme oranı azalır)
+      const result = drawCardsFromPack(pack, characters, pityCount, cardUpgrades, myCards);
+
+      const netCoins = newCoins + result.cashback + result.refundTotal;
+      const newCollection = Array.from(new Set([...myCards, ...result.drawnCards.map((c) => c.id)]));
+      const newXp = Number(profile?.xp || 0) + (result.xpReward || 0);
+
       try {
-        await supabase
-          .from('profiles')
-          .update({ coins: newCoins })
-          .eq('id', user.id);
-      } catch (tableErr) {
-        console.warn('profiles tablosu güncellenemedi, user_metadata kullanılıyor:', tableErr);
-      }
-
-      // 2. Filtreye göre karakterleri seç
-      let pool = characters.filter((c) => pack.tierFilter.includes(c.tier));
-      if (pool.length === 0) pool = characters;
-
-      // Pity (Şanssızlık Koruması) Mekaniği: 10. pakette (pityCount >= 9) kesin SSR veya UR!
-      const isPityActive = pityCount >= 9;
-      const drawn = [];
-      for (let i = 0; i < 2; i++) {
-        const rand = pool[Math.floor(Math.random() * pool.length)];
-        drawn.push(rand);
-      }
-
-      if (isPityActive) {
-        const highTierPool = characters.filter((c) => {
-          const r = getCardRarity(c.tier).code;
-          return r === 'UR' || r === 'SSR';
-        });
-        const guaranteedPool = highTierPool.length > 0 ? highTierPool : pool;
-        const guaranteedCard = guaranteedPool[Math.floor(Math.random() * guaranteedPool.length)];
-        drawn.push(guaranteedCard);
-      } else {
-        drawn.push(pool[Math.floor(Math.random() * pool.length)]);
-      }
-
-      // Pity güncelleme
-      const hasHighRarity = drawn.some((c) => ['UR', 'SSR'].includes(getCardRarity(c.tier).code));
-      const nextPity = hasHighRarity ? 0 : Math.min(10, pityCount + 1);
-      setPityCount(nextPity);
-
-      // 3. Kopya Kart ve Parça (Shard) Hesabı
-      const updatedUpgrades = { ...cardUpgrades };
-      let refundTotal = 0;
-
-      const processedCards = drawn.map((card) => {
-        const isDuplicate = myCards.includes(card.id);
-        const cur = updatedUpgrades[card.id] || { stars: 1, awakened: 0, shards: 0 };
-        let stars = cur.stars || 1;
-        let awakened = cur.awakened || 0;
-        let shards = cur.shards || 0;
-
-        const sInfo = getStarInfo(stars, awakened);
-
-        if (isDuplicate) {
-          if (sInfo.isMax) {
-            refundTotal += 500; // Maksimum Seviyedeyse boşa gitmesin: 500 Tier Parası İade!
-          } else {
-            shards += 1;
-          }
-        }
-
-        updatedUpgrades[card.id] = { stars, awakened, shards };
-
-        return {
-          ...card,
-          isDuplicate,
-          stars,
-          awakened,
-          shards,
-          refundGiven: isDuplicate && sInfo.isMax,
-        };
-      });
-
-      const finalCoins = newCoins + refundTotal;
-      if (refundTotal > 0) {
-        try {
-          await supabase.from('profiles').update({ coins: finalCoins }).eq('id', user.id);
-        } catch {}
-      }
-
-      setProfile((prev) => ({ ...prev, coins: finalCoins }));
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: finalCoins } }));
-      }
-
-      setCardUpgrades(updatedUpgrades);
-      const newCollection = Array.from(new Set([...myCards, ...drawn.map((c) => c.id)]));
-      setMyCards(newCollection);
+        await supabase.from('profiles').update({ coins: netCoins, xp: newXp }).eq('id', user.id);
+      } catch {}
 
       await supabase.auth.updateUser({
         data: {
           card_collection: newCollection,
-          card_upgrades: updatedUpgrades,
-          coins: finalCoins,
-          gacha_pity: nextPity,
+          card_upgrades: result.updatedUpgrades,
+          coins: netCoins,
+          gacha_pity: result.nextPity,
         },
       });
 
-      // Animasyon için kartları göster
+      setProfile((prev) => ({ ...prev, coins: netCoins, xp: newXp }));
+      setCardUpgrades(result.updatedUpgrades);
+      setMyCards(newCollection);
+      setPityCount(result.nextPity);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: netCoins } }));
+      }
+
+      // Animasyon için kartları ve paketi göster
       setTimeout(() => {
-        setOpenedPackCards(processedCards);
-        setOpening(false);
+        setPackResult({ pack, ...result });
+        setOpeningPackId(null);
         cardAudio.playPackOpening();
-      }, 1200);
+      }, 1000);
     } catch (e) {
       setMsg({ text: `Paket açılırken hata oluştu: ${e.message}`, type: 'error' });
-      setOpening(false);
+      setOpeningPackId(null);
     }
   }
 
@@ -716,8 +649,8 @@ export default function KartOyunuHub() {
             </p>
           </div>
 
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
-            {(leaguesConfig.packs || []).map((pack) => (
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '18px' }}>
+            {GACHA_PACKS.map((pack) => (
               <div
                 key={pack.id}
                 className="card"
@@ -725,32 +658,45 @@ export default function KartOyunuHub() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '20px',
+                  padding: '22px',
                   textAlign: 'center',
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.4))',
-                  border: '1px solid var(--border)',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.5))',
+                  border: openingPackId === pack.id ? '2px solid var(--accent)' : '1px solid var(--border)',
                   borderRadius: '16px',
+                  boxShadow: openingPackId === pack.id ? '0 0 25px rgba(0, 240, 255, 0.4)' : 'none',
+                  transition: 'all .3s ease',
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '3rem', marginBottom: '10px' }}>{pack.icon}</div>
-                  <h3 style={{ fontSize: '1.1rem', margin: '0 0 6px' }}>{pack.name}</h3>
-                  <p style={{ fontSize: '.8rem', color: 'var(--text-dim)', minHeight: '36px', lineHeight: 1.4 }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                    <span className="tag" style={{ background: pack.badgeColor, color: '#000', fontWeight: 900, fontSize: '.75rem' }}>
+                      {pack.badge}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '3.2rem', marginBottom: '10px' }}>{pack.icon}</div>
+                  <h3 style={{ fontSize: '1.15rem', margin: '0 0 6px', color: '#fff' }}>{pack.name}</h3>
+                  <p style={{ fontSize: '.82rem', color: 'var(--text-dim)', minHeight: '44px', lineHeight: 1.4 }}>
                     {pack.desc}
                   </p>
-                  <div style={{ margin: '14px 0', fontSize: '1.2rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    <CoinIcon size={18} /> {pack.price.toLocaleString('tr-TR')}
+                  <div style={{ fontSize: '.75rem', color: '#86efac', fontWeight: 700, margin: '6px 0 2px' }}>
+                    🎁 +{pack.cashback.toLocaleString('tr-TR')} TP Nakit İade
+                  </div>
+                  <div style={{ fontSize: '.7rem', color: 'var(--text-dim)', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '6px', margin: '8px 0' }}>
+                    {pack.ratesText}
+                  </div>
+                  <div style={{ margin: '14px 0', fontSize: '1.25rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <CoinIcon size={20} /> {pack.price.toLocaleString('tr-TR')}
                   </div>
                 </div>
 
                 <button
                   type="button"
                   className="btn"
-                  style={{ width: '100%', fontWeight: 800 }}
+                  style={{ width: '100%', fontWeight: 800, padding: '10px' }}
                   onClick={() => handleOpenPack(pack)}
-                  disabled={opening}
+                  disabled={openingPackId !== null}
                 >
-                  {opening ? 'Açılıyor...' : 'Paketi Aç'}
+                  {openingPackId === pack.id ? 'Paket Yırtılıyor...' : `${pack.cardCount} Kart Aç`}
                 </button>
               </div>
             ))}
@@ -952,16 +898,16 @@ export default function KartOyunuHub() {
       )}
 
       {/* PAKET AÇILIM MODALI (FUT Pack Opening Reveal) */}
-      {openedPackCards && (
+      {packResult && (
         <div
           className="spotlight-overlay"
           style={{ zIndex: 100, alignItems: 'center' }}
-          onClick={() => setOpenedPackCards(null)}
+          onClick={() => setPackResult(null)}
         >
           <div
             className="card"
             style={{
-              maxWidth: '680px',
+              maxWidth: '820px',
               width: '100%',
               padding: '30px',
               textAlign: 'center',
@@ -973,29 +919,40 @@ export default function KartOyunuHub() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {openedPackCards.some((c) => ['0', '1-A', '1-B', '1-C', '2-A', '2-B', '2-C', '3-A', '3-B', '3-C'].includes(c.tier)) ? (
-              <div style={{ marginBottom: '10px' }}>
-                <span className="synergy-badge" style={{ fontSize: '.85rem', padding: '6px 14px' }}>
-                  🔥 EFSANEVİ KOZMİK WALKOUT! 🔥
+            {packResult.drawnCards.some((c) => {
+              const r = getCardRarity(c.tier).code;
+              return r === 'UR' || r === 'SSR';
+            }) ? (
+              <div style={{ marginBottom: '12px' }}>
+                <span className="synergy-badge" style={{ fontSize: '.95rem', padding: '8px 20px', background: 'linear-gradient(135deg, #ff007f, #f59e0b)' }}>
+                  🔥 EFSANEVİ KOZMİK WALKOUT! (SSR / UR DÜŞTÜ!) 🔥
                 </span>
               </div>
             ) : (
               <div style={{ fontSize: '3rem', marginBottom: '6px' }}>✨</div>
             )}
-            <h2 style={{ fontSize: '1.8rem', color: 'var(--accent)', margin: '0 0 6px' }}>PAKETTEN ÇIKAN KARTLAR!</h2>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>Tebrikler, 3 yeni karakter kartı koleksiyonuna eklendi:</p>
+            <h2 style={{ fontSize: '1.8rem', color: 'var(--accent)', margin: '0 0 6px' }}>
+              {packResult.pack.name} Açıldı!
+            </h2>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '20px', fontSize: '.88rem' }}>
+              <span style={{ color: '#86efac', fontWeight: 800 }}>🪙 +{packResult.cashback.toLocaleString('tr-TR')} TP Nakit İade</span>
+              {packResult.refundTotal > 0 && (
+                <span style={{ color: '#fef08a', fontWeight: 800 }}>✨ +{packResult.refundTotal.toLocaleString('tr-TR')} TP Kopya Kart İadesi</span>
+              )}
+              <span style={{ color: '#a5b4fc', fontWeight: 800 }}>⚡ +{packResult.xpReward} XP</span>
+            </div>
 
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-              {openedPackCards.map((c) => {
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+              {packResult.drawnCards.map((c, idx) => {
                 const rarity = getCardRarity(c.tier);
                 const isHighTier = rarity.isHolo;
                 const starInfo = getStarInfo(c.stars || 1, c.awakened || 0);
                 return (
                   <div
-                    key={c.id}
+                    key={`${c.id}-${idx}`}
                     className={`card ${isHighTier ? 'holo-foil-card' : ''}`}
                     style={{
-                      padding: '14px',
+                      padding: '12px',
                       textAlign: 'center',
                       background: 'var(--bg-2)',
                       border: isHighTier ? '2px solid var(--accent)' : '1px solid var(--border)',
@@ -1010,7 +967,7 @@ export default function KartOyunuHub() {
                       {c.isDuplicate ? (
                         c.refundGiven ? (
                           <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
-                            🪙 +500 İade (MAX)
+                            🪙 +1.000 İade (MAX)
                           </span>
                         ) : (
                           <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#fef08a', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
@@ -1024,10 +981,10 @@ export default function KartOyunuHub() {
                       )}
                     </div>
 
-                    <div style={{ width: '100%', height: '150px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', background: '#000' }}>
+                    <div style={{ width: '100%', height: '140px', borderRadius: '10px', overflow: 'hidden', marginBottom: '8px', background: '#000' }}>
                       <img src={c.image_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
-                    <strong style={{ fontSize: '.95rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <strong style={{ fontSize: '.9rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {c.name}
                     </strong>
                     <div style={{ margin: '4px 0' }}><TierBadge tier={c.tier} /></div>
@@ -1045,7 +1002,7 @@ export default function KartOyunuHub() {
             <button
               type="button"
               className="btn"
-              onClick={() => setOpenedPackCards(null)}
+              onClick={() => setPackResult(null)}
               style={{ padding: '10px 30px', fontWeight: 800 }}
             >
               ✓ Koleksiyona Ekle & Kapat

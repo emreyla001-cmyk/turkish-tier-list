@@ -265,8 +265,8 @@ export default function SavasArenasi() {
     const delta = calculateTrophyChange(playerTrophies, opponent?.trophies || 100, isPlayerWinner);
     const newTrophies = Math.max(0, playerTrophies + delta);
 
-    const coinReward = isPlayerWinner ? 250 : 75;
-    const xpReward = isPlayerWinner ? 100 : 35;
+    const coinReward = isPlayerWinner ? 750 : 200;
+    const xpReward = isPlayerWinner ? 300 : 100;
 
     const summary = {
       winner: isPlayerWinner ? 'player' : (playerScore === opponentScore ? 'draw' : 'opponent'),
