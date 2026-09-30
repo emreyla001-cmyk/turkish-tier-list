@@ -1,4 +1,5 @@
 import { tierRank } from '../components/tiers';
+import { getStarInfo } from './cardRarity';
 
 export function calculateTrophyChange(playerTrophies = 0, opponentTrophies = 0, isWinner = true) {
   const trophyDiff = opponentTrophies - playerTrophies;
@@ -34,7 +35,7 @@ export function calculateSeriesSynergy(card, deck = []) {
   return { hasSynergy: false, multiplier: 1.0 };
 }
 
-export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opponentDeck = []) {
+export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opponentDeck = [], playerUpgrades = {}, opponentUpgrades = {}) {
   if (!playerCard || !opponentCard) {
     return { winner: 'player', narrative: 'Rakip kart çekemedi!', statHighlight: 'Hükmen', isSuperImpact: false };
   }
@@ -44,6 +45,9 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
 
   const pSynergy = calculateSeriesSynergy(playerCard, playerDeck);
   const oSynergy = calculateSeriesSynergy(opponentCard, opponentDeck);
+
+  const pStarInfo = getStarInfo(playerUpgrades?.[playerCard.id]?.stars || 1);
+  const oStarInfo = getStarInfo(opponentUpgrades?.[opponentCard.id]?.stars || 1);
 
   // 1. Tier Karşılaştırması (En belirleyici faktör)
   if (Math.abs(r1 - r2) >= 2) {
@@ -56,6 +60,8 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
         isSuperImpact,
         pSynergy,
         oSynergy,
+        pStarInfo,
+        oStarInfo,
       };
     } else {
       return {
@@ -65,11 +71,13 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
         isSuperImpact,
         pSynergy,
         oSynergy,
+        pStarInfo,
+        oStarInfo,
       };
     }
   }
 
-  // 2. Tier'lar çok yakınsa Detaylı Stat Kıyaslaması (Güç, Hız, Zeka, Dayanıklılık) + Sinerji
+  // 2. Tier'lar çok yakınsa Detaylı Stat Kıyaslaması (Güç, Hız, Zeka, Dayanıklılık) + Sinerji + Yıldız Takviyesi
   const pStats = {
     power: Number(playerCard.power_score) || 50,
     speed: Number(playerCard.speed_score) || 50,
@@ -84,8 +92,8 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
     durability: Number(opponentCard.durability_score) || 50,
   };
 
-  let pTotal = (pStats.power * 1.2 + pStats.speed * 1.1 + pStats.intelligence * 1.0 + pStats.durability * 0.9 + (r1 * 15)) * pSynergy.multiplier;
-  let oTotal = (oStats.power * 1.2 + oStats.speed * 1.1 + oStats.intelligence * 1.0 + oStats.durability * 0.9 + (r2 * 15)) * oSynergy.multiplier;
+  let pTotal = (pStats.power * 1.2 + pStats.speed * 1.1 + pStats.intelligence * 1.0 + pStats.durability * 0.9 + (r1 * 15)) * pSynergy.multiplier * pStarInfo.multiplier;
+  let oTotal = (oStats.power * 1.2 + oStats.speed * 1.1 + oStats.intelligence * 1.0 + oStats.durability * 0.9 + (r2 * 15)) * oSynergy.multiplier * oStarInfo.multiplier;
 
   const isPlayerWinner = pTotal >= oTotal;
   const isSuperImpact = Math.abs(pTotal - oTotal) > 60;
@@ -94,6 +102,7 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
   const winStats = isPlayerWinner ? pStats : oStats;
   const loseStats = isPlayerWinner ? oStats : pStats;
   const winSynergy = isPlayerWinner ? pSynergy : oSynergy;
+  const winStarInfo = isPlayerWinner ? pStarInfo : oStarInfo;
 
   // Hangi stat en çok fark yarattı?
   let dominantStat = 'Güç';
@@ -116,6 +125,12 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
     `Hakem Analizi: ${winnerCard.name}, kritik anlarda sergilediği ${dominantStat.toLowerCase()} ile ${loserCard.name}'e üstünlük kurdu.`,
     `${winnerCard.name}, ${loserCard.name}'in hamlelerini önceden okuyarak ${dominantStat.toLowerCase()} farkıyla raundu hanesine yazdırdı!`,
   ];
+
+  if (winStarInfo.stars > 1) {
+    narratives.push(
+      `${winnerCard.name}, ${winStarInfo.stars} Yıldızlı seviye takviyesi (+%${winStarInfo.bonusPercent}) sayesinde kritik anda ${loserCard.name}'i devirdi!`
+    );
+  }
 
   if (winSynergy.hasSynergy) {
     narratives.push(

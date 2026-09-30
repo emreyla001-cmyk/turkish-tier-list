@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import TierBadge from '../components/TierBadge';
 import { getLeagueForTrophies } from '../lib/cardGameEngine';
 import { cardAudio } from '../lib/cardAudio';
+import { getCardRarity, getStarInfo, MAX_STARS } from '../lib/cardRarity';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -14,6 +15,7 @@ export default function KartOyunuHub() {
   const [activeTab, setActiveTab] = useState('arena'); // 'arena' | 'packs' | 'deck' | 'leagues'
   const [myCards, setMyCards] = useState([]);
   const [myDeck, setMyDeck] = useState([]); // 5 kart id'si
+  const [cardUpgrades, setCardUpgrades] = useState({}); // { [id]: { stars: 1..5, shards: number } }
   const [trophies, setTrophies] = useState(100);
   const [openedPackCards, setOpenedPackCards] = useState(null);
   const [opening, setOpening] = useState(false);
@@ -45,10 +47,15 @@ export default function KartOyunuHub() {
 
         setProfile(p);
 
-        // Kullanıcının kartlarını ve kupasını metadata / localStorage'dan oku
+        // Kullanıcının kartlarını, yükseltmelerini ve kupasını metadata'dan oku
         const metaCards = Array.isArray(u.user_metadata?.card_collection) ? u.user_metadata.card_collection : [];
         const metaDeck = Array.isArray(u.user_metadata?.card_deck) ? u.user_metadata.card_deck : [];
+        const metaUpgrades = (u.user_metadata?.card_upgrades && typeof u.user_metadata.card_upgrades === 'object')
+          ? u.user_metadata.card_upgrades
+          : {};
         const userTrophies = Number(u.user_metadata?.trophies) || 150;
+
+        setCardUpgrades(metaUpgrades);
 
         // Başlangıç hediyesi: Eğer kartı yoksa en az 5 başlangıç kartı hediye et
         if (metaCards.length === 0 && allChars.length >= 5) {
@@ -76,7 +83,7 @@ export default function KartOyunuHub() {
 
   useEffect(() => { load(); }, []);
 
-  // Paket Açılımı Fonksiyonu
+  // Paket Açılımı Fonksiyonu (Kopya Kart ve Parça / Shard Sistemi)
   async function handleOpenPack(pack) {
     if (!user || !profile) return;
     setMsg(null);
@@ -101,12 +108,6 @@ export default function KartOyunuHub() {
         throw new Error('Bakiye düşülemedi: ' + updateErr.message);
       }
 
-      // State ve global navbar güncelle
-      setProfile((prev) => ({ ...prev, coins: newCoins }));
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: newCoins } }));
-      }
-
       // 2. Filtreye göre karakterleri seç
       let pool = characters.filter((c) => pack.tierFilter.includes(c.tier));
       if (pool.length === 0) pool = characters;
@@ -118,19 +119,60 @@ export default function KartOyunuHub() {
         drawn.push(rand);
       }
 
-      // 3. Koleksiyona ekle
+      // 3. Kopya Kart ve Parça (Shard) Hesabı
+      const updatedUpgrades = { ...cardUpgrades };
+      let refundTotal = 0;
+
+      const processedCards = drawn.map((card) => {
+        const isDuplicate = myCards.includes(card.id);
+        const cur = updatedUpgrades[card.id] || { stars: 1, shards: 0 };
+        let stars = cur.stars || 1;
+        let shards = cur.shards || 0;
+
+        if (isDuplicate) {
+          if (stars >= MAX_STARS) {
+            refundTotal += 250; // Zaten 5 yıldızsa boşa gitmesin: 250 altın iade!
+          } else {
+            shards += 1;
+          }
+        }
+
+        updatedUpgrades[card.id] = { stars, shards };
+
+        return {
+          ...card,
+          isDuplicate,
+          stars,
+          shards,
+          refundGiven: isDuplicate && stars >= MAX_STARS,
+        };
+      });
+
+      const finalCoins = newCoins + refundTotal;
+      if (refundTotal > 0) {
+        await supabase.from('profiles').update({ coins: finalCoins }).eq('id', user.id);
+      }
+
+      setProfile((prev) => ({ ...prev, coins: finalCoins }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: finalCoins } }));
+      }
+
+      setCardUpgrades(updatedUpgrades);
       const newCollection = Array.from(new Set([...myCards, ...drawn.map((c) => c.id)]));
       setMyCards(newCollection);
+
       await supabase.auth.updateUser({
         data: {
           card_collection: newCollection,
-          coins: newCoins,
+          card_upgrades: updatedUpgrades,
+          coins: finalCoins,
         },
       });
 
       // Animasyon için kartları göster
       setTimeout(() => {
-        setOpenedPackCards(drawn);
+        setOpenedPackCards(processedCards);
         setOpening(false);
         cardAudio.playPackOpening();
       }, 1200);
@@ -138,6 +180,47 @@ export default function KartOyunuHub() {
       setMsg({ text: `Paket açılırken hata oluştu: ${e.message}`, type: 'error' });
       setOpening(false);
     }
+  }
+
+  // Yıldız Seviyesi Yükseltme Fonksiyonu
+  async function handleUpgradeCard(cardId) {
+    if (!user) return;
+    const current = cardUpgrades[cardId] || { stars: 1, shards: 0 };
+    const starInfo = getStarInfo(current.stars);
+
+    if (current.stars >= MAX_STARS) {
+      setMsg({ text: 'Bu karakter zaten maksimum 5 Yıldız seviyesindedir!', type: 'info' });
+      return;
+    }
+
+    if (current.shards < starInfo.nextCostShards) {
+      setMsg({
+        text: `Yetersiz karakter parçası! ${current.stars + 1}. Yıldız için ${starInfo.nextCostShards} parçaya ihtiyacın var. Mevcut parçan: ${current.shards}`,
+        type: 'error',
+      });
+      return;
+    }
+
+    const newStars = current.stars + 1;
+    const newShards = current.shards - starInfo.nextCostShards;
+    const updated = {
+      ...cardUpgrades,
+      [cardId]: { stars: newStars, shards: newShards },
+    };
+
+    setCardUpgrades(updated);
+    cardAudio.playVictoryFanfare();
+
+    const charObj = characters.find((c) => c.id === cardId);
+    const newBonus = getStarInfo(newStars).bonusPercent;
+    setMsg({
+      type: 'success',
+      text: `🎉 Tebrikler! ${charObj?.name || 'Karakter'} ${newStars}. Yıldız seviyesine yükseltildi! (Arenada +%${newBonus} Güç Takviyesi aktif)`,
+    });
+
+    await supabase.auth.updateUser({
+      data: { card_upgrades: updated },
+    });
   }
 
   // Deste Kartı Seçme (5'li deste)
@@ -354,18 +437,45 @@ export default function KartOyunuHub() {
                       <strong style={{ fontSize: '.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
                         {card.name}
                       </strong>
-                      <div style={{ margin: '4px 0' }}><TierBadge tier={card.tier} /></div>
-                      <div style={{ fontSize: '.76rem', color: 'var(--accent)', fontWeight: 800 }}>
-                        Güç: {card.power_score || 50}
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        style={{ width: '100%', padding: '4px', fontSize: '.72rem', marginTop: '6px', borderColor: '#e6455b', color: '#e6455b' }}
-                        onClick={() => toggleDeckCard(card.id)}
-                      >
-                        Çıkar
-                      </button>
+                      {(() => {
+                        const rarity = getCardRarity(card.tier);
+                        const upg = cardUpgrades[card.id] || { stars: 1, shards: 0 };
+                        const sInfo = getStarInfo(upg.stars);
+                        return (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '4px 0' }}>
+                              <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>
+                                {rarity.code}
+                              </span>
+                              <TierBadge tier={card.tier} />
+                            </div>
+                            <div style={{ fontSize: '.74rem', color: '#fef08a', margin: '2px 0' }}>
+                              {sInfo.starString} {sInfo.bonusPercent > 0 && `(+%${sInfo.bonusPercent})`}
+                            </div>
+                            <div style={{ fontSize: '.76rem', color: 'var(--accent)', fontWeight: 800 }}>
+                              Güç: {Math.round((card.power_score || 50) * sInfo.multiplier)}
+                            </div>
+                            {upg.shards >= sInfo.nextCostShards && upg.stars < MAX_STARS && (
+                              <button
+                                type="button"
+                                className="btn"
+                                style={{ width: '100%', padding: '4px', fontSize: '.72rem', marginTop: '4px', background: 'linear-gradient(135deg, #f59e0b, #eab308)', color: '#111', fontWeight: 900 }}
+                                onClick={() => handleUpgradeCard(card.id)}
+                              >
+                                ⭐ Yükselt ({upg.shards}/{sInfo.nextCostShards})
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="btn btn-ghost"
+                              style={{ width: '100%', padding: '4px', fontSize: '.72rem', marginTop: '6px', borderColor: '#e6455b', color: '#e6455b' }}
+                              onClick={() => toggleDeckCard(card.id)}
+                            >
+                              Çıkar
+                            </button>
+                          </>
+                        );
+                      })()}
                     </>
                   ) : (
                     <div style={{ color: 'var(--text-dim)', fontSize: '.84rem' }}>
@@ -522,10 +632,45 @@ export default function KartOyunuHub() {
                   <strong style={{ fontSize: '.88rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.name}
                   </strong>
-                  <div style={{ margin: '4px 0' }}><TierBadge tier={c.tier} /></div>
-                  <div style={{ fontSize: '.76rem', color: 'var(--accent)', fontWeight: 800 }}>
-                    Güç: {c.power_score || 50} · Hız: {c.speed_score || 50}
-                  </div>
+                  {(() => {
+                    const rarity = getCardRarity(c.tier);
+                    const upg = cardUpgrades[c.id] || { stars: 1, shards: 0 };
+                    const sInfo = getStarInfo(upg.stars);
+                    const canUpgrade = upg.shards >= sInfo.nextCostShards && upg.stars < MAX_STARS;
+                    return (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '4px 0' }}>
+                          <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>
+                            {rarity.code}
+                          </span>
+                          <TierBadge tier={c.tier} />
+                        </div>
+                        <div style={{ fontSize: '.72rem', color: '#fef08a', margin: '2px 0' }}>
+                          {sInfo.starString} {sInfo.bonusPercent > 0 && `(+%${sInfo.bonusPercent})`}
+                        </div>
+                        <div style={{ fontSize: '.76rem', color: 'var(--accent)', fontWeight: 800 }}>
+                          Güç: {Math.round((c.power_score || 50) * sInfo.multiplier)}
+                        </div>
+                        {canUpgrade ? (
+                          <button
+                            type="button"
+                            className="btn"
+                            style={{ width: '100%', padding: '4px', fontSize: '.72rem', marginTop: '6px', background: 'linear-gradient(135deg, #f59e0b, #eab308)', color: '#111', fontWeight: 900 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpgradeCard(c.id);
+                            }}
+                          >
+                            ⭐ Yükselt ({upg.shards}/{sInfo.nextCostShards})
+                          </button>
+                        ) : (
+                          <div style={{ fontSize: '.68rem', color: 'var(--text-dim)', marginTop: '4px' }}>
+                            {upg.stars >= MAX_STARS ? 'Maks Seviye' : `Parça: ${upg.shards}/${sInfo.nextCostShards}`}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -607,7 +752,9 @@ export default function KartOyunuHub() {
 
             <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
               {openedPackCards.map((c) => {
-                const isHighTier = ['0', '1-A', '1-B', '1-C', '2-A', '2-B', '2-C', '3-A', '3-B', '3-C'].includes(c.tier);
+                const rarity = getCardRarity(c.tier);
+                const isHighTier = rarity.isHolo;
+                const starInfo = getStarInfo(c.stars || 1);
                 return (
                   <div
                     key={c.id}
@@ -621,15 +768,39 @@ export default function KartOyunuHub() {
                       boxShadow: isHighTier ? '0 0 20px rgba(234, 179, 8, 0.4)' : 'none',
                     }}
                   >
-                    <div style={{ width: '100%', height: '160px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', background: '#000' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>
+                        {rarity.code}
+                      </span>
+                      {c.isDuplicate ? (
+                        c.refundGiven ? (
+                          <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            🪙 +250 İade
+                          </span>
+                        ) : (
+                          <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#fef08a', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            ✨ +1 Parça
+                          </span>
+                        )
+                      ) : (
+                        <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                          🎉 YENİ!
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ width: '100%', height: '150px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', background: '#000' }}>
                       <img src={c.image_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <strong style={{ fontSize: '.95rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {c.name}
                     </strong>
-                    <div style={{ margin: '6px 0' }}><TierBadge tier={c.tier} /></div>
+                    <div style={{ margin: '4px 0' }}><TierBadge tier={c.tier} /></div>
+                    <div style={{ fontSize: '.72rem', color: '#fef08a', marginBottom: '2px' }}>
+                      {starInfo.starString}
+                    </div>
                     <div style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 800 }}>
-                      Güç: {c.power_score || 50}
+                      Güç: {Math.round((c.power_score || 50) * starInfo.multiplier)}
                     </div>
                   </div>
                 );

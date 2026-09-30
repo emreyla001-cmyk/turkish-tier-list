@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import TierBadge from '../../components/TierBadge';
 import { calculateTrophyChange, getLeagueForTrophies, simulateCardClash, calculateSeriesSynergy } from '../../lib/cardGameEngine';
 import { cardAudio } from '../../lib/cardAudio';
+import { getCardRarity, getStarInfo } from '../../lib/cardRarity';
 
 const BOT_NAMES = [
   'Gölge Gladyatör',
@@ -31,6 +32,7 @@ export default function SavasArenasi() {
   const [playerTrophies, setPlayerTrophies] = useState(150);
   const [playerDeck, setPlayerDeck] = useState([]); // 5 kart
   const [playerRemainingHand, setPlayerRemainingHand] = useState([]); // Henüz sürülmemiş kartlar
+  const [playerUpgrades, setPlayerUpgrades] = useState({}); // { [id]: { stars: number } }
   const [activePlayerCard, setActivePlayerCard] = useState(null); // Sahadaki aktif kart
 
   // Rakip verileri
@@ -75,6 +77,11 @@ export default function SavasArenasi() {
       const allChars = chars || [];
       const userTrophies = Number(u.user_metadata?.trophies) || 150;
       setPlayerTrophies(userTrophies);
+
+      const metaUpgrades = (u.user_metadata?.card_upgrades && typeof u.user_metadata.card_upgrades === 'object')
+        ? u.user_metadata.card_upgrades
+        : {};
+      setPlayerUpgrades(metaUpgrades);
 
       // Oyuncunun 5 kartlık destesi
       let metaDeck = Array.isArray(u.user_metadata?.card_deck) ? u.user_metadata.card_deck : [];
@@ -154,7 +161,7 @@ export default function SavasArenasi() {
       setCardRevealed(true);
       cardAudio.playCardFlip();
 
-      const clash = simulateCardClash(activePlayerCard, activeOpponentCard, playerDeck, opponent?.deck || []);
+      const clash = simulateCardClash(activePlayerCard, activeOpponentCard, playerDeck, opponent?.deck || [], playerUpgrades, {});
       setCurrentClashResult(clash);
 
       // Tok ve tok sinematik ses + ekran sarsıntısı
@@ -291,8 +298,13 @@ export default function SavasArenasi() {
   const opponentLeague = getLeagueForTrophies(opponent?.trophies || 100, leaguesConfig.leagues);
 
   const playerSynergy = activePlayerCard ? calculateSeriesSynergy(activePlayerCard, playerDeck) : { hasSynergy: false };
-  const isPlayerHighTier = activePlayerCard && HIGH_TIERS.includes(activePlayerCard.tier);
-  const isOpponentHighTier = activeOpponentCard && HIGH_TIERS.includes(activeOpponentCard.tier);
+  const playerRarity = activePlayerCard ? getCardRarity(activePlayerCard.tier) : null;
+  const playerStarInfo = activePlayerCard ? getStarInfo(playerUpgrades[activePlayerCard.id]?.stars || 1) : null;
+
+  const oppRarity = activeOpponentCard ? getCardRarity(activeOpponentCard.tier) : null;
+
+  const isPlayerHighTier = activePlayerCard && (playerRarity?.isHolo || HIGH_TIERS.includes(activePlayerCard.tier));
+  const isOpponentHighTier = activeOpponentCard && (oppRarity?.isHolo || HIGH_TIERS.includes(activeOpponentCard.tier));
 
   return (
     <div className={`wrap ${isScreenShaking ? 'screen-shake' : ''}`} style={{ maxWidth: '960px', paddingBottom: '80px' }}>
@@ -451,7 +463,9 @@ export default function SavasArenasi() {
               >
                 {playerRemainingHand.map((c) => {
                   const syn = calculateSeriesSynergy(c, playerDeck);
-                  const isHolo = HIGH_TIERS.includes(c.tier);
+                  const cardRarity = getCardRarity(c.tier);
+                  const cStar = getStarInfo(playerUpgrades[c.id]?.stars || 1);
+                  const isHolo = cardRarity.isHolo || HIGH_TIERS.includes(c.tier);
                   return (
                     <div
                       key={c.id}
@@ -476,7 +490,12 @@ export default function SavasArenasi() {
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <TierBadge tier={c.tier} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ background: cardRarity.badgeBg, color: '#fff', fontSize: '.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>
+                            {cardRarity.code}
+                          </span>
+                          <TierBadge tier={c.tier} />
+                        </div>
                         {syn.hasSynergy && (
                           <span className="synergy-badge" title="Aynı evrenden birden fazla kart desteğinde bulunduğu için +%15 Güç Bonusu!">
                             🔥 +%15
@@ -491,8 +510,17 @@ export default function SavasArenasi() {
                       <strong style={{ fontSize: '.85rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {c.name}
                       </strong>
-                      <div style={{ fontSize: '.74rem', color: 'var(--text-dim)', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '.74rem', color: 'var(--text-dim)', marginBottom: '4px' }}>
                         {c.series || 'Evren'}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '.72rem', marginBottom: '8px' }}>
+                        <span style={{ color: '#fef08a' }}>
+                          {cStar.starString} {cStar.bonusPercent > 0 && `(+%${cStar.bonusPercent})`}
+                        </span>
+                        <span style={{ color: 'var(--accent)', fontWeight: 800 }}>
+                          ⚡ {Math.round((c.power_score || 50) * cStar.multiplier)}
+                        </span>
                       </div>
 
                       <button
@@ -533,8 +561,23 @@ export default function SavasArenasi() {
                   position: 'relative',
                 }}
               >
-                <div style={{ position: 'absolute', top: '12px', left: '16px' }}>
+                <div style={{ position: 'absolute', top: '12px', left: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <TierBadge tier={activePlayerCard.tier} large />
+                  {playerRarity && (
+                    <span
+                      style={{
+                        background: playerRarity.badgeBg,
+                        color: '#fff',
+                        fontSize: '.75rem',
+                        fontWeight: 900,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        boxShadow: playerRarity.glow,
+                      }}
+                    >
+                      {playerRarity.code}
+                    </span>
+                  )}
                 </div>
                 <div style={{ position: 'absolute', top: '14px', right: '16px' }}>
                   {playerSynergy.hasSynergy ? (
@@ -560,15 +603,21 @@ export default function SavasArenasi() {
                 </div>
 
                 <h2 style={{ fontSize: '1.3rem', margin: '4px 0 2px' }}>{activePlayerCard.name}</h2>
-                <div style={{ fontSize: '.85rem', color: 'var(--text-dim)', marginBottom: '14px' }}>
+                <div style={{ fontSize: '.85rem', color: 'var(--text-dim)', marginBottom: '4px' }}>
                   {activePlayerCard.series || 'Evren'}
                 </div>
 
+                {playerStarInfo && (
+                  <div style={{ fontSize: '.82rem', color: '#fef08a', fontWeight: 800, marginBottom: '10px' }}>
+                    {playerStarInfo.starString} {playerStarInfo.bonusPercent > 0 && `(+%${playerStarInfo.bonusPercent} Seviye Bonusu)`}
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left', fontSize: '.8rem' }}>
-                  <StatRow label="Güç" val={activePlayerCard.power_score || 50} color="#ef4444" />
-                  <StatRow label="Hız" val={activePlayerCard.speed_score || 50} color="#3b82f6" />
-                  <StatRow label="Zeka" val={activePlayerCard.intelligence_score || 50} color="#eab308" />
-                  <StatRow label="Dayanıklılık" val={activePlayerCard.durability_score || 50} color="#22c55e" />
+                  <StatRow label="Güç" val={Math.round((activePlayerCard.power_score || 50) * (playerStarInfo?.multiplier || 1))} color="#ef4444" />
+                  <StatRow label="Hız" val={Math.round((activePlayerCard.speed_score || 50) * (playerStarInfo?.multiplier || 1))} color="#3b82f6" />
+                  <StatRow label="Zeka" val={Math.round((activePlayerCard.intelligence_score || 50) * (playerStarInfo?.multiplier || 1))} color="#eab308" />
+                  <StatRow label="Dayanıklılık" val={Math.round((activePlayerCard.durability_score || 50) * (playerStarInfo?.multiplier || 1))} color="#22c55e" />
                 </div>
               </div>
 
@@ -675,8 +724,29 @@ export default function SavasArenasi() {
                   position: 'relative',
                 }}
               >
-                <div style={{ position: 'absolute', top: '12px', left: '16px' }}>
-                  {cardRevealed ? <TierBadge tier={activeOpponentCard.tier} large /> : <span className="tier-badge">?</span>}
+                <div style={{ position: 'absolute', top: '12px', left: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {cardRevealed ? (
+                    <>
+                      <TierBadge tier={activeOpponentCard.tier} large />
+                      {oppRarity && (
+                        <span
+                          style={{
+                            background: oppRarity.badgeBg,
+                            color: '#fff',
+                            fontSize: '.75rem',
+                            fontWeight: 900,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            boxShadow: oppRarity.glow,
+                          }}
+                        >
+                          {oppRarity.code}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="tier-badge">?</span>
+                  )}
                 </div>
                 <div style={{ position: 'absolute', top: '14px', right: '16px', fontSize: '.8rem', color: 'var(--text-dim)', fontWeight: 800 }}>
                   RAKİP KARTI
