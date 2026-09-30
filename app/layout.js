@@ -1,5 +1,6 @@
 import './globals.css';
 import HeaderNav from './components/HeaderNav';
+import DarkModeToggle from './components/DarkModeToggle.jsx';
 import Logo from './components/Logo';
 import Heartbeat from './components/Heartbeat';
 import BanGuard from './components/BanGuard';
@@ -48,7 +49,9 @@ export default function RootLayout({ children }) {
               <SpotlightSearch />
             </div>
 
-            <HeaderNav />
+            <div className="flex items-center space-x-2">
+            <DarkModeToggle />
+          </div>
           </div>
         </header>
 

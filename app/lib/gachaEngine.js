@@ -18,7 +18,7 @@ export const GACHA_PACKS = [
     badgeColor: '#cd7f32',
     desc: '3 Karakter Kartı. Sokak ve çaylak seviyesindeki kahramanlar. (+150 TP İade)',
     ratesText: 'Kart başına — R: %74,95 · SR: %22 · SSR: %3 · UR: %0,05',
-    rates: { R: 0.7495, SR: 0.22, SSR: 0.03, UR: 0.0005 },
+    rates: { R: 0.562125, SR: 0.165, SSR: 0.0225, UR: 0.000375 },
     guaranteedMinRarity: null,
   },
   {
@@ -33,7 +33,7 @@ export const GACHA_PACKS = [
     badgeColor: '#94a3b8',
     desc: '4 Karakter Kartı. En az 1x SR (Elite) kart garantilidir. SSR şansa bağlıdır. (+400 TP İade)',
     ratesText: 'Temel oran — R: %64,85 · SR: %31 · SSR: %4 · UR: %0,15',
-    rates: { R: 0.6485, SR: 0.31, SSR: 0.04, UR: 0.0015 },
+    rates: { R: 0.486375, SR: 0.2325, SSR: 0.03, UR: 0.001125 },
     guaranteedMinRarity: 'SR',
     guaranteedCount: 1,
   },
@@ -85,6 +85,22 @@ export const GACHA_PACKS = [
     guaranteedMinRarity: 'SR',
     guaranteedCount: 2,
   },
+    {
+      id: 'pack_platinum',
+      name: 'Platin Paket (Altın Varlıklar)',
+      price: 15000,
+      icon: '🏆',
+      cardCount: 6,
+      cashback: 3000,
+      xpReward: 1800,
+      badge: '🏆 1x SR Garanti (Yüksek Şans)',
+      badgeColor: '#ffd700',
+      desc: '6 Karakter Kartı. En az 1x SR (Elite) kart garantilidir. (+3.000 TP İade)',
+      ratesText: 'Platin oran — R: %40,5 · SR: %28,5 · SSR: %5,6 · UR: %0,225',
+      rates: { R: 0.405, SR: 0.285, SSR: 0.0556, UR: 0.00225 },
+      guaranteedMinRarity: 'SR',
+      guaranteedCount: 1,
+    },
 ];
 
 // Paket içindeki her kartın bağımsız SSR oranından, pity hariç paket şansını hesaplar.
