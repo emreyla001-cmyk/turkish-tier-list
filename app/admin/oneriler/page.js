@@ -39,7 +39,28 @@ function Submissions() {
     });
     if (error) { setMsg('Eklenemedi: ' + error.message); return; }
     await supabase.from('character_submissions').update({ status: 'approved' }).eq('id', item.id);
-    setMsg(`"${item.proposed_name}" taslak olarak eklendi. Karakterler bölümünden düzenleyip yayınlayabilirsin.`);
+
+    // Öneren kullanıcıya "🌟 Evren Katkıcısı" rozeti ve ödül tanımla
+    if (item.submitted_by) {
+      try {
+        await fetch('/api/badges', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: item.submitted_by, badgeId: 'katkici' }),
+        });
+        const { data: prof } = await supabase.from('profiles').select('coins, xp').eq('id', item.submitted_by).maybeSingle();
+        if (prof) {
+          await supabase.from('profiles').update({
+            coins: (prof.coins || 0) + 1000,
+            xp: (prof.xp || 0) + 500,
+          }).eq('id', item.submitted_by);
+        }
+      } catch (err) {
+        console.error('Katkıcı rozeti verilirken hata:', err);
+      }
+    }
+
+    setMsg(`"${item.proposed_name}" taslak olarak eklendi! Öneren kullanıcıya "🌟 Evren Katkıcısı" rozeti ve 1.000 Tier Parası tanımlandı.`);
     load();
   }
 

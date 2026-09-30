@@ -82,6 +82,7 @@ function isVipUser(p) {
 function ProfilContent() {
   const [user, setUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
+  const [userBadges, setUserBadges] = useState([]);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'cosmetics' | 'security'
   const [username, setUsername] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -96,6 +97,14 @@ function ProfilContent() {
       const { data: { user: u } } = await supabase.auth.getUser();
       setUser(u || null);
       if (!u) return;
+
+      // Rozetleri getir
+      fetch(`/api/badges?userId=${u.id}`)
+        .then((res) => res.json())
+        .then((d) => {
+          if (d?.badgeIds) setUserBadges(d.badgeIds);
+        })
+        .catch(() => {});
 
       const { data } = await supabase
         .from('profiles')
@@ -397,7 +406,7 @@ function ProfilContent() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <UserBadge role={profile?.role || 'user'} xp={currentXp} vipActive={vipActive} />
+                  <UserBadge role={profile?.role || 'user'} xp={currentXp} vipActive={vipActive} badges={userBadges} />
                 </div>
               </div>
             </div>
@@ -508,6 +517,104 @@ function ProfilContent() {
                   <span style={{ fontSize: '.78rem', color: 'var(--text-dim)' }}>Ücretsiz ödüller çevir</span>
                 </div>
               </a>
+            </div>
+          </div>
+
+          {/* Prestij Rozetleri Vitrini (Flex Alanı) */}
+          <div className="card" style={{ border: '1px solid rgba(245, 158, 11, 0.3)', background: 'linear-gradient(135deg, rgba(24, 24, 27, 0.8), rgba(9, 9, 11, 0.9))' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#fef08a' }}>
+                <span>🏆</span> Prestij Rozetleri Vitrini
+              </h3>
+              <span className="tag" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', fontWeight: 800 }}>
+                {userBadges.length} Kazanılan Rozet
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-dim)', fontSize: '.86rem', margin: '0 0 16px' }}>
+              Topluluğa ve Türk Kurgu Evrenine sağladığın katkılar, kültürel başarımlar ve yarışma nişanları burada sergilenir:
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+              {/* 1. Katkıcı Rozeti */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: userBadges.includes('katkici') ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))' : 'var(--bg-2)',
+                  border: userBadges.includes('katkici') ? '1px solid #f59e0b' : '1px solid var(--border)',
+                  opacity: userBadges.includes('katkici') ? 1 : 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                }}
+              >
+                <span style={{ fontSize: '2.4rem' }}>🌟</span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <strong style={{ fontSize: '.92rem', color: userBadges.includes('katkici') ? '#f59e0b' : 'var(--text-dim)' }}>
+                      Evren Katkıcısı
+                    </strong>
+                    {userBadges.includes('katkici') && <span className="tag" style={{ background: '#f59e0b', color: '#000', fontSize: '.7rem', fontWeight: 800 }}>KAZANILDI</span>}
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '.78rem', color: 'var(--text-dim)', lineHeight: 1.35 }}>
+                    Karakter önerisi editörlerce onaylanan ve evrene yeni figür kazandıran usta yazar.
+                  </p>
+                </div>
+              </div>
+
+              {/* 2. Kaos Elçisi */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: userBadges.includes('kaos_elcisi') ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.05))' : 'var(--bg-2)',
+                  border: userBadges.includes('kaos_elcisi') ? '1px solid #ef4444' : '1px solid var(--border)',
+                  opacity: userBadges.includes('kaos_elcisi') ? 1 : 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                }}
+              >
+                <span style={{ fontSize: '2.4rem' }}>🔥</span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <strong style={{ fontSize: '.92rem', color: userBadges.includes('kaos_elcisi') ? '#ef4444' : 'var(--text-dim)' }}>
+                      Kaos Elçisi
+                    </strong>
+                    {userBadges.includes('kaos_elcisi') && <span className="tag" style={{ background: '#ef4444', color: '#fff', fontSize: '.7rem', fontWeight: 800 }}>KAZANILDI</span>}
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '.78rem', color: 'var(--text-dim)', lineHeight: 1.35 }}>
+                    Kaos Duvarında Haftanın Mitik Deliliğine seçilerek en yüksek oyu toplayan viral üretici.
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. Kültür & Onur Muhafızı (5816 Kanunu Uyumlu, Satılamaz/Gacha Dışı) */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: userBadges.includes('onur_muhafizi') ? 'linear-gradient(135deg, rgba(225, 29, 72, 0.15), rgba(159, 18, 57, 0.05))' : 'var(--bg-2)',
+                  border: userBadges.includes('onur_muhafizi') ? '1px solid #e11d48' : '1px solid var(--border)',
+                  opacity: userBadges.includes('onur_muhafizi') ? 1 : 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                }}
+              >
+                <span style={{ fontSize: '2.4rem' }}>🇹🇷</span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <strong style={{ fontSize: '.92rem', color: userBadges.includes('onur_muhafizi') ? '#e11d48' : 'var(--text-dim)' }}>
+                      Kültür & Onur Muhafızı
+                    </strong>
+                    {userBadges.includes('onur_muhafizi') && <span className="tag" style={{ background: '#e11d48', color: '#fff', fontSize: '.7rem', fontWeight: 800 }}>KAZANILDI</span>}
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '.78rem', color: 'var(--text-dim)', lineHeight: 1.35 }}>
+                    Milli miras ve mitolojik figürleri en yüksek başarımla savunan onur nişanı (Devredilemez / Satılamaz).
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 

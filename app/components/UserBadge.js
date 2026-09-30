@@ -20,13 +20,43 @@ export function xpForLevel(level) {
   return (safeLvl - 1) * (safeLvl - 1) * 100;
 }
 
-export default function UserBadge({ role = 'user', xp = 0, vipActive = false }) {
+export default function UserBadge({ role = 'user', xp = 0, vipActive = false, badges = [] }) {
   const safeRole = (role && ROLES[role]) ? role : 'user';
   const [icon, label] = ROLES[safeRole] || ['👤', 'Kullanıcı'];
+  const hasKatkici = Array.isArray(badges) && badges.includes('katkici');
+  const hasKaos = Array.isArray(badges) && badges.includes('kaos_elcisi');
   return (
     <span className="user-badges">
       <span className={`role-badge role-${safeRole}`}>{icon} {label}</span>
       {vipActive && safeRole !== 'vip' && safeRole !== 'admin' && <span className="role-badge role-vip">💎 VIP</span>}
+      {hasKatkici && (
+        <span
+          className="role-badge"
+          title="Evren Katkıcısı: Onaylı Karakter Öneren Yazar"
+          style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))',
+            color: '#f59e0b',
+            border: '1px solid #f59e0b',
+            fontWeight: 700,
+          }}
+        >
+          🌟 Katkıcı
+        </span>
+      )}
+      {hasKaos && (
+        <span
+          className="role-badge"
+          title="Kaos Elçisi: Haftanın Mitik Deliliği Paylaşımı Sahibi"
+          style={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.15))',
+            color: '#ef4444',
+            border: '1px solid #ef4444',
+            fontWeight: 700,
+          }}
+        >
+          🔥 Kaos Elçisi
+        </span>
+      )}
       <span className="level-badge">Sv. {levelFromXp(xp)}</span>
     </span>
   );

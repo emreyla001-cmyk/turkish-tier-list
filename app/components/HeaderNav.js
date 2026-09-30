@@ -136,9 +136,23 @@ export default function HeaderNav() {
         )}
       </div>
 
-      {/* 2. SOHBET ODASI */}
+      {/* 2. SOHBET ODASI & KAOS DUVARI */}
       <a href="/sohbet" className="nav-item-link" onClick={closeDropdown}>
         💬 Sohbet
+      </a>
+      <a
+        href="/kaos"
+        className="nav-item-link"
+        onClick={closeDropdown}
+        style={{
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.15))',
+          color: '#f59e0b',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: '8px',
+          fontWeight: 700,
+        }}
+      >
+        🔥 Kaos Duvarı
       </a>
 
       {/* 3. GRUP: ETKİNLİKLER & MAĞAZA SEKMESİ */}
