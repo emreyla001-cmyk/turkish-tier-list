@@ -5,59 +5,7 @@ import path from 'path';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CLANS_FILE = path.join(DATA_DIR, 'clans.json');
 
-const INITIAL_CLANS = [
-  {
-    id: 'clan-gs',
-    name: 'Galatasaray Tayfa',
-    tag: 'GS',
-    emblem: '🦁',
-    description: 'Zirve bizim tek yuvamızdır! Sarı-kırmızı güç.',
-    leader_id: 'system-leader-1',
-    leader_name: 'AslanPençesi',
-    points: 18900,
-    level: 5,
-    members: [
-      { id: 'system-leader-1', username: 'AslanPençesi', role: 'leader', contributed_cp: 5400 },
-      { id: 'member-1', username: 'MetinOktayRuhu', role: 'officer', contributed_cp: 4200 },
-      { id: 'member-2', username: 'CimBom1905', role: 'member', contributed_cp: 3100 },
-      { id: 'member-3', username: 'KralBurak', role: 'member', contributed_cp: 2800 },
-    ],
-    created_at: new Date(Date.now() - 3600000 * 24 * 14).toISOString(),
-  },
-  {
-    id: 'clan-kurt',
-    name: 'Bozkır Kurtları',
-    tag: 'KURT',
-    emblem: '🐺',
-    description: 'Kurt puslu havayı sever, Türk kurgu evreninin efsanevi savaşçıları.',
-    leader_id: 'system-leader-2',
-    leader_name: 'KaosLideri',
-    points: 15400,
-    level: 4,
-    members: [
-      { id: 'system-leader-2', username: 'KaosLideri', role: 'leader', contributed_cp: 6100 },
-      { id: 'member-4', username: 'TarkanHayranı', role: 'officer', contributed_cp: 3900 },
-      { id: 'member-5', username: 'BozkurtAlp', role: 'member', contributed_cp: 2700 },
-    ],
-    created_at: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
-  },
-  {
-    id: 'clan-tier',
-    name: 'Tier Avcıları',
-    tag: 'TIER',
-    emblem: '⚔️',
-    description: 'Hatalı scalingleri yıkan, her karakteri hak ettiği tier seviyesine oturtan analistler.',
-    leader_id: 'system-leader-3',
-    leader_name: 'TierMühendisi',
-    points: 11800,
-    level: 3,
-    members: [
-      { id: 'system-leader-3', username: 'TierMühendisi', role: 'leader', contributed_cp: 4800 },
-      { id: 'member-6', username: 'AnalizciKedi', role: 'officer', contributed_cp: 3600 },
-    ],
-    created_at: new Date(Date.now() - 3600000 * 24 * 7).toISOString(),
-  },
-];
+const INITIAL_CLANS = [];
 
 function ensureClansFile() {
   try {
