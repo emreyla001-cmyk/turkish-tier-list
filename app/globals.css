@@ -140,6 +140,155 @@ a { color: inherit; text-decoration: none; }
 .nav-links a:hover { color: var(--text); background: var(--card); }
 .nav-vs-link { color: var(--accent) !important; font-weight: 700 !important; }
 
+/* Modern Gruplandırılmış Navigasyon */
+.modern-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-dropdown-wrap {
+  position: relative;
+}
+.nav-dropdown-trigger {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: .86rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .15s ease;
+}
+.nav-dropdown-trigger:hover,
+.nav-dropdown-trigger.active {
+  background: var(--card);
+  border-color: var(--border-focus);
+}
+.nav-item-link {
+  color: var(--text) !important;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 9px;
+  text-decoration: none;
+}
+.nav-item-link:hover {
+  background: var(--card);
+}
+.dropdown-arrow {
+  font-size: .75rem;
+  color: var(--text-dim);
+  transition: transform .2s ease;
+}
+.nav-dropdown-trigger.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 250px;
+  background: #10141f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 240, 255, 0.08);
+  z-index: 50;
+  animation: navMenuIn .15s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+@keyframes navMenuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text) !important;
+  transition: background .15s;
+}
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.dropdown-icon {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+.dropdown-item strong {
+  display: block;
+  font-size: .86rem;
+  line-height: 1.2;
+}
+.dropdown-item p {
+  margin: 2px 0 0;
+  font-size: .74rem;
+  color: var(--text-dim);
+  line-height: 1.2;
+}
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}
+
+/* Kullanıcı Profil Butonu (Pill) */
+.user-nav-pill {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  padding: 4px 10px 4px 6px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-family: inherit;
+  transition: all .15s ease;
+}
+.user-nav-pill:hover {
+  border-color: var(--border-focus);
+  background: var(--card);
+}
+.user-nav-name {
+  font-size: .85rem;
+  font-weight: 700;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-nav-coins {
+  font-size: .76rem;
+  color: #fef08a;
+  background: rgba(254, 240, 138, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.nav-user-dropdown {
+  left: auto;
+  right: 0;
+  min-width: 220px;
+}
+.nav-user-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
 /* Spotlight Modal */
 .spotlight-overlay {
   position: fixed;
@@ -1513,6 +1662,21 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
   .profile-hero-cyber {
     padding: 20px;
   }
+}
+
+/* ========================================================
+   HAREKETLİ İSİM & ÇERÇEVE ANİMASYONLARI
+   ======================================================== */
+@keyframes nameGradientShift {
+  0% { background-position: 0% center; }
+  50% { background-position: 100% center; }
+  100% { background-position: 0% center; }
+}
+
+@keyframes framePulseFlow {
+  0% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(30deg); }
+  100% { filter: hue-rotate(0deg); }
 }
 
 
