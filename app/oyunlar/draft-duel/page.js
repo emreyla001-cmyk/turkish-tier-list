@@ -6,6 +6,7 @@ import TierBadge from '../../components/TierBadge';
 import { getCardRarity } from '../../lib/cardRarity';
 import { cardAudio } from '../../lib/cardAudio';
 import { getBotTierByTrophies, selectBotCard } from '../../lib/cardAIEngine';
+import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon } from '../../components/CyberIcons';
 
 export default function DraftDuelPage() {
   const [user, setUser] = useState(null);
@@ -229,17 +230,23 @@ export default function DraftDuelPage() {
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '28px' }}>
-              <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px' }}>
+              <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ display: 'block', fontSize: '.76rem', color: 'var(--text-dim)' }}>Zafer Ödülü</span>
-                <strong style={{ color: '#fef08a' }}>🪙 600 Tier Parası</strong>
+                <strong style={{ color: '#fef08a', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
+                  <CoinIcon size={16} /> 600 Tier Parası
+                </strong>
               </div>
-              <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px' }}>
+              <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ display: 'block', fontSize: '.76rem', color: 'var(--text-dim)' }}>Deneyim</span>
-                <strong style={{ color: '#a5b4fc' }}>⚡ 300 XP</strong>
+                <strong style={{ color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
+                  <EnergyIcon size={16} /> 300 XP
+                </strong>
               </div>
-              <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px' }}>
+              <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ display: 'block', fontSize: '.76rem', color: 'var(--text-dim)' }}>Klan Bonusu</span>
-                <strong style={{ color: '#86efac' }}>🛡️ +150 Klan Puanı</strong>
+                <strong style={{ color: '#86efac', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
+                  <ShieldIcon size={16} /> +150 Klan CP
+                </strong>
               </div>
             </div>
 
@@ -253,9 +260,12 @@ export default function DraftDuelPage() {
                 fontWeight: 900,
                 background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                 boxShadow: '0 0 30px rgba(245, 158, 11, 0.4)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
               }}
             >
-              ⚔️ Draft Düellosunu Başlat
+              <SwordsIcon size={22} /> Draft Düellosunu Başlat
             </button>
           </div>
         </div>
@@ -372,9 +382,17 @@ export default function DraftDuelPage() {
               type="button"
               className="btn"
               onClick={proceedToBattle}
-              style={{ padding: '12px 36px', fontWeight: 900, fontSize: '1.1rem', background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}
+              style={{
+                padding: '12px 36px',
+                fontWeight: 900,
+                fontSize: '1.1rem',
+                background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
             >
-              ⚔️ 5v5 Arenaya Gir &rarr;
+              <SwordsIcon size={20} /> 5v5 Arenaya Gir &rarr;
             </button>
           </div>
         </div>
@@ -484,10 +502,16 @@ export default function DraftDuelPage() {
             </p>
 
             {playerScore > botScore && (
-              <div style={{ display: 'inline-flex', gap: '16px', padding: '12px 24px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #22c55e', borderRadius: '12px', marginBottom: '28px' }}>
-                <span style={{ color: '#fef08a', fontWeight: 800 }}>🪙 +600 Tier Parası</span>
-                <span style={{ color: '#a5b4fc', fontWeight: 800 }}>⚡ +300 XP</span>
-                <span style={{ color: '#86efac', fontWeight: 800 }}>🛡️ +150 Klan CP</span>
+              <div style={{ display: 'inline-flex', gap: '20px', alignItems: 'center', padding: '12px 24px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #22c55e', borderRadius: '12px', marginBottom: '28px' }}>
+                <span style={{ color: '#fef08a', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <CoinIcon size={16} /> +600 Tier Parası
+                </span>
+                <span style={{ color: '#a5b4fc', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <EnergyIcon size={16} /> +300 XP
+                </span>
+                <span style={{ color: '#86efac', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <ShieldIcon size={16} /> +150 Klan CP
+                </span>
               </div>
             )}
 

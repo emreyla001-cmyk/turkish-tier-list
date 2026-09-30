@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Avatar, NameTag } from './UserBadge';
-import { resolveFrame, resolveNameColor } from './cosmetics';
+import { frameStyle, nameColorStyle, resolveFrame, resolveNameColor } from './cosmetics';
+import { CoinIcon } from './CyberIcons';
 
 export default function HeaderNav() {
   const [user, setUser] = useState(null);
@@ -233,8 +234,8 @@ export default function HeaderNav() {
             <span className="user-nav-name">
               <NameTag name={profile?.username || 'Kullanıcı'} color={nameColor} />
             </span>
-            <span className="user-nav-coins">
-              🪙 {(profile?.coins || 0).toLocaleString('tr-TR')}
+            <span className="user-nav-coins" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <CoinIcon size={14} /> {(profile?.coins || 0).toLocaleString('tr-TR')}
             </span>
             <span className="dropdown-arrow">▾</span>
           </button>
@@ -252,8 +253,8 @@ export default function HeaderNav() {
                   <div style={{ fontWeight: 800, fontSize: '.92rem' }}>
                     <NameTag name={profile?.username || 'Kullanıcı'} color={nameColor} />
                   </div>
-                  <div style={{ fontSize: '.76rem', color: 'var(--text-dim)' }}>
-                    🪙 {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
+                  <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+                    <CoinIcon size={13} /> {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
                   </div>
                 </div>
               </div>
