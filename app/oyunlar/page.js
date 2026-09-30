@@ -1,17 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
+import { getDailyPlays, MAX_DAILY_PLAYS } from '../lib/dailyLimit';
 
 export default function OyunlarHubPage() {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bilmecePlays, setBilmecePlays] = useState(0);
+  const [kimAlirPlays, setKimAlirPlays] = useState(0);
 
   useEffect(() => {
-    fetch('/api/events')
-      .then((res) => res.json())
-      .then((data) => setConfig(data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    async function loadData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const bPlays = getDailyPlays(user, 'bilmece');
+        const kPlays = getDailyPlays(user, 'kim_alir');
+        setBilmecePlays(bPlays);
+        setKimAlirPlays(kPlays);
+
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        setConfig(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
   const isDouble = !!config?.cift_odul;
@@ -100,14 +117,22 @@ export default function OyunlarHubPage() {
                   🪙 {isDouble ? (config?.bilmece_odul || 500) * 2 : (config?.bilmece_odul || 500)} Tier Parası
                 </span>
                 <span className="tag" style={{ fontSize: '.8rem' }}>⚡ 250 XP</span>
-                <span className="tag" style={{ fontSize: '.8rem', color: '#00f0ff' }}>📱 Paylaşılabilir Skor</span>
+                <span className="tag" style={{ fontSize: '.8rem', color: bilmecePlays >= MAX_DAILY_PLAYS ? '#ef4444' : '#fef08a' }}>
+                  🎮 Günlük Hak: {Math.max(0, MAX_DAILY_PLAYS - bilmecePlays)} / {MAX_DAILY_PLAYS}
+                </span>
               </div>
             </div>
 
             {config?.karakter_bilmece ? (
-              <a href="/oyunlar/karakter-bilmece" className="btn" style={{ width: '100%', textAlign: 'center', fontWeight: 800 }}>
-                🎮 Şimdi Oyna →
-              </a>
+              bilmecePlays >= MAX_DAILY_PLAYS ? (
+                <button type="button" className="btn btn-ghost" disabled style={{ width: '100%', color: '#ef4444' }}>
+                  ⏳ Bugünkü 5 Hak Doldu (5/5)
+                </button>
+              ) : (
+                <a href="/oyunlar/karakter-bilmece" className="btn" style={{ width: '100%', textAlign: 'center', fontWeight: 800 }}>
+                  🎮 Şimdi Oyna →
+                </a>
+              )
             ) : (
               <button type="button" className="btn btn-ghost" disabled style={{ width: '100%' }}>
                 🔒 Etkinlik Geçici Olarak Kapalı
@@ -153,14 +178,22 @@ export default function OyunlarHubPage() {
                   🪙 {isDouble ? (config?.kim_alir_odul || 750) * 2 : (config?.kim_alir_odul || 750)} Tier Parası
                 </span>
                 <span className="tag" style={{ fontSize: '.8rem' }}>⚡ 350 XP</span>
-                <span className="tag" style={{ fontSize: '.8rem', color: '#fef08a' }}>⏱️ Hızlı Tempolu</span>
+                <span className="tag" style={{ fontSize: '.8rem', color: kimAlirPlays >= MAX_DAILY_PLAYS ? '#ef4444' : '#fef08a' }}>
+                  🎮 Günlük Hak: {Math.max(0, MAX_DAILY_PLAYS - kimAlirPlays)} / {MAX_DAILY_PLAYS}
+                </span>
               </div>
             </div>
 
             {config?.kim_alir ? (
-              <a href="/oyunlar/kim-alir" className="btn" style={{ width: '100%', textAlign: 'center', fontWeight: 800 }}>
-                ⚔️ Düelloya Başla →
-              </a>
+              kimAlirPlays >= MAX_DAILY_PLAYS ? (
+                <button type="button" className="btn btn-ghost" disabled style={{ width: '100%', color: '#ef4444' }}>
+                  ⏳ Bugünkü 5 Hak Doldu (5/5)
+                </button>
+              ) : (
+                <a href="/oyunlar/kim-alir" className="btn" style={{ width: '100%', textAlign: 'center', fontWeight: 800 }}>
+                  ⚔️ Düelloya Başla →
+                </a>
+              )
             ) : (
               <button type="button" className="btn btn-ghost" disabled style={{ width: '100%' }}>
                 🔒 Etkinlik Geçici Olarak Kapalı

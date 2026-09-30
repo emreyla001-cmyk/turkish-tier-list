@@ -38,14 +38,14 @@ export default function CommentList({ comments = [], frameMap = {} }) {
             url={c.profiles?.avatar_url}
             name={c.profiles?.username || '?'}
             frameGradient={frameMap ? (frameMap[c.profiles?.equipped_frame] || c.profiles?.equipped_frame) : c.profiles?.equipped_frame}
-            onClick={() => setSelectedUser(c.user_id)}
+            onClick={() => setSelectedUser(c.user_id || c.profiles?.id)}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="msg-head">
               <span
                 className="msg-name"
                 style={{ cursor: 'pointer' }}
-                onClick={() => setSelectedUser(c.user_id)}
+                onClick={() => setSelectedUser(c.user_id || c.profiles?.id)}
                 title="Profili Gör / Moderatör İşlemleri"
               >
                 <NameTag
