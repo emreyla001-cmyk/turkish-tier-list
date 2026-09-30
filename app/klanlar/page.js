@@ -381,7 +381,23 @@ export default function KlanlarPage() {
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>Klanlar yükleniyor... 🏰</div>
         ) : allClans.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>Henüz kurulmuş bir klan yok.</div>
+          <div style={{ padding: '50px 20px', textAlign: 'center' }}>
+            <span style={{ fontSize: '3rem' }}>🏰</span>
+            <h4 style={{ margin: '10px 0 6px', fontSize: '1.1rem' }}>Henüz Kurulmuş Bir Klan Yok</h4>
+            <p style={{ color: 'var(--text-dim)', fontSize: '.88rem', margin: 0 }}>
+              Sitenin ilk klanını kurup zirveye bayrağını diken efsanevi lider sen ol!
+            </p>
+            {!myClan && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => (user ? setShowCreateModal(true) : showToast('⚠️ Klan kurmak için giriş yapmalısın!'))}
+                style={{ marginTop: '14px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                <CrownIcon size={16} /> İlk Klanı Kur (5.000 TP)
+              </button>
+            )}
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {allClans.map((clan, idx) => {
