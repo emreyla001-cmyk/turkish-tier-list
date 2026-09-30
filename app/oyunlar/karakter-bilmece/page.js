@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import TierBadge from '../../components/TierBadge';
 import { Avatar } from '../../components/UserBadge';
+import { getDailyPlays, incrementDailyPlay, MAX_DAILY_PLAYS } from '../../lib/dailyLimit';
 
 export default function KarakterBilmecePage() {
   const [config, setConfig] = useState(null);
@@ -16,6 +17,7 @@ export default function KarakterBilmecePage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [dailyPlays, setDailyPlays] = useState(0);
 
   useEffect(() => {
     async function init() {
@@ -31,6 +33,9 @@ export default function KarakterBilmecePage() {
             .select('id, name, series, tier, category, power_score, image_url')
             .eq('status', 'published'),
         ]);
+
+        const plays = getDailyPlays(u, 'bilmece');
+        setDailyPlays(plays);
 
         setConfig(cfgRes);
         const list = chars || [];
@@ -68,6 +73,23 @@ export default function KarakterBilmecePage() {
     );
   }
 
+  if (dailyPlays >= MAX_DAILY_PLAYS && !won) {
+    return (
+      <div className="wrap" style={{ maxWidth: '600px', textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '12px' }}>⏳</div>
+        <h2 style={{ color: 'var(--accent)' }}>Bugünkü Oyun Hakkın Doldu!</h2>
+        <p style={{ color: 'var(--text-dim)', margin: '12px 0 24px', lineHeight: 1.6 }}>
+          Para ve XP kasma açığını önlemek amacıyla mini oyunlar günde en fazla <strong>5 kez</strong> oynanabilir.
+          Bugünkü 5 hakkını ({dailyPlays}/{MAX_DAILY_PLAYS}) kullandın. Yarın saat 00:00&apos;da yeni hakların tanımlanacak!
+        </p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <a href="/oyunlar" className="btn btn-ghost">← Mini Oyunlar Menüsü</a>
+          <a href="/kart-oyunu" className="btn">🃏 Kart Arenasında Savaş</a>
+        </div>
+      </div>
+    );
+  }
+
   function handleGuess(char) {
     if (!char || won || guesses.some((g) => g.id === char.id)) return;
     const newGuesses = [char, ...guesses];
@@ -83,20 +105,27 @@ export default function KarakterBilmecePage() {
   async function claimReward(attempts) {
     if (!user || rewardClaimed) return;
     setRewardClaimed(true);
-    const baseReward = config?.bilmece_odul || 500;
-    const finalCoins = config?.cift_odul ? baseReward * 2 : baseReward;
-    const finalXp = config?.cift_odul ? 500 : 250;
 
-    try {
-      const { data: p } = await supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle();
-      if (p) {
-        await supabase.from('profiles').update({
-          coins: (p.coins || 0) + finalCoins,
-          xp: (p.xp || 0) + finalXp,
-        }).eq('id', user.id);
+    if (dailyPlays < MAX_DAILY_PLAYS) {
+      incrementDailyPlay(supabase, user, 'bilmece').then((newCount) => {
+        setDailyPlays(newCount);
+      });
+
+      const baseReward = config?.bilmece_odul || 500;
+      const finalCoins = config?.cift_odul ? baseReward * 2 : baseReward;
+      const finalXp = config?.cift_odul ? 500 : 250;
+
+      try {
+        const { data: p } = await supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle();
+        if (p) {
+          await supabase.from('profiles').update({
+            coins: (p.coins || 0) + finalCoins,
+            xp: (p.xp || 0) + finalXp,
+          }).eq('id', user.id);
+        }
+      } catch (e) {
+        console.error('Ödül verilemedi:', e);
       }
-    } catch (e) {
-      console.error('Ödül verilemedi:', e);
     }
   }
 
@@ -131,9 +160,14 @@ export default function KarakterBilmecePage() {
   return (
     <div className="wrap" style={{ maxWidth: '820px', paddingBottom: '70px' }}>
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <span className="tag" style={{ background: 'rgba(0, 240, 255, 0.1)', color: 'var(--accent)', fontWeight: 800 }}>
-          GÜNLÜK VİRAL BİLMECE
-        </span>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <span className="tag" style={{ background: 'rgba(0, 240, 255, 0.1)', color: 'var(--accent)', fontWeight: 800 }}>
+            GÜNLÜK VİRAL BİLMECE
+          </span>
+          <span className="tag" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fef08a', fontWeight: 800 }}>
+            🎮 Kalan Günlük Hak: {Math.max(0, MAX_DAILY_PLAYS - dailyPlays)} / {MAX_DAILY_PLAYS}
+          </span>
+        </div>
         <h1 style={{ fontSize: '2rem', margin: '8px 0 6px' }}>🧩 Günün Karakterini Bil</h1>
         <p style={{ color: 'var(--text-dim)', fontSize: '.92rem', margin: 0 }}>
           Dizi, kategori ve güç göstergelerini takip ederek gizli karakteri en az denemede tahmin et.

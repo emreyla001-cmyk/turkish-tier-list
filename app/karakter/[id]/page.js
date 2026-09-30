@@ -68,7 +68,7 @@ function ScalingSection({ text }) {
 async function getComments(characterId) {
   const { data } = await supabase
     .from('comments')
-    .select('id, content, created_at, profiles(username, avatar_url, role, xp, equipped_frame, equipped_name_color, vip_until)')
+    .select('id, user_id, content, created_at, profiles(id, username, avatar_url, role, xp, equipped_frame, equipped_name_color, vip_until)')
     .eq('character_id', characterId)
     .order('created_at', { ascending: false });
   return data || [];

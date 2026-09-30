@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import TierBadge from '../../components/TierBadge';
 import { tierRank } from '../../components/tiers';
+import { getDailyPlays, incrementDailyPlay, MAX_DAILY_PLAYS } from '../../lib/dailyLimit';
 
 export default function KimAlirPage() {
   const [config, setConfig] = useState(null);
@@ -19,6 +20,7 @@ export default function KimAlirPage() {
   const [user, setUser] = useState(null);
   const [copied, setCopied] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [dailyPlays, setDailyPlays] = useState(0);
 
   const TOTAL_ROUNDS = 10;
 
@@ -36,6 +38,9 @@ export default function KimAlirPage() {
             .select('id, name, series, tier, category, power_score, speed_score, intelligence_score, durability_score, image_url')
             .eq('status', 'published'),
         ]);
+
+        const plays = getDailyPlays(u, 'kim_alir');
+        setDailyPlays(plays);
 
         setConfig(cfgRes);
         const list = (chars || []).filter((c) => c.image_url);
@@ -105,20 +110,27 @@ export default function KimAlirPage() {
   useEffect(() => {
     if (finished && user && !rewardClaimed) {
       setRewardClaimed(true);
-      const base = config?.kim_alir_odul || 750;
-      // Skora göre orantılı ödül
-      const earnedCoins = Math.round((base * (score / TOTAL_ROUNDS)));
-      const finalCoins = config?.cift_odul ? earnedCoins * 2 : earnedCoins;
-      const finalXp = config?.cift_odul ? 700 : 350;
 
-      supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle().then(({ data: p }) => {
-        if (p) {
-          supabase.from('profiles').update({
-            coins: (p.coins || 0) + finalCoins,
-            xp: (p.xp || 0) + finalXp,
-          }).eq('id', user.id);
-        }
-      });
+      if (dailyPlays < MAX_DAILY_PLAYS) {
+        incrementDailyPlay(supabase, user, 'kim_alir').then((newCount) => {
+          setDailyPlays(newCount);
+        });
+
+        const base = config?.kim_alir_odul || 750;
+        // Skora göre orantılı ödül
+        const earnedCoins = Math.round((base * (score / TOTAL_ROUNDS)));
+        const finalCoins = config?.cift_odul ? earnedCoins * 2 : earnedCoins;
+        const finalXp = config?.cift_odul ? 700 : 350;
+
+        supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle().then(({ data: p }) => {
+          if (p) {
+            supabase.from('profiles').update({
+              coins: (p.coins || 0) + finalCoins,
+              xp: (p.xp || 0) + finalXp,
+            }).eq('id', user.id);
+          }
+        });
+      }
     }
   }, [finished]);
 
@@ -133,6 +145,23 @@ export default function KimAlirPage() {
           Kim Alır? VS Quiz etkinliği yönetici tarafından geçici olarak durdurulmuştur.
         </p>
         <a href="/oyunlar" className="btn btn-ghost">← Mini Oyunlar Merkezine Dön</a>
+      </div>
+    );
+  }
+
+  if (dailyPlays >= MAX_DAILY_PLAYS && !finished) {
+    return (
+      <div className="wrap" style={{ maxWidth: '600px', textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '12px' }}>⏳</div>
+        <h2 style={{ color: 'var(--accent)' }}>Bugünkü Oyun Hakkın Doldu!</h2>
+        <p style={{ color: 'var(--text-dim)', margin: '12px 0 24px', lineHeight: 1.6 }}>
+          Para ve XP kasma açığını önlemek amacıyla mini oyunlar günde en fazla <strong>5 kez</strong> oynanabilir.
+          Bugünkü 5 hakkını ({dailyPlays}/{MAX_DAILY_PLAYS}) kullandın. Yarın saat 00:00&apos;da yeni hakların tanımlanacak!
+        </p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <a href="/oyunlar" className="btn btn-ghost">← Mini Oyunlar Menüsü</a>
+          <a href="/kart-oyunu" className="btn">🃏 Kart Arenasında Savaş</a>
+        </div>
       </div>
     );
   }
@@ -152,9 +181,14 @@ export default function KimAlirPage() {
   return (
     <div className="wrap" style={{ maxWidth: '820px', paddingBottom: '70px' }}>
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <span className="tag" style={{ background: 'rgba(230, 69, 91, 0.15)', color: 'var(--accent)', fontWeight: 800 }}>
-          HIZLI DÜELLO QUİZİ
-        </span>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <span className="tag" style={{ background: 'rgba(230, 69, 91, 0.15)', color: 'var(--accent)', fontWeight: 800 }}>
+            HIZLI DÜELLO QUİZİ
+          </span>
+          <span className="tag" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fef08a', fontWeight: 800 }}>
+            🎮 Kalan Günlük Hak: {Math.max(0, MAX_DAILY_PLAYS - dailyPlays)} / {MAX_DAILY_PLAYS}
+          </span>
+        </div>
         <h1 style={{ fontSize: '2rem', margin: '8px 0 4px' }}>⚔️ Kim Alır?</h1>
         <p style={{ color: 'var(--text-dim)', fontSize: '.92rem', margin: 0 }}>
           Hangisi daha güçlü? Tarafını seç, istatistikleri gör ve seriyi tamamla!
