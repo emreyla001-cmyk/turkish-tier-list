@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabaseClient';
+import { validateXpGain } from './gamificationUtils';
 
 /**
  * Kullanıcının güncel bakiyesini user_metadata ve profiles senkronizasyonunu gözeterek döndürür.
@@ -193,7 +194,14 @@ export async function addXP(userOrId, amount, currentXpFallback = null) {
     } catch {}
   }
 
-  const newXp = currentXp + Number(amount);
+  const validation = validateXpGain(userId || 'anon', amount);
+  if (!validation.allowed || validation.adjustedAmount <= 0) {
+    console.warn('XP validation blocked or capped:', validation.reason);
+    return { success: false, newXp: currentXp, reason: validation.reason };
+  }
+
+  const grantedAmount = validation.adjustedAmount;
+  const newXp = currentXp + grantedAmount;
 
   // 1. Supabase Auth user_metadata'ya anında yaz (En güvenilir oturum state'i)
   try {
