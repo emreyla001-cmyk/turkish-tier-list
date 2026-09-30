@@ -46,8 +46,8 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
   const pSynergy = calculateSeriesSynergy(playerCard, playerDeck);
   const oSynergy = calculateSeriesSynergy(opponentCard, opponentDeck);
 
-  const pStarInfo = getStarInfo(playerUpgrades?.[playerCard.id]?.stars || 1);
-  const oStarInfo = getStarInfo(opponentUpgrades?.[opponentCard.id]?.stars || 1);
+  const pStarInfo = getStarInfo(playerUpgrades?.[playerCard.id] || 1);
+  const oStarInfo = getStarInfo(opponentUpgrades?.[opponentCard.id] || 1);
 
   // 1. Tier Karşılaştırması (En belirleyici faktör)
   if (Math.abs(r1 - r2) >= 2) {
@@ -126,7 +126,15 @@ export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opp
     `${winnerCard.name}, ${loserCard.name}'in hamlelerini önceden okuyarak ${dominantStat.toLowerCase()} farkıyla raundu hanesine yazdırdı!`,
   ];
 
-  if (winStarInfo.stars > 1) {
+  if (winStarInfo?.isMax) {
+    narratives.push(
+      `${winnerCard.name}, 👑 MAKSİMUM SEVİYE UYANIŞ (+%${winStarInfo.bonusPercent}) efsanevi aurasıyla ${loserCard.name}'e nefes aldırmadı!`
+    );
+  } else if (winStarInfo?.isAwakened) {
+    narratives.push(
+      `${winnerCard.name}, ${winStarInfo.awakened}. Uyanış seviye gücü (+%${winStarInfo.bonusPercent}) sayesinde ${loserCard.name} karşısında mutlak üstünlük sağladı!`
+    );
+  } else if (winStarInfo?.stars > 1) {
     narratives.push(
       `${winnerCard.name}, ${winStarInfo.stars} Yıldızlı seviye takviyesi (+%${winStarInfo.bonusPercent}) sayesinde kritik anda ${loserCard.name}'i devirdi!`
     );

@@ -311,7 +311,7 @@ export default function SavasArenasi() {
 
   const playerSynergy = activePlayerCard ? calculateSeriesSynergy(activePlayerCard, playerDeck) : { hasSynergy: false };
   const playerRarity = activePlayerCard ? getCardRarity(activePlayerCard.tier) : null;
-  const playerStarInfo = activePlayerCard ? getStarInfo(playerUpgrades[activePlayerCard.id]?.stars || 1) : null;
+  const playerStarInfo = activePlayerCard ? getStarInfo(playerUpgrades[activePlayerCard.id] || 1) : null;
 
   const oppRarity = activeOpponentCard ? getCardRarity(activeOpponentCard.tier) : null;
 
@@ -476,7 +476,7 @@ export default function SavasArenasi() {
                 {playerRemainingHand.map((c) => {
                   const syn = calculateSeriesSynergy(c, playerDeck);
                   const cardRarity = getCardRarity(c.tier);
-                  const cStar = getStarInfo(playerUpgrades[c.id]?.stars || 1);
+                  const cStar = getStarInfo(playerUpgrades[c.id] || 1);
                   const isHolo = cardRarity.isHolo || HIGH_TIERS.includes(c.tier);
                   return (
                     <div
@@ -503,7 +503,7 @@ export default function SavasArenasi() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ background: cardRarity.badgeBg, color: '#fff', fontSize: '.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>
+                          <span style={{ background: cardRarity.badgeBg, color: '#fff', fontSize: '.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px', boxShadow: cardRarity.glow }}>
                             {cardRarity.code}
                           </span>
                           <TierBadge tier={c.tier} />
@@ -527,9 +527,15 @@ export default function SavasArenasi() {
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '.72rem', marginBottom: '8px' }}>
-                        <span style={{ color: '#fef08a' }}>
-                          {cStar.starString} {cStar.bonusPercent > 0 && `(+%${cStar.bonusPercent})`}
-                        </span>
+                        {cStar.isMax ? (
+                          <span style={{ color: '#ffd700', fontWeight: 900 }}>👑 MAX (+%{cStar.bonusPercent})</span>
+                        ) : cStar.isAwakened ? (
+                          <span style={{ color: '#f87171', fontWeight: 900 }}>🔴 U-{cStar.awakened} (+%{cStar.bonusPercent})</span>
+                        ) : (
+                          <span style={{ color: '#fef08a' }}>
+                            {cStar.starString} {cStar.bonusPercent > 0 && `(+%${cStar.bonusPercent})`}
+                          </span>
+                        )}
                         <span style={{ color: 'var(--accent)', fontWeight: 800 }}>
                           ⚡ {Math.round((c.power_score || 50) * cStar.multiplier)}
                         </span>
@@ -620,8 +626,43 @@ export default function SavasArenasi() {
                 </div>
 
                 {playerStarInfo && (
-                  <div style={{ fontSize: '.82rem', color: '#fef08a', fontWeight: 800, marginBottom: '10px' }}>
-                    {playerStarInfo.starString} {playerStarInfo.bonusPercent > 0 && `(+%${playerStarInfo.bonusPercent} Seviye Bonusu)`}
+                  <div style={{ margin: '4px 0 10px' }}>
+                    {playerStarInfo.isMax ? (
+                      <span
+                        style={{
+                          background: 'linear-gradient(135deg, #eab308, #ef4444, #7928ca)',
+                          color: '#fff',
+                          fontSize: '.76rem',
+                          fontWeight: 900,
+                          padding: '3px 10px',
+                          borderRadius: '8px',
+                          border: '1px solid #ffd700',
+                          boxShadow: '0 0 16px rgba(255, 215, 0, 0.8)',
+                          display: 'inline-block',
+                        }}
+                      >
+                        👑 MAKSİMUM SEVİYE (+%{playerStarInfo.bonusPercent})
+                      </span>
+                    ) : playerStarInfo.isAwakened ? (
+                      <span
+                        style={{
+                          background: 'linear-gradient(135deg, #dc2626, #9333ea)',
+                          color: '#fff',
+                          fontSize: '.74rem',
+                          fontWeight: 900,
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          boxShadow: '0 0 12px rgba(220, 38, 38, 0.6)',
+                          display: 'inline-block',
+                        }}
+                      >
+                        🔴 {playerStarInfo.awakened}. UYANIŞ (+%{playerStarInfo.bonusPercent})
+                      </span>
+                    ) : playerStarInfo.stars > 1 ? (
+                      <span style={{ fontSize: '.82rem', color: '#fef08a', fontWeight: 800 }}>
+                        {playerStarInfo.starString} (+%{playerStarInfo.bonusPercent} Seviye Bonusu)
+                      </span>
+                    ) : null}
                   </div>
                 )}
 
