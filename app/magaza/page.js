@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { frameStyle, nameColorStyle, resolveBackground, resolveFrame, resolveNameColor } from '../components/cosmetics';
 import { Avatar, NameTag } from '../components/UserBadge';
+import { deductCoins, getEffectiveCoins } from '../lib/wallet';
+import { CoinIcon, CrownIcon, EnergyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
 
 const KIND_LABEL = {
   special_permit: '⚡ Özel Haklar (GIF & Arka Plan)',
@@ -413,11 +415,12 @@ export default function MagazaPage() {
         const metaOwned = Array.isArray(u.user_metadata?.owned_items) ? u.user_metadata.owned_items : [];
         const invSet = new Set([...(inv || []).map((r) => r.item_id), ...metaOwned]);
 
-        const prof = p || {
+        const effectiveCoins = getEffectiveCoins(u, p);
+        const prof = p ? { ...p, coins: effectiveCoins } : {
           id: u.id,
           username: u.user_metadata?.username || u.email?.split('@')[0] || 'Kullanıcı',
           avatar_url: u.user_metadata?.avatar_url || null,
-          coins: 0,
+          coins: effectiveCoins,
           role: 'user',
         };
 
@@ -437,7 +440,16 @@ export default function MagazaPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const handleCoins = (e) => {
+      if (e?.detail?.coins !== undefined) {
+        setProfile((prev) => (prev ? { ...prev, coins: e.detail.coins } : prev));
+      }
+    };
+    window.addEventListener('coins-updated', handleCoins);
+    return () => window.removeEventListener('coins-updated', handleCoins);
+  }, []);
 
   const isVip =
     profile?.role === 'vip' ||
@@ -460,19 +472,16 @@ export default function MagazaPage() {
       return;
     }
 
-    if ((profile.coins || 0) < item.price) {
-      setMsg({
-        text: `Yetersiz bakiye! Bu hak için ${item.price.toLocaleString('tr-TR')} altına ihtiyacın var. Mevcut bakiyen: ${(profile.coins || 0).toLocaleString('tr-TR')}`,
-        type: 'error',
-      });
-      setLoadingAction(null);
-      return;
-    }
-
     try {
+      const deductRes = await deductCoins(user, item.price, item.name);
+      if (!deductRes.success) {
+        setMsg({ text: deductRes.error, type: 'error' });
+        setLoadingAction(null);
+        return;
+      }
+
       const nowMs = Date.now();
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-      const newCoins = (profile.coins || 0) - item.price;
 
       if (item.id === 'avatar_gif_permit') {
         const curExp = isFutureDate(profile.avatar_gif_until)
@@ -480,10 +489,8 @@ export default function MagazaPage() {
           : nowMs;
         const newExpDate = new Date(curExp + thirtyDaysMs).toISOString();
 
-        // 1. profiles tablosu
-        await supabase.from('profiles').update({ coins: newCoins, avatar_gif_until: newExpDate }).eq('id', user.id);
-        // 2. auth metadata
         await supabase.auth.updateUser({ data: { avatar_gif_until: newExpDate } });
+        try { await supabase.from('profiles').update({ avatar_gif_until: newExpDate }).eq('id', user.id); } catch {}
 
         setMsg({
           text: `🎉 Tebrikler! 30 Günlük Hareketli GIF Avatar hakkı hesabına eklendi. (Kalan Süre: ${getRemainingTimeText(newExpDate)})`,
@@ -495,20 +502,16 @@ export default function MagazaPage() {
           : nowMs;
         const newExpDate = new Date(curExp + thirtyDaysMs).toISOString();
 
-        // 1. profiles tablosu (hata verirse yoksay)
-        try {
-          await supabase.from('profiles').update({ coins: newCoins, profile_bg_until: newExpDate }).eq('id', user.id);
-        } catch {
-          await supabase.from('profiles').update({ coins: newCoins }).eq('id', user.id);
-        }
-        // 2. auth metadata
         await supabase.auth.updateUser({ data: { profile_bg_until: newExpDate } });
+        try { await supabase.from('profiles').update({ profile_bg_until: newExpDate }).eq('id', user.id); } catch {}
 
         setMsg({
           text: `🎉 Tebrikler! 30 Günlük Hareketli Profil Arka Planı hakkı hesabına eklendi. (Kalan Süre: ${getRemainingTimeText(newExpDate)})`,
           type: 'success',
         });
       }
+
+      setProfile((prev) => ({ ...prev, coins: deductRes.newCoins }));
     } catch (err) {
       setMsg({ text: `Satın alma hatası: ${err.message || err}`, type: 'error' });
     } finally {
@@ -533,37 +536,25 @@ export default function MagazaPage() {
       return;
     }
 
-    if ((profile.coins || 0) < item.price) {
-      setMsg({ text: 'Yetersiz bakiye.', type: 'error' });
-      setLoadingAction(null);
-      return;
-    }
-
     try {
-      let rpcSucceeded = false;
-      // 1. Önce veritabanı RPC fonksiyonunu dene
-      try {
-        const { error: rpcErr } = await supabase.rpc('buy_item', { item: item.id });
-        if (!rpcErr) rpcSucceeded = true;
-      } catch {}
-
-      // 2. RPC başaramadıysa doğrudan bakiye ve envanter güncelle
-      if (!rpcSucceeded) {
-        const newCoins = (profile.coins || 0) - item.price;
-        await supabase.from('profiles').update({ coins: newCoins }).eq('id', user.id);
-
-        try {
-          await supabase.from('user_inventory').insert({ user_id: user.id, item_id: item.id });
-        } catch {}
-
-        const prevOwned = Array.isArray(user.user_metadata?.owned_items) ? user.user_metadata.owned_items : [];
-        if (!prevOwned.includes(item.id)) {
-          await supabase.auth.updateUser({ data: { owned_items: [...prevOwned, item.id] } });
-        }
+      const deductRes = await deductCoins(user, item.price, item.name);
+      if (!deductRes.success) {
+        setMsg({ text: deductRes.error, type: 'error' });
+        setLoadingAction(null);
+        return;
       }
 
-      setMsg({ text: `"${item.name}" başarıyla satın alındı ve envanterine eklendi!`, type: 'success' });
-      // Otomatik kuşan
+      try {
+        await supabase.from('user_inventory').insert({ user_id: user.id, item_id: item.id });
+      } catch {}
+
+      const prevOwned = Array.isArray(user.user_metadata?.owned_items) ? user.user_metadata.owned_items : [];
+      if (!prevOwned.includes(item.id)) {
+        await supabase.auth.updateUser({ data: { owned_items: [...prevOwned, item.id] } });
+      }
+
+      setProfile((prev) => ({ ...prev, coins: deductRes.newCoins }));
+      setMsg({ text: `"${item.name}" başarıyla satın alındı ve kuşanıldı!`, type: 'success' });
       await equip(item, false);
     } catch (e) {
       setMsg({ text: e.message || 'Satın alma başarısız oldu.', type: 'error' });
@@ -668,7 +659,7 @@ export default function MagazaPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <div className="coin-pill" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.15rem' }}>
-            <span>🪙</span> <strong>{(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası</strong>
+            <CoinIcon size={22} /> <strong>{(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası</strong>
           </div>
         </div>
       </div>
@@ -943,8 +934,8 @@ export default function MagazaPage() {
                         {it.description}
                       </p>
 
-                      <p style={{ margin: '0 0 16px', fontSize: '.95rem' }}>
-                        <strong>{it.price.toLocaleString('tr-TR')}</strong> tier parası
+                      <p style={{ margin: '0 0 16px', fontSize: '.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CoinIcon size={15} /> <strong>{it.price.toLocaleString('tr-TR')}</strong> tier parası
                         {it.duration_days ? ` · ${it.duration_days} Günlük` : ''}
                       </p>
                     </div>
@@ -983,10 +974,10 @@ export default function MagazaPage() {
                             : isVip
                             ? '👑 VIP ile Sınırsız Aktif'
                             : specialActive
-                            ? '+30 Gün Daha Uzat (30.000 🪙)'
+                            ? '+30 Gün Daha Uzat (30.000 TP)'
                             : !isAffordable
-                            ? 'Yetersiz Bakiye (30.000 🪙)'
-                            : '30 Gün Satın Al (30.000 🪙)'}
+                            ? 'Yetersiz Bakiye (30.000 TP)'
+                            : '30 Gün Satın Al (30.000 TP)'}
                         </button>
                       ) : isEquipped ? (
                         <button

@@ -9,6 +9,7 @@ import TwoFactor from '../components/TwoFactor';
 import TierBadge from '../components/TierBadge';
 import { getCardRarity, getStarInfo } from '../lib/cardRarity';
 import { getLeagueForTrophies } from '../lib/cardGameEngine';
+import { CoinIcon, EnergyIcon, TrophyIcon, ShieldIcon, CrownIcon } from '../components/CyberIcons';
 
 const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
 
@@ -464,7 +465,7 @@ function ProfilContent() {
             {/* Hızlı İstatistik Kartları */}
             <div className="cyber-stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
               <div className="cyber-stat-card">
-                <div className="cyber-stat-label"><span>🪙</span> Tier Parası</div>
+                <div className="cyber-stat-label"><CoinIcon size={14} /> Tier Parası</div>
                 <div className="cyber-stat-value" style={{ color: '#fef08a' }}>{profile?.coins ?? 0}</div>
               </div>
               <div className="cyber-stat-card">
@@ -1001,19 +1002,19 @@ function ProfilContent() {
           <div className="card">
             <h3>Rekabetçi Profil İstatistikleri</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '14px' }}>
-              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>
-                <span style={{ fontSize: '1.8rem' }}>🏆</span>
-                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '4px' }}>Kart Kupası</div>
+              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <TrophyIcon size={32} />
+                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '6px' }}>Kart Kupası</div>
                 <strong style={{ fontSize: '1.2rem', color: '#fef08a' }}>{trophies} Kupa</strong>
               </div>
-              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>
-                <span style={{ fontSize: '1.8rem' }}>🪙</span>
-                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '4px' }}>Tier Parası Bakiyesi</div>
+              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <CoinIcon size={32} />
+                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '6px' }}>Tier Parası Bakiyesi</div>
                 <strong style={{ fontSize: '1.2rem', color: '#fef08a' }}>{(profile?.coins || 0).toLocaleString('tr-TR')}</strong>
               </div>
-              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>
-                <span style={{ fontSize: '1.8rem' }}>⚡</span>
-                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '4px' }}>Hesap Seviyesi</div>
+              <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <EnergyIcon size={32} />
+                <div style={{ fontSize: '.76rem', color: 'var(--text-dim)', marginTop: '6px' }}>Hesap Seviyesi</div>
                 <strong style={{ fontSize: '1.2rem', color: '#a5b4fc' }}>Seviye {level}</strong>
               </div>
               <div style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', textAlign: 'center' }}>

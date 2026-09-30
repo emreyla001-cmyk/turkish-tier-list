@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { deductCoins } from '../lib/wallet';
+import { CoinIcon, CrownIcon, ShieldIcon, SwordsIcon } from '../components/CyberIcons';
 
 const EMBLEMS = ['🐺', '🦁', '🦅', '⚔️', '🛡️', '⚡', '👑', '🐉', '🔥', '🇹🇷'];
 const CLAN_CREATION_FEE = 5000;
@@ -112,16 +114,13 @@ export default function KlanlarPage() {
 
       const data = await res.json();
       if (data.success && data.clan) {
-        const newCoins = currentCoins - CLAN_CREATION_FEE;
-        setProfile((prev) => ({ ...prev, coins: newCoins }));
-        try {
-          await supabase.from('profiles').update({ coins: newCoins }).eq('id', user.id);
-          await supabase.auth.updateUser({ data: { coins: newCoins, clan_tag: data.clan.tag } });
-        } catch {}
+        const deductResult = await deductCoins(user.id, CLAN_CREATION_FEE, currentCoins);
+        const finalCoins = deductResult.success ? deductResult.newCoins : currentCoins - CLAN_CREATION_FEE;
+        setProfile((prev) => ({ ...prev, coins: finalCoins }));
 
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: newCoins } }));
-        }
+        try {
+          await supabase.auth.updateUser({ data: { clan_tag: data.clan.tag } });
+        } catch {}
 
         setShowCreateModal(false);
         setMyClan(data.clan);
@@ -264,7 +263,7 @@ export default function KlanlarPage() {
               gap: '8px',
             }}
           >
-            <span>➕</span> Klan Kur (5.000 TP)
+            <CrownIcon size={18} /> Klan Kur (5.000 TP)
           </button>
         )}
       </div>
@@ -319,8 +318,8 @@ export default function KlanlarPage() {
 
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Toplam Klan Puanı</div>
-              <strong style={{ fontSize: '1.6rem', color: '#fef08a' }}>
-                🛡️ {(myClan.points || 0).toLocaleString('tr-TR')} CP
+              <strong style={{ fontSize: '1.6rem', color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                <ShieldIcon size={24} /> {(myClan.points || 0).toLocaleString('tr-TR')} CP
               </strong>
               {myClan.leader_id !== user?.id && (
                 <div style={{ marginTop: '10px' }}>
@@ -505,8 +504,8 @@ export default function KlanlarPage() {
               </button>
             </div>
 
-            <p style={{ fontSize: '.84rem', color: 'var(--text-dim)', margin: '0 0 16px' }}>
-              Klan kurma bedeli: <strong style={{ color: '#fef08a' }}>5.000 Tier Parası</strong>. Kurucu otomatik olarak klan lideri olur.
+            <p style={{ fontSize: '.84rem', color: 'var(--text-dim)', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Klan kurma bedeli: <span style={{ color: '#fef08a', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CoinIcon size={16} /> <strong>5.000 Tier Parası</strong></span>. Kurucu otomatik olarak klan lideri olur.
             </p>
 
             <form onSubmit={handleCreateClan}>

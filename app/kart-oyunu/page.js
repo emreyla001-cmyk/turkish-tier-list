@@ -7,6 +7,7 @@ import { getLeagueForTrophies } from '../lib/cardGameEngine';
 import { cardAudio } from '../lib/cardAudio';
 import { getCardRarity, getStarInfo, MAX_STARS } from '../lib/cardRarity';
 import { getStamina, buyStaminaPotion, POTION_COST, POTION_REFILL } from '../lib/stamina';
+import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -384,11 +385,11 @@ export default function KartOyunuHub() {
               {currentLeague.name}
             </h1>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fef08a' }}>
-                🏆 {trophies} Kupa
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fef08a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <TrophyIcon size={20} /> {trophies} Kupa
               </span>
-              <span className="coin-pill" style={{ fontSize: '.9rem' }}>
-                🪙 {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
+              <span className="coin-pill" style={{ fontSize: '.9rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <CoinIcon size={16} /> {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
               </span>
             </div>
           </div>
@@ -585,7 +586,7 @@ export default function KartOyunuHub() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.6rem' }}>⚡</span>
+              <EnergyIcon size={28} />
               <div>
                 <strong style={{ fontSize: '.95rem', color: stamina.current > 0 ? '#86efac' : '#ef4444' }}>
                   Enerjin: {stamina.current} / {stamina.max}
@@ -625,9 +626,20 @@ export default function KartOyunuHub() {
                 background: stamina.current > 0 ? 'linear-gradient(135deg, var(--accent), var(--accent-2))' : '#3f3f46',
                 color: stamina.current > 0 ? '#111' : '#a1a1aa',
                 cursor: stamina.current > 0 ? 'pointer' : 'not-allowed',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
               }}
             >
-              {stamina.current > 0 ? '⚔️ Bu Desteyle Arenaya Gir (1 ⚡)' : '⚡ Enerji Tükendi'}
+              {stamina.current > 0 ? (
+                <>
+                  <SwordsIcon size={20} /> Bu Desteyle Arenaya Gir (1 <EnergyIcon size={16} />)
+                </>
+              ) : (
+                <>
+                  <EnergyIcon size={20} /> Enerji Tükendi
+                </>
+              )}
             </a>
           </div>
         </div>
@@ -660,8 +672,8 @@ export default function KartOyunuHub() {
               <span style={{ fontSize: '.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', display: 'block' }}>
                 Mevcut Bakiyen
               </span>
-              <strong style={{ fontSize: '1.25rem', color: '#fef08a' }}>
-                🪙 {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
+              <strong style={{ fontSize: '1.25rem', color: '#fef08a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <CoinIcon size={18} /> {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
               </strong>
             </div>
           </div>
@@ -679,7 +691,7 @@ export default function KartOyunuHub() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.4rem' }}>🛡️</span>
+                <ShieldIcon size={22} />
                 <strong style={{ color: '#fef08a', fontSize: '.95rem' }}>
                   Pity (Şanssızlık Koruması) Barı: {pityCount} / 10
                 </strong>
@@ -726,8 +738,8 @@ export default function KartOyunuHub() {
                   <p style={{ fontSize: '.8rem', color: 'var(--text-dim)', minHeight: '36px', lineHeight: 1.4 }}>
                     {pack.desc}
                   </p>
-                  <div style={{ margin: '14px 0', fontSize: '1.2rem', fontWeight: 900, color: '#fef08a' }}>
-                    🪙 {pack.price.toLocaleString('tr-TR')}
+                  <div style={{ margin: '14px 0', fontSize: '1.2rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <CoinIcon size={18} /> {pack.price.toLocaleString('tr-TR')}
                   </div>
                 </div>
 
