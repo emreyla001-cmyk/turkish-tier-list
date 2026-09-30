@@ -189,6 +189,13 @@ export default function HeaderNav() {
                 <p>Çarkıfelek çevir ve GIF izinleri kazan</p>
               </div>
             </a>
+            <a href="/klanlar" onClick={closeDropdown} className="dropdown-item">
+              <span className="dropdown-icon">🏰</span>
+              <div>
+                <strong style={{ color: '#f59e0b' }}>Klanlar & Loncalar</strong>
+                <p>Klan kur, ortak CP kas ve ligde yarış</p>
+              </div>
+            </a>
             <a href="/gorevler" onClick={closeDropdown} className="dropdown-item">
               <span className="dropdown-icon">📜</span>
               <div>
