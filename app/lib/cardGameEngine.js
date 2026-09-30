@@ -23,32 +23,53 @@ export function getLeagueForTrophies(trophies = 0, leagues = []) {
   return match || leagues[0];
 }
 
-export function simulateCardClash(playerCard, opponentCard) {
+export function calculateSeriesSynergy(card, deck = []) {
+  if (!card || !card.series || !deck || deck.length === 0) return { hasSynergy: false, multiplier: 1.0 };
+  const matches = deck.filter(
+    (c) => c && c.id !== card.id && c.series && c.series.toLowerCase().trim() === card.series.toLowerCase().trim()
+  );
+  if (matches.length >= 1) {
+    return { hasSynergy: true, multiplier: 1.15, series: card.series, matchesCount: matches.length + 1 };
+  }
+  return { hasSynergy: false, multiplier: 1.0 };
+}
+
+export function simulateCardClash(playerCard, opponentCard, playerDeck = [], opponentDeck = []) {
   if (!playerCard || !opponentCard) {
-    return { winner: 'player', narrative: 'Rakip kart çekemedi!', statHighlight: 'Hükmen' };
+    return { winner: 'player', narrative: 'Rakip kart çekemedi!', statHighlight: 'Hükmen', isSuperImpact: false };
   }
 
   const r1 = tierRank(playerCard.tier);
   const r2 = tierRank(opponentCard.tier);
 
+  const pSynergy = calculateSeriesSynergy(playerCard, playerDeck);
+  const oSynergy = calculateSeriesSynergy(opponentCard, opponentDeck);
+
   // 1. Tier Karşılaştırması (En belirleyici faktör)
   if (Math.abs(r1 - r2) >= 2) {
+    const isSuperImpact = true;
     if (r1 > r2) {
       return {
         winner: 'player',
-        narrative: `${playerCard.name}, ${playerCard.tier} seviyesindeki ezici evren kademesiyle ${opponentCard.name} (${opponentCard.tier}) karşısında tartışmasız bir zafer elde etti!`,
-        statHighlight: `Tier Üstünlüğü: ${playerCard.tier} vs ${opponentCard.tier}`,
+        narrative: `${playerCard.name}, ${playerCard.tier} seviyesindeki ezici evren kademesiyle ${opponentCard.name} (${opponentCard.tier}) karşısında sarsıcı bir zafer elde etti!`,
+        statHighlight: `Tier Eziciliği: ${playerCard.tier} vs ${opponentCard.tier}`,
+        isSuperImpact,
+        pSynergy,
+        oSynergy,
       };
     } else {
       return {
         winner: 'opponent',
         narrative: `${opponentCard.name}, ${opponentCard.tier} kademesindeki üstün gücüyle ${playerCard.name} (${playerCard.tier}) kartını tek hamlede alt etti!`,
-        statHighlight: `Tier Üstünlüğü: ${opponentCard.tier} vs ${playerCard.tier}`,
+        statHighlight: `Tier Eziciliği: ${opponentCard.tier} vs ${playerCard.tier}`,
+        isSuperImpact,
+        pSynergy,
+        oSynergy,
       };
     }
   }
 
-  // 2. Tier'lar çok yakınsa Detaylı Stat Kıyaslaması (Güç, Hız, Zeka, Dayanıklılık)
+  // 2. Tier'lar çok yakınsa Detaylı Stat Kıyaslaması (Güç, Hız, Zeka, Dayanıklılık) + Sinerji
   const pStats = {
     power: Number(playerCard.power_score) || 50,
     speed: Number(playerCard.speed_score) || 50,
@@ -63,14 +84,16 @@ export function simulateCardClash(playerCard, opponentCard) {
     durability: Number(opponentCard.durability_score) || 50,
   };
 
-  const pTotal = pStats.power * 1.2 + pStats.speed * 1.1 + pStats.intelligence * 1.0 + pStats.durability * 0.9 + (r1 * 15);
-  const oTotal = oStats.power * 1.2 + oStats.speed * 1.1 + oStats.intelligence * 1.0 + oStats.durability * 0.9 + (r2 * 15);
+  let pTotal = (pStats.power * 1.2 + pStats.speed * 1.1 + pStats.intelligence * 1.0 + pStats.durability * 0.9 + (r1 * 15)) * pSynergy.multiplier;
+  let oTotal = (oStats.power * 1.2 + oStats.speed * 1.1 + oStats.intelligence * 1.0 + oStats.durability * 0.9 + (r2 * 15)) * oSynergy.multiplier;
 
   const isPlayerWinner = pTotal >= oTotal;
+  const isSuperImpact = Math.abs(pTotal - oTotal) > 60;
   const winnerCard = isPlayerWinner ? playerCard : opponentCard;
   const loserCard = isPlayerWinner ? opponentCard : playerCard;
   const winStats = isPlayerWinner ? pStats : oStats;
   const loseStats = isPlayerWinner ? oStats : pStats;
+  const winSynergy = isPlayerWinner ? pSynergy : oSynergy;
 
   // Hangi stat en çok fark yarattı?
   let dominantStat = 'Güç';
@@ -94,11 +117,20 @@ export function simulateCardClash(playerCard, opponentCard) {
     `${winnerCard.name}, ${loserCard.name}'in hamlelerini önceden okuyarak ${dominantStat.toLowerCase()} farkıyla raundu hanesine yazdırdı!`,
   ];
 
+  if (winSynergy.hasSynergy) {
+    narratives.push(
+      `${winnerCard.name}, "${winSynergy.series}" evren sinerjisi (+%15 Güç Bonusu) sayesinde ${loserCard.name}'i dize getirdi!`
+    );
+  }
+
   const narrative = narratives[Math.floor(Math.random() * narratives.length)];
 
   return {
     winner: isPlayerWinner ? 'player' : 'opponent',
     narrative,
     statHighlight: `${dominantStat} Farkı (${isPlayerWinner ? 'Oyuncu Zaferi' : 'Rakip Zaferi'})`,
+    isSuperImpact,
+    pSynergy,
+    oSynergy,
   };
 }
