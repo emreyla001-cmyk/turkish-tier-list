@@ -16,6 +16,17 @@ function nextResetLabel() {
   return `${h} sa ${m} dk sonra (09:00, TR saati)`;
 }
 
+const FALLBACK_REWARDS = [
+  { id: 'coins_500', label: '500 Tier Parası', icon: '🪙', sort: 1 },
+  { id: 'avatar_gif_7d', label: '7 Günlük GIF Avatar', icon: '🎞️', sort: 2 },
+  { id: 'coins_1000', label: '1.000 Tier Parası', icon: '💰', sort: 3 },
+  { id: 'profile_bg_7d', label: '7 Günlük GIF Arka Plan', icon: '🖼️', sort: 4 },
+  { id: 'xp_250', label: '250 XP', icon: '⚡', sort: 5 },
+  { id: 'avatar_gif_30d', label: '30 Günlük GIF Avatar', icon: '👑', sort: 6 },
+  { id: 'coins_2500', label: '2.500 Tier Parası', icon: '💎', sort: 7 },
+  { id: 'xp_500', label: '500 XP', icon: '🚀', sort: 8 },
+];
+
 export default function CekilisPage() {
   const [user, setUser] = useState(undefined);
   const [spin, setSpin] = useState(null);
@@ -37,7 +48,7 @@ export default function CekilisPage() {
     ]);
     setSpin(s || { spin1_reward: null, spin2_reward: null });
     setBonusReady(!!stats?.claimed?.includes('bonus'));
-    setRewards(rw || []);
+    setRewards(rw && rw.length > 0 ? rw : FALLBACK_REWARDS);
   }
   useEffect(() => { load(); }, []);
 
@@ -51,8 +62,28 @@ export default function CekilisPage() {
   async function afterSpin(which, rewardId) {
     if (!rewardId) return;
     const r = rewards.find((x) => x.id === rewardId);
-    setTimeout(() => {
+    setTimeout(async () => {
       setMsg(r ? `${r.icon} Kazandın: ${r.label}!` : 'Ödül kazandın!');
+      // Eğer kazanılan ödül GIF avatar veya GIF arkaplan ise süreyi hemen tanımla
+      const isAvatarGif = rewardId === 'avatar_gif_7d' || rewardId === 'avatar_gif_permit' || rewardId === 'avatar_gif_30d';
+      const isBgGif = rewardId === 'profile_bg_7d' || rewardId === 'profile_bg_permit' || rewardId === 'profile_bg_30d';
+      if (user && isAvatarGif) {
+        const days = rewardId.includes('30') ? 30 : 7;
+        const cur = user?.user_metadata?.avatar_gif_until && new Date(user.user_metadata.avatar_gif_until) > new Date()
+          ? new Date(user.user_metadata.avatar_gif_until).getTime()
+          : Date.now();
+        const newUntil = new Date(cur + days * 24 * 60 * 60 * 1000).toISOString();
+        try { await supabase.from('profiles').update({ avatar_gif_until: newUntil }).eq('id', user.id); } catch {}
+        await supabase.auth.updateUser({ data: { avatar_gif_until: newUntil } });
+      } else if (user && isBgGif) {
+        const days = rewardId.includes('30') ? 30 : 7;
+        const cur = user?.user_metadata?.profile_bg_until && new Date(user.user_metadata.profile_bg_until) > new Date()
+          ? new Date(user.user_metadata.profile_bg_until).getTime()
+          : Date.now();
+        const newUntil = new Date(cur + days * 24 * 60 * 60 * 1000).toISOString();
+        try { await supabase.from('profiles').update({ profile_bg_until: newUntil }).eq('id', user.id); } catch {}
+        await supabase.auth.updateUser({ data: { profile_bg_until: newUntil } });
+      }
       load();
     }, 3200);
   }

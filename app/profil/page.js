@@ -56,6 +56,24 @@ function formatDateSafe(dateVal) {
   }
 }
 
+function getRemainingTimeText(untilDate) {
+  if (!untilDate) return null;
+  try {
+    const target = new Date(untilDate).getTime();
+    if (isNaN(target)) return null;
+    const diff = target - Date.now();
+    if (diff <= 0) return 'Süresi Doldu';
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (days > 0) return `${days} gün ${hours} saat`;
+    if (hours > 0) return `${hours} saat ${mins} dk`;
+    return `${mins} dakika`;
+  } catch {
+    return null;
+  }
+}
+
 function isVipUser(p) {
   if (!p) return false;
   return p.role === 'vip' || p.role === 'admin' || p.role === 'moderator' || isFutureDate(p.vip_until);
@@ -94,7 +112,8 @@ function ProfilContent() {
         coins: 0,
         vip_until: null,
         name_color_until: null,
-        avatar_gif_until: null,
+        avatar_gif_until: u.user_metadata?.avatar_gif_until || null,
+        profile_bg_until: u.user_metadata?.profile_bg_until || null,
         equipped_frame: null,
         equipped_background: null,
         equipped_name_color: null,
@@ -104,6 +123,12 @@ function ProfilContent() {
       const prof = data ? { ...fallbackProfile, ...data } : fallbackProfile;
       if (!prof.profile_bg_url && u.user_metadata?.profile_bg_url) {
         prof.profile_bg_url = u.user_metadata.profile_bg_url;
+      }
+      if (!prof.profile_bg_until && u.user_metadata?.profile_bg_until) {
+        prof.profile_bg_until = u.user_metadata.profile_bg_until;
+      }
+      if (!prof.avatar_gif_until && u.user_metadata?.avatar_gif_until) {
+        prof.avatar_gif_until = u.user_metadata.avatar_gif_until;
       }
       setProfile(prof);
       setUsername(prof.username || '');
@@ -156,11 +181,11 @@ function ProfilContent() {
     const file = e.target.files?.[0];
     if (!file) return;
     const isVip = isVipUser(profile);
-    const gifAllowed = isVip || isFutureDate(profile?.avatar_gif_until);
+    const gifAllowed = isVip || isFutureDate(profile?.avatar_gif_until) || isFutureDate(user?.user_metadata?.avatar_gif_until);
     const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
 
     if (isGif && !gifAllowed) {
-      say('avatar', 'Hareketli GIF avatar yüklemek VIP üyelere özeldir. Standart üyeler PNG, JPG veya WEBP yükleyebilir. VIP olmak için Mağaza\'yı ziyaret edebilirsin.');
+      say('avatar', 'Hareketli GIF avatar yüklemek VIP üyelere veya Mağaza\'dan 30 Günlük GIF Avatar Hakkı (30.000 Altın) alanlara özeldir. Standart üyeler PNG, JPG veya WEBP yükleyebilir.');
       return;
     }
 
@@ -226,8 +251,9 @@ function ProfilContent() {
     const file = e.target.files?.[0];
     if (!file) return;
     const isVip = isVipUser(profile);
-    if (!isVip) {
-      say('bg', 'Özel ve hareketli GIF profil arka planı yüklemek yalnızca VIP üyelere özeldir. VIP olmak için Mağaza\'yı ziyaret edebilirsin.');
+    const bgAllowed = isVip || isFutureDate(profile?.profile_bg_until) || isFutureDate(user?.user_metadata?.profile_bg_until);
+    if (!bgAllowed) {
+      say('bg', 'Özel ve hareketli GIF profil arka planı yüklemek VIP üyelere veya Mağaza\'dan 30 Günlük Arka Plan Hakkı (30.000 Altın) alanlara özeldir. Mağaza\'yı ziyaret edebilirsin.');
       return;
     }
     const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
@@ -320,7 +346,12 @@ function ProfilContent() {
 
   const vipActive = isVipUser(profile);
   const tempColorActive = isFutureDate(profile?.name_color_until);
-  const gifActive = vipActive || isFutureDate(profile?.avatar_gif_until);
+  const gifActive = vipActive || isFutureDate(profile?.avatar_gif_until) || isFutureDate(user?.user_metadata?.avatar_gif_until);
+  const bgActive = vipActive || isFutureDate(profile?.profile_bg_until) || isFutureDate(user?.user_metadata?.profile_bg_until);
+
+  const avatarGifRemaining = vipActive ? 'Sınırsız (VIP)' : getRemainingTimeText(profile?.avatar_gif_until || user?.user_metadata?.avatar_gif_until);
+  const profileBgRemaining = vipActive ? 'Sınırsız (VIP)' : getRemainingTimeText(profile?.profile_bg_until || user?.user_metadata?.profile_bg_until);
+
   const currentXp = Number(profile?.xp) || 0;
   const level = levelFromXp(currentXp);
   const cur = xpForLevel(level);
@@ -328,7 +359,8 @@ function ProfilContent() {
   const xpDiff = Math.max(1, next - cur);
   const pct = Math.min(100, Math.max(0, Math.round(((currentXp - cur) / xpDiff) * 100)));
 
-  const bannerBg = profile?.profile_bg_url
+  // Eğer VIP veya 30 Günlük hak yoksa / süresi dolduysa, özel yüklenen görsel gösterilmez (varsayılana döner)
+  const bannerBg = (bgActive && profile?.profile_bg_url)
     ? `url("${profile.profile_bg_url}")`
     : resolveBackground(profile?.equipped_background, frameMap);
   const frameGrad = resolveFrame(profile?.equipped_frame, frameMap);
@@ -366,14 +398,6 @@ function ProfilContent() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <UserBadge role={profile?.role || 'user'} xp={currentXp} vipActive={vipActive} />
-                  <span className="tag" style={{ background: 'rgba(99, 102, 241, 0.2)', borderColor: '#818cf8', color: '#c7d2fe', fontWeight: 800 }}>
-                    ⚡ Seviye {level}
-                  </span>
-                  {vipActive && (
-                    <span className="tag" style={{ background: 'rgba(230, 179, 37, 0.25)', borderColor: '#e6b325', color: '#fef08a', fontWeight: 800 }}>
-                      👑 VIP Üye
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -394,7 +418,7 @@ function ProfilContent() {
             </div>
 
             {/* Hızlı İstatistik Kartları */}
-            <div className="cyber-stat-grid">
+            <div className="cyber-stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
               <div className="cyber-stat-card">
                 <div className="cyber-stat-label"><span>🪙</span> Tier Parası</div>
                 <div className="cyber-stat-value" style={{ color: '#fef08a' }}>{profile?.coins ?? 0}</div>
@@ -405,14 +429,20 @@ function ProfilContent() {
               </div>
               <div className="cyber-stat-card">
                 <div className="cyber-stat-label"><span>💎</span> VIP Durumu</div>
-                <div className="cyber-stat-value" style={{ fontSize: '1.1rem', color: vipActive ? '#86efac' : 'var(--text-dim)' }}>
+                <div className="cyber-stat-value" style={{ fontSize: '1.05rem', color: vipActive ? '#86efac' : 'var(--text-dim)' }}>
                   {vipActive ? (profile?.vip_until ? `${formatDateSafe(profile.vip_until)}'e kadar` : 'Süresiz') : 'Standart'}
                 </div>
               </div>
               <div className="cyber-stat-card">
-                <div className="cyber-stat-label"><span>🎨</span> Kuşanılan Eşyalar</div>
-                <div className="cyber-stat-value" style={{ fontSize: '1.1rem', color: '#f472b6' }}>
-                  {[profile?.equipped_frame, profile?.equipped_name_color, profile?.equipped_background].filter(Boolean).length} / 3 Aktif
+                <div className="cyber-stat-label"><span>🎞️</span> GIF Avatar</div>
+                <div className="cyber-stat-value" style={{ fontSize: '.95rem', color: avatarGifRemaining && avatarGifRemaining !== 'Süresi Doldu' ? '#86efac' : 'var(--text-dim)' }}>
+                  {avatarGifRemaining || 'Kilitli'}
+                </div>
+              </div>
+              <div className="cyber-stat-card">
+                <div className="cyber-stat-label"><span>🖼️</span> GIF Arka Plan</div>
+                <div className="cyber-stat-value" style={{ fontSize: '.95rem', color: profileBgRemaining && profileBgRemaining !== 'Süresi Doldu' ? '#86efac' : 'var(--text-dim)' }}>
+                  {profileBgRemaining || 'Kilitli'}
                 </div>
               </div>
             </div>
@@ -585,11 +615,11 @@ function ProfilContent() {
               <h3>Avatar Görseli</h3>
               {gifActive ? (
                 <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'rgba(230, 179, 37, 0.1)' }}>
-                  💎 VIP: Hareketli GIF Avatar & 10 MB Açık
+                  ✨ GIF Avatar Açık · {avatarGifRemaining}
                 </span>
               ) : (
                 <span className="tag" style={{ borderColor: 'var(--border)', color: 'var(--text-dim)' }}>
-                  Standart: 10 MB (GIF için VIP gerekir)
+                  Standart: 10 MB (GIF için VIP veya 30 Günlük Hak)
                 </span>
               )}
             </div>
@@ -597,12 +627,12 @@ function ProfilContent() {
               Profil resmini PNG, JPG veya WEBP olarak yükle (en fazla 10 MB).{' '}
               {gifActive ? (
                 <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                  ✨ VIP ayrıcalığın aktif: Hareketli GIF avatar yükleyebilirsin!
+                  ✨ Hareketli GIF avatar ayrıcalığın aktif! ({avatarGifRemaining})
                 </span>
               ) : (
                 <span>
-                  💎 Hareketli GIF avatar yüklemek <strong>VIP üyelere özeldir</strong>.{' '}
-                  <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>VIP Ol &rarr;</a>
+                  💎 Hareketli GIF avatar yüklemek <strong>VIP üyelere</strong> veya Mağaza'dan <strong>30 Günlük GIF Avatar Hakkı</strong> alanlara özeldir.{' '}
+                  <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700 }}>Mağaza'dan Al &rarr;</a>
                 </span>
               )}
             </p>
@@ -621,18 +651,24 @@ function ProfilContent() {
             {msg.avatar && <p style={{ marginTop: '10px', color: 'var(--accent)', fontSize: '.85rem' }}>{msg.avatar}</p>}
           </div>
 
-          {/* Özel Profil Arka Planı (VIP) */}
+          {/* Özel Profil Arka Planı (VIP veya 30 Günlük Hak) */}
           <div className="card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
               <h3>Özel Profil Arka Planı (Görsel veya Hareketli GIF)</h3>
-              <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'rgba(230, 179, 37, 0.1)' }}>
-                💎 VIP Özel (10 MB)
-              </span>
+              {bgActive ? (
+                <span className="tag" style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'rgba(230, 179, 37, 0.1)' }}>
+                  ✨ GIF Arka Plan Açık · {profileBgRemaining}
+                </span>
+              ) : (
+                <span className="tag" style={{ borderColor: 'var(--border)', color: 'var(--text-dim)' }}>
+                  VIP veya 30 Günlük Hak Gerekir (10 MB)
+                </span>
+              )}
             </div>
             <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: '6px 0 10px' }}>
-              VIP üyeler kendi profillerine özel hareketli GIF veya yüksek kaliteli görsel arka plan yükleyebilir (en fazla 10 MB).
+              Profiline özel hareketli GIF veya yüksek kaliteli görsel arka plan yükleyebilirsin (en fazla 10 MB).
             </p>
-            {vipActive ? (
+            {bgActive ? (
               <div>
                 <div className="field">
                   <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={uploadBackground} />
@@ -646,8 +682,8 @@ function ProfilContent() {
               </div>
             ) : (
               <div style={{ background: 'var(--bg-2)', padding: '14px 18px', borderRadius: '12px', fontSize: '.88rem', color: 'var(--text-dim)', border: '1px solid var(--border)' }}>
-                🔒 Özel ve hareketli GIF profil arka planı yüklemek <strong>VIP üyelere özeldir</strong> (en fazla 10 MB).{' '}
-                <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700, marginLeft: '6px' }}>VIP olmak için Mağaza &rarr;</a>
+                🔒 Özel ve hareketli GIF profil arka planı yüklemek <strong>VIP üyelere</strong> veya Mağaza'dan <strong>30 Günlük Arka Plan Hakkı</strong> alanlara özeldir.{' '}
+                <a href="/magaza" style={{ color: 'var(--accent)', fontWeight: 700, marginLeft: '6px' }}>Mağaza'dan 30.000 Altına Al &rarr;</a>
               </div>
             )}
           </div>

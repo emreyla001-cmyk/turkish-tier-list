@@ -1,5 +1,5 @@
 import './globals.css';
-import NavAuth from './components/NavAuth';
+import HeaderNav from './components/HeaderNav';
 import Logo from './components/Logo';
 import Heartbeat from './components/Heartbeat';
 import SpotlightSearch from './components/SpotlightSearch';
@@ -46,13 +46,7 @@ export default function RootLayout({ children }) {
               <SpotlightSearch />
             </div>
 
-            <nav className="nav-links">
-              <a href="/#karakterler">Karakterler</a>
-              <a href="/vs" className="nav-vs-link">⚔️ VS Arenası</a>
-              <a href="/tier-sistemi">Tier Sistemi</a>
-              <a href="/sohbet">Sohbet</a>
-              <NavAuth />
-            </nav>
+            <HeaderNav />
           </div>
         </header>
 
