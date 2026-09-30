@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import SpinWheel from '../components/SpinWheel';
+import { addCoins, addXP } from '../lib/wallet';
 
 function nextResetLabel() {
   const now = new Date();
@@ -126,21 +127,19 @@ export default function CekilisPage() {
         const newUntil = new Date(cur + days * 24 * 60 * 60 * 1000).toISOString();
         try { await supabase.from('profiles').update({ profile_bg_until: newUntil }).eq('id', user.id); } catch {}
         await supabase.auth.updateUser({ data: { profile_bg_until: newUntil } });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`user_profile_bg_until_${user.id}`, newUntil);
+          window.dispatchEvent(new CustomEvent('profile-updated', { detail: { profile_bg_until: newUntil } }));
+        }
       } else if (user && rewardId.startsWith('coins_')) {
         const amt = Number(rewardId.split('_')[1]) || 500;
         try {
-          const { data: prof } = await supabase.from('profiles').select('coins').eq('id', user.id).maybeSingle();
-          if (prof) {
-            await supabase.from('profiles').update({ coins: (prof.coins || 0) + amt }).eq('id', user.id);
-          }
+          await addCoins(user, amt);
         } catch {}
       } else if (user && rewardId.startsWith('xp_')) {
         const amt = Number(rewardId.split('_')[1]) || 250;
         try {
-          const { data: prof } = await supabase.from('profiles').select('xp').eq('id', user.id).maybeSingle();
-          if (prof) {
-            await supabase.from('profiles').update({ xp: (prof.xp || 0) + amt }).eq('id', user.id);
-          }
+          await addXP(user, amt);
         } catch {}
       }
 

@@ -145,3 +145,89 @@ export async function addCoins(userOrId, amount, currentCoinsFallback = null) {
     newCoins,
   };
 }
+
+/**
+ * Kullanıcının güncel seviye XP'sini user_metadata, profiles ve localStorage senkronizasyonuyla döndürür.
+ * Hiçbir kazanılan XP kaybolmaz (en yüksek ve geçerli değer esas alınır).
+ */
+export function getEffectiveXP(user, profile) {
+  const metaXp = user?.user_metadata?.xp !== undefined ? Number(user.user_metadata.xp) : null;
+  const profileXp = profile?.xp !== undefined ? Number(profile.xp) : null;
+  const localXp = typeof window !== 'undefined' && user?.id
+    ? Number(localStorage.getItem(`user_xp_${user.id}`))
+    : null;
+
+  const validValues = [metaXp, profileXp, localXp].filter((v) => v !== null && !isNaN(v) && v >= 0);
+  if (validValues.length === 0) return 0;
+  return Math.max(...validValues);
+}
+
+/**
+ * Güvenli ve Kesintisiz Seviye XP Ekleme (user_metadata, localStorage, profiles ve global state)
+ */
+export async function addXP(userOrId, amount, currentXpFallback = null) {
+  if (!userOrId || amount <= 0) return { success: false, newXp: 0 };
+
+  let userObj = typeof userOrId === 'object' ? userOrId : null;
+  let userId = typeof userOrId === 'string' ? userOrId : userOrId?.id;
+
+  if (!userObj) {
+    try {
+      const { data } = await supabase.auth.getUser();
+      userObj = data?.user || null;
+      if (!userId && userObj) userId = userObj.id;
+    } catch {}
+  }
+
+  let currentXp = getEffectiveXP(userObj, null);
+  if (currentXpFallback !== null && !isNaN(Number(currentXpFallback))) {
+    currentXp = Math.max(currentXp, Number(currentXpFallback));
+  }
+
+  if (userId) {
+    try {
+      const { data: p } = await supabase.from('profiles').select('xp').eq('id', userId).maybeSingle();
+      if (p?.xp !== undefined && !isNaN(Number(p.xp))) {
+        currentXp = Math.max(currentXp, Number(p.xp));
+      }
+    } catch {}
+  }
+
+  const newXp = currentXp + Number(amount);
+
+  // 1. Supabase Auth user_metadata'ya anında yaz (En güvenilir oturum state'i)
+  try {
+    await supabase.auth.updateUser({
+      data: {
+        xp: newXp,
+      },
+    });
+  } catch (err) {
+    console.warn('Metadata addXP error:', err);
+  }
+
+  // 2. Tarayıcı localStorage'a anında yaz (Çevrimdışı ve sayfa yenileme yedeklemesi)
+  if (typeof window !== 'undefined' && userId) {
+    localStorage.setItem(`user_xp_${userId}`, String(newXp));
+  }
+
+  // 3. profiles tablosunu güncelle
+  if (userId) {
+    try {
+      await supabase.from('profiles').update({ xp: newXp }).eq('id', userId);
+    } catch (err) {
+      console.warn('Profiles table addXP error:', err);
+    }
+  }
+
+  // 4. Global UI eventlerini ateşle (Profil, HeaderNav, Görevler anında yenilenir)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('xp-updated', { detail: { xp: newXp } }));
+    window.dispatchEvent(new CustomEvent('profile-updated', { detail: { xp: newXp } }));
+  }
+
+  return {
+    success: true,
+    newXp,
+  };
+}

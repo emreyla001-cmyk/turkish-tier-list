@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Avatar, NameTag } from './UserBadge';
 import { frameStyle, nameColorStyle, resolveFrame, resolveNameColor } from './cosmetics';
 import { CoinIcon } from './CyberIcons';
+import { getEffectiveCoins, getEffectiveXP } from '../lib/wallet';
 
 export default function HeaderNav() {
   const [user, setUser] = useState(null);
@@ -21,14 +22,12 @@ export default function HeaderNav() {
         const u = data.user;
         const { data: p } = await supabase
           .from('profiles')
-          .select('id, username, avatar_url, role, coins, is_admin, equipped_frame, equipped_name_color')
+          .select('id, username, avatar_url, role, coins, xp, is_admin, equipped_frame, equipped_name_color')
           .eq('id', u.id)
           .maybeSingle();
         if (mounted) {
-          const effectiveCoins = u.user_metadata?.coins !== undefined
-            ? Number(u.user_metadata.coins)
-            : Number(p?.coins || 0);
-
+          const effectiveCoins = getEffectiveCoins(u, p);
+          const effectiveXp = getEffectiveXP(u, p);
           const localFrame = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_frame_${u.id}`) : null;
           const localNameColor = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_name_color_${u.id}`) : null;
 
@@ -38,6 +37,7 @@ export default function HeaderNav() {
           setProfile(p ? {
             ...p,
             coins: effectiveCoins,
+            xp: effectiveXp,
             equipped_frame: activeFrame,
             equipped_name_color: activeNameColor,
           } : {
@@ -45,6 +45,7 @@ export default function HeaderNav() {
             username: u.user_metadata?.username || u.email?.split('@')[0],
             avatar_url: u.user_metadata?.avatar_url || null,
             coins: effectiveCoins,
+            xp: effectiveXp,
             role: 'user',
             equipped_frame: activeFrame,
             equipped_name_color: activeNameColor,
@@ -59,6 +60,7 @@ export default function HeaderNav() {
           if (!prev) return prev;
           const updated = { ...prev };
           if (e.detail.coins !== undefined) updated.coins = e.detail.coins;
+          if (e.detail.xp !== undefined) updated.xp = e.detail.xp;
           if (e.detail.equipped_frame !== undefined) updated.equipped_frame = e.detail.equipped_frame;
           if (e.detail.equipped_name_color !== undefined) updated.equipped_name_color = e.detail.equipped_name_color;
           if (e.detail.avatar_url !== undefined) updated.avatar_url = e.detail.avatar_url;
@@ -68,6 +70,7 @@ export default function HeaderNav() {
     };
 
     window.addEventListener('coins-updated', handleProfileSync);
+    window.addEventListener('xp-updated', handleProfileSync);
     window.addEventListener('profile-updated', handleProfileSync);
     window.addEventListener('cosmetics-updated', handleProfileSync);
 
@@ -81,6 +84,7 @@ export default function HeaderNav() {
       mounted = false;
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('coins-updated', handleProfileSync);
+      window.removeEventListener('xp-updated', handleProfileSync);
       window.removeEventListener('profile-updated', handleProfileSync);
       window.removeEventListener('cosmetics-updated', handleProfileSync);
     };

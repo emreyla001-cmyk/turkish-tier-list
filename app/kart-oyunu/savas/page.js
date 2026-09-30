@@ -8,6 +8,7 @@ import { cardAudio } from '../../lib/cardAudio';
 import { getCardRarity, getStarInfo } from '../../lib/cardRarity';
 import { getStamina, consumeStamina, buyStaminaPotion, POTION_COST } from '../../lib/stamina';
 import { getBotTierByTrophies, selectBotCard, BOT_TIERS } from '../../lib/cardAIEngine';
+import { addCoins, addXP } from '../../lib/wallet';
 
 const BOT_NAMES = [
   'Gölge Gladyatör',
@@ -289,26 +290,20 @@ export default function SavasArenasi() {
 
     try {
       if (user) {
-        const currentCoins = user.user_metadata?.coins !== undefined
-          ? Number(user.user_metadata.coins)
-          : Number(profile?.coins || 0);
-        const updatedCoins = currentCoins + coinReward;
-        const updatedXp = Number(profile?.xp || 0) + xpReward;
-
         await supabase.auth.updateUser({
           data: {
             trophies: newTrophies,
-            coins: updatedCoins,
           },
         });
 
-        try {
-          await supabase.from('profiles').update({ coins: updatedCoins, xp: updatedXp }).eq('id', user.id);
-        } catch {}
+        await addCoins(user, coinReward);
+        const xpRes = await addXP(user, xpReward, profile?.xp);
 
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: updatedCoins } }));
-        }
+        setProfile((prev) => (prev ? {
+          ...prev,
+          coins: (prev.coins || 0) + coinReward,
+          xp: xpRes?.newXp || (prev.xp || 0) + xpReward,
+        } : prev));
       }
     } catch (e) {
       console.error('Kupa ve ödül güncellenirken hata:', e);

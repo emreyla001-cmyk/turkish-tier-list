@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { frameStyle, nameColorStyle, resolveBackground, resolveFrame, resolveNameColor } from '../components/cosmetics';
 import { Avatar, NameTag } from '../components/UserBadge';
-import { deductCoins, getEffectiveCoins } from '../lib/wallet';
+import { deductCoins, getEffectiveCoins, getEffectiveXP, addXP } from '../lib/wallet';
 import { CoinIcon, CrownIcon, EnergyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
 import TierBadge from '../components/TierBadge';
 import { GACHA_PACKS, drawCardsFromPack } from '../lib/gachaEngine';
@@ -694,22 +694,24 @@ export default function MagazaPage() {
         const localNameColor = typeof window !== 'undefined' ? localStorage.getItem(`user_equipped_name_color_${u.id}`) : null;
 
         const effectiveCoins = getEffectiveCoins(u, p);
+        const effectiveXp = getEffectiveXP(u, p);
+        const localBgUntil = typeof window !== 'undefined' ? localStorage.getItem(`user_profile_bg_until_${u.id}`) : null;
+        const localGifUntil = typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_gif_until_${u.id}`) : null;
+
         const prof = {
           ...(p || {}),
           id: u.id,
           username: p?.username || u.user_metadata?.username || u.email?.split('@')[0] || 'Kullanıcı',
           avatar_url: p?.avatar_url || u.user_metadata?.avatar_url || null,
           coins: effectiveCoins,
-          xp: p?.xp || 0,
+          xp: effectiveXp,
           role: p?.role || 'user',
           equipped_frame: p?.equipped_frame || u.user_metadata?.equipped_frame || localFrame || null,
           equipped_background: p?.equipped_background || u.user_metadata?.equipped_background || localBg || null,
           equipped_name_color: p?.equipped_name_color || u.user_metadata?.equipped_name_color || localNameColor || null,
+          profile_bg_until: p?.profile_bg_until || u.user_metadata?.profile_bg_until || localBgUntil || null,
+          avatar_gif_until: p?.avatar_gif_until || u.user_metadata?.avatar_gif_until || localGifUntil || null,
         };
-
-        if (u.user_metadata?.profile_bg_until) {
-          prof.profile_bg_until = u.user_metadata.profile_bg_until;
-        }
 
         setProfile(prof);
         setOwned(invSet);
@@ -727,18 +729,23 @@ export default function MagazaPage() {
           if (!prev) return prev;
           const next = { ...prev };
           if (e.detail.coins !== undefined) next.coins = e.detail.coins;
+          if (e.detail.xp !== undefined) next.xp = e.detail.xp;
           if (e.detail.equipped_frame !== undefined) next.equipped_frame = e.detail.equipped_frame;
           if (e.detail.equipped_background !== undefined) next.equipped_background = e.detail.equipped_background;
           if (e.detail.equipped_name_color !== undefined) next.equipped_name_color = e.detail.equipped_name_color;
+          if (e.detail.profile_bg_until !== undefined) next.profile_bg_until = e.detail.profile_bg_until;
+          if (e.detail.avatar_gif_until !== undefined) next.avatar_gif_until = e.detail.avatar_gif_until;
           return next;
         });
       }
     };
     window.addEventListener('coins-updated', handleSync);
+    window.addEventListener('xp-updated', handleSync);
     window.addEventListener('profile-updated', handleSync);
     window.addEventListener('cosmetics-updated', handleSync);
     return () => {
       window.removeEventListener('coins-updated', handleSync);
+      window.removeEventListener('xp-updated', handleSync);
       window.removeEventListener('profile-updated', handleSync);
       window.removeEventListener('cosmetics-updated', handleSync);
     };
@@ -779,26 +786,29 @@ export default function MagazaPage() {
 
       const netCoins = deductRes.newCoins + result.cashback + result.refundTotal;
       const newCollection = Array.from(new Set([...metaCards, ...result.drawnCards.map((c) => c.id)]));
-      const newXp = Number(profile?.xp || 0) + (result.xpReward || 0);
+      const xpRes = await addXP(user, result.xpReward || 0, profile?.xp);
+      const netXp = xpRes?.newXp || (Number(profile?.xp || 0) + (result.xpReward || 0));
 
       await supabase.auth.updateUser({
         data: {
           card_collection: newCollection,
           card_upgrades: result.updatedUpgrades,
           coins: netCoins,
+          xp: netXp,
           gacha_pity: result.nextPity,
         },
       });
 
       try {
-        await supabase.from('profiles').update({ coins: netCoins, xp: newXp }).eq('id', user.id);
+        await supabase.from('profiles').update({ coins: netCoins, xp: netXp }).eq('id', user.id);
       } catch {}
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: netCoins } }));
+        window.dispatchEvent(new CustomEvent('xp-updated', { detail: { xp: netXp } }));
       }
 
-      setProfile((prev) => ({ ...prev, coins: netCoins, xp: newXp }));
+      setProfile((prev) => ({ ...prev, coins: netCoins, xp: netXp }));
 
       setTimeout(() => {
         setPackResult({ pack, ...result });
@@ -837,7 +847,12 @@ export default function MagazaPage() {
 
         await supabase.auth.updateUser({ data: { avatar_gif_until: newExpDate } });
         try { await supabase.from('profiles').update({ avatar_gif_until: newExpDate }).eq('id', user.id); } catch {}
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`user_avatar_gif_until_${user.id}`, newExpDate);
+          window.dispatchEvent(new CustomEvent('profile-updated', { detail: { avatar_gif_until: newExpDate, coins: deductRes.newCoins } }));
+        }
 
+        setProfile((prev) => ({ ...prev, avatar_gif_until: newExpDate, coins: deductRes.newCoins }));
         setMsg({
           text: `🎉 Tebrikler! 30 Günlük Hareketli GIF Avatar hakkı hesabına eklendi. (Kalan Süre: ${getRemainingTimeText(newExpDate)})`,
           type: 'success',
@@ -850,7 +865,12 @@ export default function MagazaPage() {
 
         await supabase.auth.updateUser({ data: { profile_bg_until: newExpDate } });
         try { await supabase.from('profiles').update({ profile_bg_until: newExpDate }).eq('id', user.id); } catch {}
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`user_profile_bg_until_${user.id}`, newExpDate);
+          window.dispatchEvent(new CustomEvent('profile-updated', { detail: { profile_bg_until: newExpDate, coins: deductRes.newCoins } }));
+        }
 
+        setProfile((prev) => ({ ...prev, profile_bg_until: newExpDate, coins: deductRes.newCoins }));
         setMsg({
           text: `🎉 Tebrikler! 30 Günlük Hareketli Profil Arka Planı hakkı hesabına eklendi. (Kalan Süre: ${getRemainingTimeText(newExpDate)})`,
           type: 'success',
@@ -910,7 +930,7 @@ export default function MagazaPage() {
       setOwned((prev) => new Set([...prev, item.id]));
       setProfile((prev) => ({ ...prev, coins: deductRes.newCoins }));
       setMsg({ text: `"${item.name}" başarıyla satın alındı ve otomatik kuşanıldı! 🎉`, type: 'success' });
-      await equip(item, false);
+      await equip(item, false, true);
     } catch (e) {
       setMsg({ text: e.message || 'Satın alma başarısız oldu.', type: 'error' });
     } finally {
@@ -920,7 +940,7 @@ export default function MagazaPage() {
   }
 
   // 4. Kuşan veya Çıkar
-  async function equip(item, showSuccessMsg = true) {
+  async function equip(item, showSuccessMsg = true, forceEquip = false) {
     if (!user) return;
     setLoadingAction(item.id);
     setMsg(null);
@@ -938,7 +958,7 @@ export default function MagazaPage() {
     }
 
     const isCurrentlyEquipped = (profile && profile[col] === item.id) || (user?.user_metadata?.[col] === item.id);
-    const targetValue = isCurrentlyEquipped ? null : item.id;
+    const targetValue = forceEquip ? item.id : (isCurrentlyEquipped ? null : item.id);
 
     try {
       // 1. user_metadata'ya anında yaz
@@ -1056,17 +1076,28 @@ export default function MagazaPage() {
         style={{
           marginTop: '22px',
           padding: '24px 28px',
-          backgroundImage: displayBg ? resolveBackground(displayBg) : undefined,
+          background: displayBg ? (resolveBackground(displayBg) || displayBg) : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           position: 'relative',
           overflow: 'hidden',
           border: isPreviewing ? '2px solid var(--accent)' : '1px solid var(--border)',
-          boxShadow: isPreviewing ? '0 0 24px rgba(0, 240, 255, 0.2)' : 'none',
+          boxShadow: isPreviewing ? '0 0 24px rgba(0, 240, 255, 0.25)' : 'none',
           transition: 'all .3s ease',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '18px' }}>
+        {displayBg && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(180deg, rgba(8, 10, 18, 0.35) 0%, rgba(8, 10, 18, 0.8) 100%)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
             <Avatar
               url={displayAvatar}
