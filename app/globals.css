@@ -1679,4 +1679,108 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
   100% { filter: hue-rotate(0deg); }
 }
 
+/* ========================================================
+   MODERN KART OYUNU & SAVAŞ "JUICE" EFEKTLERİ
+   ======================================================== */
+
+/* 1. Ekran Sarsıntısı (Screen Shake) */
+.screen-shake {
+  animation: arenaScreenShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes arenaScreenShake {
+  10%, 90% { transform: translate3d(-3px, -2px, 0) rotate(-0.5deg); }
+  20%, 80% { transform: translate3d(4px, 3px, 0) rotate(0.8deg); }
+  30%, 50%, 70% { transform: translate3d(-6px, -4px, 0) rotate(-1deg); }
+  40%, 60% { transform: translate3d(6px, 4px, 0) rotate(1deg); }
+}
+
+/* 2. Kart Çarpışma Atılımı & Geri Tepmesi */
+.clash-card-p1 {
+  animation: clashPlayer1 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.clash-card-p2 {
+  animation: clashPlayer2 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes clashPlayer1 {
+  0% { transform: translateX(0) scale(1); }
+  40% { transform: translateX(50px) scale(1.08) rotate(3deg); }
+  60% { transform: translateX(-15px) scale(1.02); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes clashPlayer2 {
+  0% { transform: translateX(0) scale(1); }
+  40% { transform: translateX(-50px) scale(1.08) rotate(-3deg); }
+  60% { transform: translateX(15px) scale(1.02); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+/* 3. Holografik Folyo & Prizmatik Kart Işıltısı (Hearthstone / Marvel Snap Foil) */
+.holo-foil-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.holo-foil-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.15) 35%,
+    rgba(255, 0, 128, 0.2) 45%,
+    rgba(0, 240, 255, 0.25) 55%,
+    rgba(255, 215, 0, 0.2) 65%,
+    transparent 80%
+  );
+  transform: rotate(-25deg);
+  pointer-events: none;
+  opacity: 0.7;
+  animation: holoSheen 4s infinite linear;
+}
+
+@keyframes holoSheen {
+  0% { transform: translate(-30%, -30%) rotate(-25deg); }
+  100% { transform: translate(30%, 30%) rotate(-25deg); }
+}
+
+/* 4. Dizi / Evren Sinerji Parıltısı */
+.synergy-badge {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: synergyPulse 1.8s infinite alternate;
+}
+
+@keyframes synergyPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.04); filter: brightness(1.25); }
+}
+
+/* 5. FUT Paket Açılım Walkout Işıkları */
+.pack-walkout-glow {
+  animation: walkoutFlares 2s infinite alternate ease-in-out;
+}
+
+@keyframes walkoutFlares {
+  0% { box-shadow: 0 0 25px rgba(234, 179, 8, 0.3), inset 0 0 15px rgba(234, 179, 8, 0.2); }
+  100% { box-shadow: 0 0 60px rgba(234, 179, 8, 0.8), inset 0 0 30px rgba(234, 179, 8, 0.5); }
+}
+
+
 

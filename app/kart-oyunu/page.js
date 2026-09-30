@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import TierBadge from '../components/TierBadge';
 import { getLeagueForTrophies } from '../lib/cardGameEngine';
+import { cardAudio } from '../lib/cardAudio';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -86,6 +87,7 @@ export default function KartOyunuHub() {
     }
 
     setOpening(true);
+    cardAudio.playWhoosh();
     try {
       // 1. Altın düş
       const newCoins = Math.max(0, (profile.coins || 0) - pack.price);
@@ -130,6 +132,7 @@ export default function KartOyunuHub() {
       setTimeout(() => {
         setOpenedPackCards(drawn);
         setOpening(false);
+        cardAudio.playPackOpening();
       }, 1200);
     } catch (e) {
       setMsg({ text: `Paket açılırken hata oluştu: ${e.message}`, type: 'error' });
@@ -139,6 +142,7 @@ export default function KartOyunuHub() {
 
   // Deste Kartı Seçme (5'li deste)
   async function toggleDeckCard(cardId) {
+    cardAudio.playCardFlip();
     let updatedDeck = [...myDeck];
     if (updatedDeck.includes(cardId)) {
       if (updatedDeck.length <= 1) {
@@ -589,35 +593,47 @@ export default function KartOyunuHub() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '6px' }}>✨</div>
+            {openedPackCards.some((c) => ['0', '1-A', '1-B', '1-C', '2-A', '2-B', '2-C', '3-A', '3-B', '3-C'].includes(c.tier)) ? (
+              <div style={{ marginBottom: '10px' }}>
+                <span className="synergy-badge" style={{ fontSize: '.85rem', padding: '6px 14px' }}>
+                  🔥 EFSANEVİ KOZMİK WALKOUT! 🔥
+                </span>
+              </div>
+            ) : (
+              <div style={{ fontSize: '3rem', marginBottom: '6px' }}>✨</div>
+            )}
             <h2 style={{ fontSize: '1.8rem', color: 'var(--accent)', margin: '0 0 6px' }}>PAKETTEN ÇIKAN KARTLAR!</h2>
             <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>Tebrikler, 3 yeni karakter kartı koleksiyonuna eklendi:</p>
 
             <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-              {openedPackCards.map((c) => (
-                <div
-                  key={c.id}
-                  className="card"
-                  style={{
-                    padding: '14px',
-                    textAlign: 'center',
-                    background: 'var(--bg-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '14px',
-                  }}
-                >
-                  <div style={{ width: '100%', height: '160px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', background: '#000' }}>
-                    <img src={c.image_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {openedPackCards.map((c) => {
+                const isHighTier = ['0', '1-A', '1-B', '1-C', '2-A', '2-B', '2-C', '3-A', '3-B', '3-C'].includes(c.tier);
+                return (
+                  <div
+                    key={c.id}
+                    className={`card ${isHighTier ? 'holo-foil-card' : ''}`}
+                    style={{
+                      padding: '14px',
+                      textAlign: 'center',
+                      background: 'var(--bg-2)',
+                      border: isHighTier ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      borderRadius: '14px',
+                      boxShadow: isHighTier ? '0 0 20px rgba(234, 179, 8, 0.4)' : 'none',
+                    }}
+                  >
+                    <div style={{ width: '100%', height: '160px', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px', background: '#000' }}>
+                      <img src={c.image_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <strong style={{ fontSize: '.95rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.name}
+                    </strong>
+                    <div style={{ margin: '6px 0' }}><TierBadge tier={c.tier} /></div>
+                    <div style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 800 }}>
+                      Güç: {c.power_score || 50}
+                    </div>
                   </div>
-                  <strong style={{ fontSize: '.95rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.name}
-                  </strong>
-                  <div style={{ margin: '6px 0' }}><TierBadge tier={c.tier} /></div>
-                  <div style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 800 }}>
-                    Güç: {c.power_score || 50}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <button
