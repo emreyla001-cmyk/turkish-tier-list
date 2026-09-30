@@ -33,6 +33,26 @@ export default function HeaderNav() {
       }
     });
 
+    const handleCoinsUpdated = (e) => {
+      if (e?.detail?.coins !== undefined) {
+        setProfile((prev) => (prev ? { ...prev, coins: e.detail.coins } : prev));
+      } else if (mounted) {
+        supabase.auth.getUser().then(async ({ data: ud }) => {
+          if (ud?.user) {
+            const { data: p } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url, role, coins, is_admin, equipped_frame, equipped_name_color')
+              .eq('id', ud.user.id)
+              .maybeSingle();
+            if (p && mounted) setProfile(p);
+          }
+        });
+      }
+    };
+
+    window.addEventListener('coins-updated', handleCoinsUpdated);
+    window.addEventListener('profile-updated', handleCoinsUpdated);
+
     const handleClickOutside = (e) => {
       if (navRef.current && !navRef.current.contains(e.target)) {
         setOpenDropdown(null);
@@ -42,6 +62,8 @@ export default function HeaderNav() {
     return () => {
       mounted = false;
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('coins-updated', handleCoinsUpdated);
+      window.removeEventListener('profile-updated', handleCoinsUpdated);
     };
   }, []);
 
