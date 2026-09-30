@@ -1,4 +1,4 @@
-import { nameColorStyle, resolveFrame } from './cosmetics';
+import { getAnimatedFrameInfo, nameColorStyle, resolveFrame } from './cosmetics';
 
 export const ROLES = {
   admin: ['👑', 'Admin'],
@@ -68,58 +68,131 @@ export function NameTag({ name, color }) {
 
 export function Avatar({ url, name = '?', size = 34, frameGradient, onClick, style }) {
   const safeName = (name && typeof name === 'string' && name.trim().length > 0) ? name.trim() : '?';
+  const animInfo = getAnimatedFrameInfo(frameGradient);
   const activeFrame = resolveFrame(frameGradient);
-
-  const wrapStyle = activeFrame
-    ? {
-        width: size + 8,
-        height: size + 8,
-        borderRadius: '50%',
-        padding: '3px',
-        backgroundImage: activeFrame,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        cursor: onClick ? 'pointer' : undefined,
-        ...style,
-      }
-    : { width: size, height: size, flexShrink: 0, display: 'inline-flex', cursor: onClick ? 'pointer' : undefined, ...style };
 
   const inner = url ? (
     <img
       className="avatar"
       src={url}
       alt={safeName}
-      style={{ width: size, height: size, cursor: onClick ? 'pointer' : undefined }}
+      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: '50%' }}
       onClick={onClick}
     />
   ) : (
     <span
       className="avatar avatar-fallback"
-      style={{ width: size, height: size, fontSize: size * 0.42, cursor: onClick ? 'pointer' : undefined }}
+      style={{ width: '100%', height: '100%', fontSize: size * 0.42, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
       onClick={onClick}
     >
       {safeName.charAt(0).toLocaleUpperCase('tr')}
     </span>
   );
 
-  if (!activeFrame) return inner;
+  // 1. Gerçek Hareketli Conic Çerçeve (360° Dönen Neon Işıma)
+  if (animInfo) {
+    const framePadding = Math.max(3, Math.round(size * 0.08));
+    const totalSize = size + framePadding * 2;
+    return (
+      <span
+        className="avatar-animated-frame-wrap"
+        style={{
+          width: totalSize,
+          height: totalSize,
+          position: 'relative',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          cursor: onClick ? 'pointer' : undefined,
+          ...style,
+        }}
+        onClick={onClick}
+        title={animInfo.name ? `Çerçeve: ${animInfo.name}` : undefined}
+      >
+        <span
+          className="avatar-animated-frame-spinner"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            background: animInfo.conic,
+            boxShadow: animInfo.glow,
+            animation: `frameSpinContinuous ${animInfo.speed || '2.5s'} linear infinite`,
+            zIndex: 1,
+          }}
+        />
+        <span
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            width: size,
+            height: size,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            display: 'inline-flex',
+            background: 'var(--bg-2, #0e121b)',
+          }}
+        >
+          {inner}
+        </span>
+      </span>
+    );
+  }
 
-  return (
-    <span style={wrapStyle} onClick={onClick}>
+  // 2. Statik veya Gradient Çerçeve
+  if (activeFrame) {
+    const framePadding = Math.max(3, Math.round(size * 0.07));
+    const totalSize = size + framePadding * 2;
+    return (
       <span
         style={{
-          width: size,
-          height: size,
+          width: totalSize,
+          height: totalSize,
           borderRadius: '50%',
-          overflow: 'hidden',
+          padding: `${framePadding}px`,
+          backgroundImage: activeFrame,
           display: 'inline-flex',
-          background: 'var(--bg-2)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          cursor: onClick ? 'pointer' : undefined,
+          ...style,
         }}
+        onClick={onClick}
       >
-        {inner}
+        <span
+          style={{
+            width: size,
+            height: size,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            display: 'inline-flex',
+            background: 'var(--bg-2, #0e121b)',
+          }}
+        >
+          {inner}
+        </span>
       </span>
+    );
+  }
+
+  // 3. Standart Çerçevesiz Avatar
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        cursor: onClick ? 'pointer' : undefined,
+        ...style,
+      }}
+      onClick={onClick}
+    >
+      {inner}
     </span>
   );
 }

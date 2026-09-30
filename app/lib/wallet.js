@@ -12,14 +12,34 @@ export function getEffectiveCoins(user, profile) {
 
 /**
  * Güvenli ve Kusursuz Bakiye Düşümü (RLS Güvenlikli & Metadata Fallback)
- * Hem profiles tablosunu hem de user_metadata'yı senkronize eder.
+ * user parametresi hem nesne (user) hem de string (user.id) olarak gelebilir.
  */
-export async function deductCoins(user, amount, reason = 'Alışveriş') {
-  if (!user) return { success: false, error: 'Giriş yapılmalıdır.' };
+export async function deductCoins(userOrId, amount, currentCoinsFallback = null) {
+  if (!userOrId) return { success: false, error: 'Giriş yapılmalıdır.' };
 
-  const currentCoins = user.user_metadata?.coins !== undefined
-    ? Number(user.user_metadata.coins)
-    : 0;
+  let userObj = typeof userOrId === 'object' ? userOrId : null;
+  let userId = typeof userOrId === 'string' ? userOrId : userOrId?.id;
+
+  if (!userObj) {
+    try {
+      const { data } = await supabase.auth.getUser();
+      userObj = data?.user || null;
+      if (!userId && userObj) userId = userObj.id;
+    } catch {}
+  }
+
+  // Mevcut bakiye: user_metadata -> currentCoinsFallback -> profiles tablosu
+  let currentCoins = 0;
+  if (userObj?.user_metadata?.coins !== undefined) {
+    currentCoins = Number(userObj.user_metadata.coins);
+  } else if (currentCoinsFallback !== null && !isNaN(Number(currentCoinsFallback))) {
+    currentCoins = Number(currentCoinsFallback);
+  } else if (userId) {
+    try {
+      const { data: p } = await supabase.from('profiles').select('coins').eq('id', userId).maybeSingle();
+      if (p?.coins !== undefined) currentCoins = Number(p.coins);
+    } catch {}
+  }
 
   if (currentCoins < amount) {
     return {
@@ -31,7 +51,7 @@ export async function deductCoins(user, amount, reason = 'Alışveriş') {
 
   const newCoins = Math.max(0, currentCoins - amount);
 
-  // 1. user_metadata'yı kesin olarak güncelle (RLS'e takılmaz)
+  // 1. user_metadata'yı güncelle
   try {
     await supabase.auth.updateUser({
       data: {
@@ -42,11 +62,13 @@ export async function deductCoins(user, amount, reason = 'Alışveriş') {
     console.warn('Metadata coins update error:', metaErr);
   }
 
-  // 2. profiles tablosunu güncelle (varsa RPC ya da update, hata verirse sessizce yoksay)
-  try {
-    await supabase.from('profiles').update({ coins: newCoins }).eq('id', user.id);
-  } catch (tableErr) {
-    console.warn('Profiles table update bypassed:', tableErr?.message);
+  // 2. profiles tablosunu güncelle
+  if (userId) {
+    try {
+      await supabase.from('profiles').update({ coins: newCoins }).eq('id', userId);
+    } catch (tableErr) {
+      console.warn('Profiles table update bypassed:', tableErr?.message);
+    }
   }
 
   // 3. UI genelinde anlık bakiye yenilemesi fırlat
@@ -64,12 +86,31 @@ export async function deductCoins(user, amount, reason = 'Alışveriş') {
 /**
  * Güvenli Bakiye Ekleme (Ödüller, Görevler, İadeler)
  */
-export async function addCoins(user, amount, reason = 'Kazanılan Ödül') {
-  if (!user || amount <= 0) return { success: false };
+export async function addCoins(userOrId, amount, currentCoinsFallback = null) {
+  if (!userOrId || amount <= 0) return { success: false };
 
-  const currentCoins = user.user_metadata?.coins !== undefined
-    ? Number(user.user_metadata.coins)
-    : 0;
+  let userObj = typeof userOrId === 'object' ? userOrId : null;
+  let userId = typeof userOrId === 'string' ? userOrId : userOrId?.id;
+
+  if (!userObj) {
+    try {
+      const { data } = await supabase.auth.getUser();
+      userObj = data?.user || null;
+      if (!userId && userObj) userId = userObj.id;
+    } catch {}
+  }
+
+  let currentCoins = 0;
+  if (userObj?.user_metadata?.coins !== undefined) {
+    currentCoins = Number(userObj.user_metadata.coins);
+  } else if (currentCoinsFallback !== null && !isNaN(Number(currentCoinsFallback))) {
+    currentCoins = Number(currentCoinsFallback);
+  } else if (userId) {
+    try {
+      const { data: p } = await supabase.from('profiles').select('coins').eq('id', userId).maybeSingle();
+      if (p?.coins !== undefined) currentCoins = Number(p.coins);
+    } catch {}
+  }
 
   const newCoins = currentCoins + amount;
 
@@ -85,10 +126,12 @@ export async function addCoins(user, amount, reason = 'Kazanılan Ödül') {
   }
 
   // 2. profiles tablosu
-  try {
-    await supabase.from('profiles').update({ coins: newCoins }).eq('id', user.id);
-  } catch (err) {
-    console.warn('Profiles table add coins error:', err);
+  if (userId) {
+    try {
+      await supabase.from('profiles').update({ coins: newCoins }).eq('id', userId);
+    } catch (err) {
+      console.warn('Profiles table add coins error:', err);
+    }
   }
 
   // 3. Event fırlat
