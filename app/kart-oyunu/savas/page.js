@@ -244,6 +244,9 @@ export default function SavasArenasi() {
           const updatedCoins = (profile.coins || 0) + coinReward;
           const updatedXp = (profile.xp || 0) + xpReward;
           await supabase.from('profiles').update({ coins: updatedCoins, xp: updatedXp }).eq('id', user.id);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: updatedCoins } }));
+          }
         }
       }
     } catch (e) {

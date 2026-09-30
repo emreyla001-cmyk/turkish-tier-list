@@ -88,9 +88,22 @@ export default function KartOyunuHub() {
     setOpening(true);
     try {
       // 1. Altın düş
-      const newCoins = (profile.coins || 0) - pack.price;
-      await supabase.from('profiles').update({ coins: newCoins }).eq('id', user.id);
+      const newCoins = Math.max(0, (profile.coins || 0) - pack.price);
+      const { error: updateErr } = await supabase
+        .from('profiles')
+        .update({ coins: newCoins })
+        .eq('id', user.id);
+
+      if (updateErr) {
+        console.error('Bakiye güncelleme hatası:', updateErr);
+        throw new Error('Bakiye düşülemedi: ' + updateErr.message);
+      }
+
+      // State ve global navbar güncelle
       setProfile((prev) => ({ ...prev, coins: newCoins }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: newCoins } }));
+      }
 
       // 2. Filtreye göre karakterleri seç
       let pool = characters.filter((c) => pack.tierFilter.includes(c.tier));
@@ -107,7 +120,10 @@ export default function KartOyunuHub() {
       const newCollection = Array.from(new Set([...myCards, ...drawn.map((c) => c.id)]));
       setMyCards(newCollection);
       await supabase.auth.updateUser({
-        data: { card_collection: newCollection },
+        data: {
+          card_collection: newCollection,
+          coins: newCoins,
+        },
       });
 
       // Animasyon için kartları göster
@@ -379,11 +395,34 @@ export default function KartOyunuHub() {
       {/* 2. SEKME: PAKET MAĞAZASI (FUT Pack Opening) */}
       {activeTab === 'packs' && (
         <div>
-          <div style={{ marginBottom: '16px' }}>
-            <h3 style={{ margin: 0 }}>Tier Kart Paketleri</h3>
-            <p style={{ color: 'var(--text-dim)', fontSize: '.88rem', margin: '4px 0 0' }}>
-              Her paketten rastgele 3 adet karakter koleksiyon kartı çıkar. Güçlü tier'lar içeren paketlerle desteni zirveye taşı!
-            </p>
+          <div
+            style={{
+              marginBottom: '20px',
+              padding: '14px 20px',
+              background: 'rgba(234, 179, 8, 0.08)',
+              border: '1px solid rgba(234, 179, 8, 0.25)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Tier Kart Paketleri</h3>
+              <p style={{ color: 'var(--text-dim)', fontSize: '.86rem', margin: '4px 0 0' }}>
+                Her paketten rastgele 3 adet karakter kartı çıkar. Desteni zirveye taşı!
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: '.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', display: 'block' }}>
+                Mevcut Bakiyen
+              </span>
+              <strong style={{ fontSize: '1.25rem', color: '#fef08a' }}>
+                🪙 {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
+              </strong>
+            </div>
           </div>
 
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
