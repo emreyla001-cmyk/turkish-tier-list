@@ -6,18 +6,24 @@ import { frameStyle, nameColorStyle, resolveBackground, resolveFrame, resolveNam
 import { Avatar, NameTag } from '../components/UserBadge';
 import { deductCoins, getEffectiveCoins } from '../lib/wallet';
 import { CoinIcon, CrownIcon, EnergyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
+import TierBadge from '../components/TierBadge';
+import { GACHA_PACKS, drawCardsFromPack } from '../lib/gachaEngine';
+import { cardAudio } from '../lib/cardAudio';
+import { getCardRarity, getStarInfo } from '../lib/cardRarity';
 
 const KIND_LABEL = {
+  packs: '🃏 Tier Kart Paketleri (Gacha)',
   special_permit: '⚡ Özel Haklar (GIF & Arka Plan)',
   frame: 'Avatar Çerçeveleri',
-  name_color: 'İsim Renkleri',
+  name_color: 'İsim Renkleri & Efektler',
   background: 'Profil Arka Planları',
+  avatar: 'Özel Karakter Avatarları',
 };
-const KIND_ORDER = ['special_permit', 'frame', 'name_color', 'background'];
+const KIND_ORDER = ['packs', 'special_permit', 'frame', 'name_color', 'background', 'avatar'];
 
-// Mağaza Eşya Kataloğu (Yeni eklenenler ve 30 Günlük Özel Haklar)
+// Genişletilmiş Mağaza Kataloğu (Yeni renkli avatarlar, hareketli arkaplanlar, hareketli isimler)
 const CATALOG_ITEMS = [
-  // Özel 30 Günlük Haklar (30.000 Altın)
+  // 1. Özel 30 Günlük Haklar (30.000 Altın)
   {
     id: 'avatar_gif_permit',
     kind: 'special_permit',
@@ -41,7 +47,7 @@ const CATALOG_ITEMS = [
     sort: 2,
   },
 
-  // Çerçeveler
+  // 2. Çerçeveler (Klasik & Yeni Hareketli Çerçeveler)
   {
     id: 'frame_gold',
     kind: 'frame',
@@ -142,8 +148,88 @@ const CATALOG_ITEMS = [
     vip_only: false,
     sort: 19,
   },
+  {
+    id: 'frame_void_abyss',
+    kind: 'frame',
+    name: 'Hiçlik Boşluğu (Void Abyss)',
+    price: 7000,
+    value: 'frame_void_abyss',
+    description: 'Karanlık mor ve neon fuşya kozmik çekim aurası.',
+    vip_only: false,
+    sort: 20,
+  },
+  {
+    id: 'frame_frost_bite',
+    kind: 'frame',
+    name: 'Buzul Kristali (Frost Bite)',
+    price: 6000,
+    value: 'frame_frost_bite',
+    description: 'Kutup mavisi donmuş buz kristalleri ve beyaz ayaz.',
+    vip_only: false,
+    sort: 21,
+  },
+  {
+    id: 'frame_thunder_storm',
+    kind: 'frame',
+    name: 'Fırtına Şimşeği (Thunder Storm)',
+    price: 8000,
+    value: 'frame_thunder_storm',
+    description: 'Elektrik sarısı ve fırtına mavisi çakan yıldırımlar.',
+    vip_only: false,
+    sort: 22,
+  },
+  {
+    id: 'frame_blood_eclipse',
+    kind: 'frame',
+    name: 'Kanlı Tutulma (Blood Eclipse)',
+    price: 9500,
+    value: 'frame_blood_eclipse',
+    description: 'Koyu bordo ve kan alevi gibi parlayan mistik tutulma.',
+    vip_only: false,
+    sort: 23,
+  },
+  {
+    id: 'frame_samurai_gold',
+    kind: 'frame',
+    name: 'Samuray Onuru & Altın Varak',
+    price: 8500,
+    value: 'frame_samurai_gold',
+    description: 'Koyu kırmızı ve saf altın varak işlemeli savaşçı çerçevesi.',
+    vip_only: false,
+    sort: 24,
+  },
+  {
+    id: 'frame_hologram_prism',
+    kind: 'frame',
+    name: 'Sonsuzluk Prizması (Holo Prism)',
+    price: 12000,
+    value: 'frame_hologram_prism',
+    description: 'Tüm renk tayfını yansıtan 3D holografik prizma çerçeve.',
+    vip_only: true,
+    sort: 25,
+  },
+  {
+    id: 'frame_emerald_serpent',
+    kind: 'frame',
+    name: 'Zümrüt Ejder Pulu',
+    price: 6500,
+    value: 'frame_emerald_serpent',
+    description: 'Pırlanta parlaklığında zümrüt yeşili ejder zırhı.',
+    vip_only: false,
+    sort: 26,
+  },
+  {
+    id: 'frame_celestial_star',
+    kind: 'frame',
+    name: 'Kozmik Süpernova',
+    price: 10000,
+    value: 'frame_celestial_star',
+    description: 'Yıldız patlaması beyazı ve derin mor süpernova aurası.',
+    vip_only: false,
+    sort: 27,
+  },
 
-  // İsim Renkleri
+  // 3. İsim Renkleri & Hareketli Efektler
   {
     id: 'nc_gold',
     kind: 'name_color',
@@ -234,8 +320,78 @@ const CATALOG_ITEMS = [
     vip_only: false,
     sort: 38,
   },
+  {
+    id: 'nc_gold_shimmer',
+    kind: 'name_color',
+    name: 'Altın Varak Parıltısı (Hareketli)',
+    price: 5000,
+    value: 'nc_gold_shimmer',
+    description: 'Saf 24 ayar altın parçacıkları gibi ışıldayan degrade.',
+    vip_only: false,
+    sort: 39,
+  },
+  {
+    id: 'nc_blood_pulse',
+    kind: 'name_color',
+    name: 'Kan Kırmızısı Nabız (Hareketli)',
+    price: 5500,
+    value: 'nc_blood_pulse',
+    description: 'Karanlık kan kırmızısı ritmik dalga.',
+    vip_only: false,
+    sort: 40,
+  },
+  {
+    id: 'nc_ice_frost',
+    kind: 'name_color',
+    name: 'Buzul Ayazı (Hareketli)',
+    price: 4500,
+    value: 'nc_ice_frost',
+    description: 'Donmuş buz kristalleri ve gök mavisi parıltı.',
+    vip_only: false,
+    sort: 41,
+  },
+  {
+    id: 'nc_solar_flare',
+    kind: 'name_color',
+    name: 'Güneş Patlaması (Hareketli)',
+    price: 6000,
+    value: 'nc_solar_flare',
+    description: 'Akkor sarı ve güneş turuncusu patlama efekti.',
+    vip_only: false,
+    sort: 42,
+  },
+  {
+    id: 'nc_void_nebula',
+    kind: 'name_color',
+    name: 'Hiçlik Nebulası (Hareketli)',
+    price: 7500,
+    value: 'nc_void_nebula',
+    description: 'Derin uzay moru ve yıldız tozu dalgalanması.',
+    vip_only: false,
+    sort: 43,
+  },
+  {
+    id: 'nc_matrix_green',
+    kind: 'name_color',
+    name: 'Matrix Terminali (Hareketli)',
+    price: 5000,
+    value: 'nc_matrix_green',
+    description: 'Yeşil siber veri terminali renk geçişi.',
+    vip_only: false,
+    sort: 44,
+  },
+  {
+    id: 'nc_cherry_blossom',
+    kind: 'name_color',
+    name: 'Sakura Çiçeği (Hareketli)',
+    price: 4000,
+    value: 'nc_cherry_blossom',
+    description: 'Japon bahar kiraz çiçeği pembe tonları.',
+    vip_only: false,
+    sort: 45,
+  },
 
-  // Profil Arka Planları
+  // 4. Profil Arka Planları (Canlı & Sinematik Arka Planlar)
   {
     id: 'bg_aurora',
     kind: 'background',
@@ -281,7 +437,7 @@ const CATALOG_ITEMS = [
     kind: 'background',
     name: 'Siber Şehir Neonu',
     price: 4500,
-    value: 'linear-gradient(135deg,#0a0e1a,#1a103c,#002b36,#0a0e1a)',
+    value: 'bg_cyber_neon',
     description: 'Gece siberpunk şehri atmosferi ve neon degrade.',
     vip_only: false,
     sort: 54,
@@ -291,7 +447,7 @@ const CATALOG_ITEMS = [
     kind: 'background',
     name: 'Tengri Altını',
     price: 6000,
-    value: 'linear-gradient(135deg,#1f1a0a,#3a2d0d,#5c4714,#1a1608)',
+    value: 'bg_tengri_gold',
     description: 'Karanlık ve altın karışımı asil bozkır tonları.',
     vip_only: false,
     sort: 55,
@@ -301,7 +457,7 @@ const CATALOG_ITEMS = [
     kind: 'background',
     name: 'Kanlı Ay Teması',
     price: 5500,
-    value: 'linear-gradient(135deg,#200508,#450a10,#681119,#150305)',
+    value: 'bg_blood_moon',
     description: 'Koyu bordo ve kan kırmızısı mistik atmosfer.',
     vip_only: false,
     sort: 56,
@@ -311,7 +467,7 @@ const CATALOG_ITEMS = [
     kind: 'background',
     name: 'Matrix Kod Teması',
     price: 4000,
-    value: 'linear-gradient(135deg,#031408,#082810,#051e0c,#020d05)',
+    value: 'bg_matrix',
     description: 'Siber dünyanın karanlık ve yeşil derinliği.',
     vip_only: false,
     sort: 57,
@@ -321,32 +477,157 @@ const CATALOG_ITEMS = [
     kind: 'background',
     name: 'Kozmik Hiçlik (Void)',
     price: 5000,
-    value: 'linear-gradient(135deg,#050508,#0c0818,#160b2b,#050508)',
+    value: 'bg_void',
     description: 'Karanlık yıldızlararası derin boşluk.',
     vip_only: false,
     sort: 58,
   },
+  {
+    id: 'bg_synthwave',
+    kind: 'background',
+    name: '80ler Synthwave Izgarası',
+    price: 4000,
+    value: 'bg_synthwave',
+    description: 'Retro fütüristik mor ve neon pembe ızgara manzarası.',
+    vip_only: false,
+    sort: 59,
+  },
+  {
+    id: 'bg_aurora_borealis',
+    kind: 'background',
+    name: 'Dans Eden Kuzey Işıkları',
+    price: 5000,
+    value: 'bg_aurora_borealis',
+    description: 'Yeşil ve turkuaz kutup ışıkları dalgalanması.',
+    vip_only: false,
+    sort: 60,
+  },
+  {
+    id: 'bg_magma_core',
+    kind: 'background',
+    name: 'Dünya Çekirdeği & Magma',
+    price: 5500,
+    value: 'bg_magma_core',
+    description: 'Derin yeraltı lav kanalları ve kızgın volkanik taşlar.',
+    vip_only: false,
+    sort: 61,
+  },
+  {
+    id: 'bg_galaxy_cluster',
+    kind: 'background',
+    name: 'Galaksi Kümesi & Süpernova',
+    price: 7500,
+    value: 'bg_galaxy_cluster',
+    description: 'Milyonlarca yıldız ve süpernova ışıltısı barındıran derin uzay.',
+    vip_only: false,
+    sort: 62,
+  },
+  {
+    id: 'bg_zen_bamboo',
+    kind: 'background',
+    name: 'Sisli Zen Bambu Bahçesi',
+    price: 3500,
+    value: 'bg_zen_bamboo',
+    description: 'Dingin yeşil bambu ormanı ve tapınak sükuneti.',
+    vip_only: false,
+    sort: 63,
+  },
+  {
+    id: 'bg_cyber_grid',
+    kind: 'background',
+    name: 'Tron Siber Izgara',
+    price: 4500,
+    value: 'bg_cyber_grid',
+    description: 'Sonsuz mavi neon dijital zemin.',
+    vip_only: false,
+    sort: 64,
+  },
+  {
+    id: 'bg_crimson_nebula',
+    kind: 'background',
+    name: 'Bordo Yıldız Beşiği',
+    price: 6000,
+    value: 'bg_crimson_nebula',
+    description: 'Karanlık uzayda doğan bordo renkli yıldız nebulası.',
+    vip_only: false,
+    sort: 65,
+  },
+
+  // 5. Özel Karakter Avatarları (Hazır Prestijli Profil Portreleri)
+  {
+    id: 'avatar_cyber_samurai',
+    kind: 'avatar',
+    name: 'Siber Samuray',
+    price: 3000,
+    value: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&q=80',
+    description: 'Neon maskeli ve katanalı siber savaşçı avatarı.',
+    vip_only: false,
+    sort: 80,
+  },
+  {
+    id: 'avatar_neon_wolf',
+    kind: 'avatar',
+    name: 'Bozkır Neon Kurdu',
+    price: 4000,
+    value: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=300&q=80',
+    description: 'Bozkırın asil ruhunu taşıyan parlayan kurt avatarı.',
+    vip_only: false,
+    sort: 81,
+  },
+  {
+    id: 'avatar_cosmic_divine',
+    kind: 'avatar',
+    name: 'Kozmik İlahi Varlık',
+    price: 6000,
+    value: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80',
+    description: 'Yıldız tozu ve ışık aurasıyla parıldayan yüce varlık.',
+    vip_only: false,
+    sort: 82,
+  },
+  {
+    id: 'avatar_phoenix_fire',
+    kind: 'avatar',
+    name: 'Ateş Ankası',
+    price: 4500,
+    value: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&q=80',
+    description: 'Küllerinden yeniden doğan parlayan anka kuşu.',
+    vip_only: false,
+    sort: 83,
+  },
+  {
+    id: 'avatar_shadow_ninja',
+    kind: 'avatar',
+    name: 'Gölge Suikastçısı',
+    price: 3500,
+    value: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=300&q=80',
+    description: 'Karanlıkta gizlenen ve sessizce vuran gölge ustası.',
+    vip_only: false,
+    sort: 84,
+  },
+  {
+    id: 'avatar_golden_dragon',
+    kind: 'avatar',
+    name: 'Altın Ejderha Hükümdarı',
+    price: 8000,
+    value: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300&q=80',
+    description: 'Göklerin efendisi, altın pullu kutsal ejderha avatarı.',
+    vip_only: true,
+    sort: 85,
+  },
 ];
 
-function isFutureDate(dateVal) {
-  if (!dateVal) return false;
-  try {
-    const d = new Date(dateVal);
-    return !isNaN(d.getTime()) && d.getTime() > Date.now();
-  } catch {
-    return false;
-  }
+function isFutureDate(dateStr) {
+  if (!dateStr) return false;
+  return new Date(dateStr).getTime() > Date.now();
 }
 
-function getRemainingTimeText(untilDate) {
-  if (!untilDate) return null;
-  const target = new Date(untilDate).getTime();
-  const now = Date.now();
-  const diff = target - now;
+function getRemainingTimeText(dateStr) {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr).getTime() - Date.now();
   if (diff <= 0) return 'Süresi Doldu';
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  if (days > 0) return `${days} gün ${hours} saat`;
+  if (days > 0) return `${days} gün kaldı`;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
   const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   return `${hours} saat ${mins} dk`;
 }
@@ -354,23 +635,28 @@ function getRemainingTimeText(untilDate) {
 export default function MagazaPage() {
   const [user, setUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
+  const [characters, setCharacters] = useState([]);
   const [items, setItems] = useState([]);
   const [owned, setOwned] = useState(new Set());
   const [activeTab, setActiveTab] = useState('all');
   const [msg, setMsg] = useState(null);
   const [loadingAction, setLoadingAction] = useState(null);
 
+  // Kart Paketi Açma Durumları
+  const [openingPackId, setOpeningPackId] = useState(null);
+  const [packResult, setPackResult] = useState(null);
+
   // Canlı Önizleme Geçici Durumu
   const [previewFrame, setPreviewFrame] = useState(null);
   const [previewBg, setPreviewBg] = useState(null);
   const [previewNameColor, setPreviewNameColor] = useState(null);
+  const [previewAvatar, setPreviewAvatar] = useState(null);
 
   async function load() {
     try {
       const { data: { user: u } } = await supabase.auth.getUser();
       setUser(u || null);
 
-      // Veritabanındaki eşyaları ve statik kataloğu birleştir
       let dbItems = [];
       try {
         const { data: shop } = await supabase.from('shop_items').select('*').order('sort');
@@ -379,12 +665,17 @@ export default function MagazaPage() {
         console.warn('DB shop_items okunamadı, katalog kullanılıyor:', err);
       }
 
-      // Catalog listesini DB listesiyle harmanla (id bazında tekilleştir)
+      // Karakterleri de gacha motoru için getir
+      const { data: chars } = await supabase
+        .from('characters')
+        .select('id, name, series, tier, category, power_score, speed_score, intelligence_score, durability_score, image_url')
+        .eq('status', 'published');
+      setCharacters(chars || []);
+
       const mergedMap = new Map();
       CATALOG_ITEMS.forEach((it) => mergedMap.set(it.id, it));
       dbItems.forEach((it) => {
         const existing = mergedMap.get(it.id);
-        // avatar_gif_permit için 30.000 altınlık 30 günlük kuralını koru
         if (it.id === 'avatar_gif_permit') {
           mergedMap.set(it.id, {
             ...existing,
@@ -406,7 +697,7 @@ export default function MagazaPage() {
         const [{ data: p }, { data: inv }] = await Promise.all([
           supabase
             .from('profiles')
-            .select('id, username, avatar_url, coins, role, vip_until, name_color_until, avatar_gif_until, equipped_frame, equipped_background, equipped_name_color, profile_bg_url')
+            .select('id, username, avatar_url, coins, role, xp, vip_until, name_color_until, avatar_gif_until, equipped_frame, equipped_background, equipped_name_color, profile_bg_url')
             .eq('id', u.id)
             .maybeSingle(),
           supabase.from('user_inventory').select('item_id').eq('user_id', u.id),
@@ -421,61 +712,111 @@ export default function MagazaPage() {
           username: u.user_metadata?.username || u.email?.split('@')[0] || 'Kullanıcı',
           avatar_url: u.user_metadata?.avatar_url || null,
           coins: effectiveCoins,
+          xp: 0,
           role: 'user',
         };
 
-        // User metadata'daki profile_bg_until ve avatar_gif_until değerlerini de yedekle
         if (u.user_metadata?.profile_bg_until) {
           prof.profile_bg_until = u.user_metadata.profile_bg_until;
-        }
-        if (u.user_metadata?.avatar_gif_until && !prof.avatar_gif_until) {
-          prof.avatar_gif_until = u.user_metadata.avatar_gif_until;
         }
 
         setProfile(prof);
         setOwned(invSet);
       }
-    } catch (err) {
-      console.error('Mağaza yükleme hatası:', err);
+    } catch (e) {
+      console.error('Mağaza yüklenirken hata:', e);
     }
   }
 
   useEffect(() => {
     load();
-    const handleCoins = (e) => {
+    const handleCoinsUpdated = (e) => {
       if (e?.detail?.coins !== undefined) {
         setProfile((prev) => (prev ? { ...prev, coins: e.detail.coins } : prev));
       }
     };
-    window.addEventListener('coins-updated', handleCoins);
-    return () => window.removeEventListener('coins-updated', handleCoins);
+    window.addEventListener('coins-updated', handleCoinsUpdated);
+    return () => window.removeEventListener('coins-updated', handleCoinsUpdated);
   }, []);
 
-  const isVip =
-    profile?.role === 'vip' ||
-    profile?.role === 'admin' ||
-    profile?.role === 'moderator' ||
-    isFutureDate(profile?.vip_until);
+  const isVip = profile?.role === 'vip' || profile?.role === 'admin' || isFutureDate(profile?.vip_until);
 
-  // 30 Günlük Özel Hak Satın Alma (Hareketli Avatar veya Arka Plan)
+  // 1. Kart Paketi Satın Alma & Açma (Gacha Engine)
+  async function handleOpenPack(pack) {
+    if (!user || !profile) {
+      setMsg({ text: 'Paket açmak için giriş yapmalısın!', type: 'error' });
+      return;
+    }
+
+    const currentCoins = profile.coins || 0;
+    if (currentCoins < pack.price) {
+      setMsg({ text: `Yetersiz bakiye! Bu paket için ${pack.price.toLocaleString('tr-TR')} Tier Parası gerekir.`, type: 'error' });
+      return;
+    }
+
+    setOpeningPackId(pack.id);
+    cardAudio.playWhoosh();
+    try {
+      const deductRes = await deductCoins(user.id, pack.price, currentCoins);
+      if (!deductRes.success) {
+        setMsg({ text: deductRes.error || 'Bakiye düşülemedi', type: 'error' });
+        setOpeningPackId(null);
+        return;
+      }
+
+      const metaCards = Array.isArray(user.user_metadata?.card_collection) ? user.user_metadata.card_collection : [];
+      const metaUpgrades = (user.user_metadata?.card_upgrades && typeof user.user_metadata.card_upgrades === 'object')
+        ? user.user_metadata.card_upgrades
+        : {};
+      const pityCount = Number(user.user_metadata?.gacha_pity) || 0;
+
+      const result = drawCardsFromPack(pack, characters, pityCount, metaUpgrades, metaCards);
+
+      const netCoins = deductRes.newCoins + result.cashback + result.refundTotal;
+      const newCollection = Array.from(new Set([...metaCards, ...result.drawnCards.map((c) => c.id)]));
+      const newXp = Number(profile?.xp || 0) + (result.xpReward || 0);
+
+      await supabase.auth.updateUser({
+        data: {
+          card_collection: newCollection,
+          card_upgrades: result.updatedUpgrades,
+          coins: netCoins,
+          gacha_pity: result.nextPity,
+        },
+      });
+
+      try {
+        await supabase.from('profiles').update({ coins: netCoins, xp: newXp }).eq('id', user.id);
+      } catch {}
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: netCoins } }));
+      }
+
+      setProfile((prev) => ({ ...prev, coins: netCoins, xp: newXp }));
+
+      setTimeout(() => {
+        setPackResult({ pack, ...result });
+        setOpeningPackId(null);
+        cardAudio.playPackOpening();
+      }, 1000);
+    } catch (err) {
+      setMsg({ text: `Paket açılırken hata oluştu: ${err.message}`, type: 'error' });
+      setOpeningPackId(null);
+    }
+  }
+
+  // 2. Özel Hak Satın Alma (30 Günlük GIF Hakları)
   async function buySpecialPermit(item) {
     if (!user || !profile) return;
     setLoadingAction(item.id);
     setMsg(null);
 
-    if (isVip) {
-      setMsg({
-        text: '👑 VIP üye olduğun için hareketli avatar ve hareketli arka plan hakları hesabında süresiz ve ücretsiz olarak aktiftir!',
-        type: 'success',
-      });
-      setLoadingAction(null);
-      return;
-    }
-
     try {
-      const deductRes = await deductCoins(user, item.price, item.name);
+      const currentCoins = profile.coins || 0;
+      const deductRes = await deductCoins(user.id, item.price, currentCoins);
       if (!deductRes.success) {
-        setMsg({ text: deductRes.error, type: 'error' });
+        setMsg({ text: deductRes.error || 'Yetersiz bakiye!', type: 'error' });
         setLoadingAction(null);
         return;
       }
@@ -520,7 +861,7 @@ export default function MagazaPage() {
     }
   }
 
-  // Standart Kozmetik Eşya Satın Alma
+  // 3. Standart Kozmetik Eşya Satın Alma
   async function buy(item) {
     if (!user || !profile) return;
     if (item.kind === 'special_permit') {
@@ -537,9 +878,10 @@ export default function MagazaPage() {
     }
 
     try {
-      const deductRes = await deductCoins(user, item.price, item.name);
+      const currentCoins = profile.coins || 0;
+      const deductRes = await deductCoins(user.id, item.price, currentCoins);
       if (!deductRes.success) {
-        setMsg({ text: deductRes.error, type: 'error' });
+        setMsg({ text: deductRes.error || 'Yetersiz bakiye!', type: 'error' });
         setLoadingAction(null);
         return;
       }
@@ -564,11 +906,29 @@ export default function MagazaPage() {
     }
   }
 
-  // Kuşan veya Çıkar
+  // 4. Kuşan veya Çıkar
   async function equip(item, showSuccessMsg = true) {
     if (!user) return;
     setLoadingAction(item.id);
     setMsg(null);
+
+    if (item.kind === 'avatar') {
+      const targetVal = profile?.avatar_url === item.value ? null : item.value;
+      try {
+        await supabase.auth.updateUser({ data: { avatar_url: targetVal } });
+        try { await supabase.from('profiles').update({ avatar_url: targetVal }).eq('id', user.id); } catch {}
+        setProfile((prev) => ({ ...prev, avatar_url: targetVal }));
+        window.dispatchEvent(new CustomEvent('profile-updated', { detail: { avatar_url: targetVal } }));
+        if (showSuccessMsg) {
+          setMsg({ text: targetVal ? `"${item.name}" avatar olarak ayarlandı!` : 'Avatar kaldırıldı.', type: 'success' });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingAction(null);
+      }
+      return;
+    }
 
     const kindToColumn = {
       frame: 'equipped_frame',
@@ -616,6 +976,8 @@ export default function MagazaPage() {
       setPreviewBg(previewBg === item.id ? null : item.id);
     } else if (item.kind === 'name_color') {
       setPreviewNameColor(previewNameColor === item.id ? null : item.id);
+    } else if (item.kind === 'avatar') {
+      setPreviewAvatar(previewAvatar === item.value ? null : item.value);
     }
   }
 
@@ -623,6 +985,7 @@ export default function MagazaPage() {
     setPreviewFrame(null);
     setPreviewBg(null);
     setPreviewNameColor(null);
+    setPreviewAvatar(null);
   }
 
   if (user === undefined) return <div className="wrap empty">Mağaza yükleniyor...</div>;
@@ -640,7 +1003,8 @@ export default function MagazaPage() {
   const displayFrame = previewFrame || profile?.equipped_frame;
   const displayBg = previewBg || profile?.equipped_background;
   const displayNameColor = previewNameColor || profile?.equipped_name_color;
-  const isPreviewing = previewFrame !== null || previewBg !== null || previewNameColor !== null;
+  const displayAvatar = previewAvatar || profile?.avatar_url;
+  const isPreviewing = previewFrame !== null || previewBg !== null || previewNameColor !== null || previewAvatar !== null;
 
   const avatarGifRemaining = isVip ? 'Sınırsız (VIP)' : getRemainingTimeText(profile?.avatar_gif_until);
   const profileBgRemaining = isVip ? 'Sınırsız (VIP)' : getRemainingTimeText(profile?.profile_bg_until);
@@ -651,10 +1015,10 @@ export default function MagazaPage() {
       <div className="shop-head" style={{ marginTop: '20px' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>🛍️</span> Kozmetik & Ayrıcalık Mağazası
+            <CrownIcon size={26} /> Kozmetik & Gacha Mağazası
           </h1>
           <p style={{ margin: '6px 0 0', color: 'var(--text-dim)', fontSize: '.94rem' }}>
-            Profilini ve sohbetteki duruşunu özelleştirecek hareketli çerçeveler, parlayan renkler ve özel GIF izinleri.
+            Kart paketleri, hareketli çerçeveler, RGB isim efektleri, sinematik arka planlar ve prestijli avatarlar.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -683,7 +1047,7 @@ export default function MagazaPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
             <Avatar
-              url={profile?.avatar_url}
+              url={displayAvatar}
               name={profile?.username || '?'}
               size={64}
               frameGradient={displayFrame}
@@ -705,7 +1069,8 @@ export default function MagazaPage() {
               <div style={{ display: 'flex', gap: '8px', marginTop: '8px', fontSize: '.8rem', color: 'var(--text-dim)', flexWrap: 'wrap' }}>
                 <span>Çerçeve: <strong>{displayFrame ? 'Seçili' : 'Yok'}</strong></span> ·
                 <span>İsim Rengi: <strong>{displayNameColor ? 'Seçili' : 'Varsayılan'}</strong></span> ·
-                <span>Arka Plan: <strong>{displayBg ? 'Seçili' : 'Varsayılan'}</strong></span>
+                <span>Arka Plan: <strong>{displayBg ? 'Seçili' : 'Varsayılan'}</strong></span> ·
+                <span>Avatar: <strong>{displayAvatar ? 'Seçili' : 'Varsayılan'}</strong></span>
               </div>
             </div>
           </div>
@@ -790,10 +1155,10 @@ export default function MagazaPage() {
           className={`filter-tab ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}
         >
-          Tüm Eşyalar ({items.length})
+          Tüm Vitrin ({items.length + GACHA_PACKS.length})
         </button>
         {KIND_ORDER.map((kind) => {
-          const count = items.filter((i) => i.kind === kind).length;
+          const count = kind === 'packs' ? GACHA_PACKS.length : items.filter((i) => i.kind === kind).length;
           return (
             <button
               key={kind}
@@ -807,8 +1172,80 @@ export default function MagazaPage() {
         })}
       </div>
 
-      {/* Eşya Listeleri */}
-      {filteredKinds.map((kind) => {
+      {/* KART PAKETLERİ (Gacha Bölümü) */}
+      {(activeTab === 'all' || activeTab === 'packs') && (
+        <section className="section" style={{ paddingTop: '28px' }}>
+          <div className="section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🃏</span> Tier Kart Paketleri (Gacha Pazarı)
+              </h2>
+              <p style={{ margin: '4px 0 0', color: 'var(--text-dim)', fontSize: '.88rem' }}>
+                Güç seviyesi arttıkça çıkma oranı düşen gerçek gacha motoru! Her paket anında TP nakit iade ve XP kazandırır.
+              </p>
+            </div>
+            <a href="/kart-oyunu" className="btn btn-ghost" style={{ fontSize: '.84rem' }}>
+              Kart Arenası & Destem →
+            </a>
+          </div>
+
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '18px', marginTop: '16px' }}>
+            {GACHA_PACKS.map((pack) => (
+              <div
+                key={pack.id}
+                className="card"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '22px',
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.5))',
+                  border: openingPackId === pack.id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                  borderRadius: '16px',
+                  boxShadow: openingPackId === pack.id ? '0 0 25px rgba(0, 240, 255, 0.4)' : 'none',
+                  transition: 'all .3s ease',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                    <span className="tag" style={{ background: pack.badgeColor, color: '#000', fontWeight: 900, fontSize: '.75rem' }}>
+                      {pack.badge}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '3.2rem', marginBottom: '10px' }}>{pack.icon}</div>
+                  <h3 style={{ fontSize: '1.15rem', margin: '0 0 6px', color: '#fff' }}>{pack.name}</h3>
+                  <p style={{ fontSize: '.82rem', color: 'var(--text-dim)', minHeight: '44px', lineHeight: 1.4 }}>
+                    {pack.desc}
+                  </p>
+                  <div style={{ fontSize: '.75rem', color: '#86efac', fontWeight: 700, margin: '6px 0 2px' }}>
+                    🎁 +{pack.cashback.toLocaleString('tr-TR')} TP Nakit İade
+                  </div>
+                  <div style={{ fontSize: '.7rem', color: 'var(--text-dim)', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '6px', margin: '8px 0' }}>
+                    {pack.ratesText}
+                  </div>
+                  <div style={{ margin: '14px 0', fontSize: '1.25rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <CoinIcon size={20} /> {pack.price.toLocaleString('tr-TR')}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ width: '100%', fontWeight: 800, padding: '10px' }}
+                  onClick={() => handleOpenPack(pack)}
+                  disabled={openingPackId !== null}
+                >
+                  {openingPackId === pack.id ? 'Paket Yırtılıyor...' : `${pack.cardCount} Kart Aç`}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* KOZMETİK EŞYA LİSTELERİ */}
+      {filteredKinds.filter((k) => k !== 'packs').map((kind) => {
         const list = items.filter((i) => i.kind === kind);
         if (list.length === 0) return null;
 
@@ -824,27 +1261,24 @@ export default function MagazaPage() {
                 const isEquipped =
                   (it.kind === 'frame' && profile?.equipped_frame === it.id) ||
                   (it.kind === 'background' && profile?.equipped_background === it.id) ||
-                  (it.kind === 'name_color' && profile?.equipped_name_color === it.id);
+                  (it.kind === 'name_color' && profile?.equipped_name_color === it.id) ||
+                  (it.kind === 'avatar' && profile?.avatar_url === it.value);
 
                 const isAffordable = (profile?.coins || 0) >= it.price;
                 const isLoading = loadingAction === it.id;
 
-                // Özel Hak Kontrolü
-                let specialActive = false;
-                let specialRemaining = null;
-                if (it.id === 'avatar_gif_permit') {
-                  specialActive = isVip || isFutureDate(profile?.avatar_gif_until);
-                  specialRemaining = avatarGifRemaining;
-                } else if (it.id === 'profile_bg_permit') {
-                  specialActive = isVip || isFutureDate(profile?.profile_bg_until);
-                  specialRemaining = profileBgRemaining;
-                }
+                const specialActive =
+                  (it.id === 'avatar_gif_permit' && (isVip || isFutureDate(profile?.avatar_gif_until))) ||
+                  (it.id === 'profile_bg_permit' && (isVip || isFutureDate(profile?.profile_bg_until)));
 
-                // Önizlemede mi kontrolü
+                const specialRemaining =
+                  it.id === 'avatar_gif_permit' ? avatarGifRemaining : profileBgRemaining;
+
                 const isCurrentPreview =
                   (it.kind === 'frame' && previewFrame === it.id) ||
                   (it.kind === 'background' && previewBg === it.id) ||
-                  (it.kind === 'name_color' && previewNameColor === it.id);
+                  (it.kind === 'name_color' && previewNameColor === it.id) ||
+                  (it.kind === 'avatar' && previewAvatar === it.value);
 
                 return (
                   <div
@@ -911,6 +1345,20 @@ export default function MagazaPage() {
                         {it.kind === 'name_color' && (
                           <span style={{ ...nameColorStyle(it.value), fontSize: '1.4rem' }}>
                             {profile?.username || 'Kullanıcı'}
+                          </span>
+                        )}
+                        {it.kind === 'avatar' && (
+                          <span
+                            style={{
+                              width: '64px',
+                              height: '64px',
+                              borderRadius: '50%',
+                              overflow: 'hidden',
+                              display: 'inline-block',
+                              border: '2px solid var(--accent)',
+                            }}
+                          >
+                            <img src={it.value} alt={it.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </span>
                         )}
                         {it.kind === 'special_permit' && (
@@ -1024,6 +1472,120 @@ export default function MagazaPage() {
           </section>
         );
       })}
+
+      {/* PAKET AÇILIM MODALI (FUT Pack Opening Reveal) */}
+      {packResult && (
+        <div
+          className="spotlight-overlay"
+          style={{ zIndex: 100, alignItems: 'center' }}
+          onClick={() => setPackResult(null)}
+        >
+          <div
+            className="card"
+            style={{
+              maxWidth: '820px',
+              width: '100%',
+              padding: '30px',
+              textAlign: 'center',
+              background: '#0d111c',
+              border: '2px solid var(--accent)',
+              boxShadow: '0 0 50px rgba(0, 240, 255, 0.4)',
+              borderRadius: '24px',
+              animation: 'modalIn .25s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {packResult.drawnCards.some((c) => {
+              const r = getCardRarity(c.tier).code;
+              return r === 'UR' || r === 'SSR';
+            }) ? (
+              <div style={{ marginBottom: '12px' }}>
+                <span className="synergy-badge" style={{ fontSize: '.95rem', padding: '8px 20px', background: 'linear-gradient(135deg, #ff007f, #f59e0b)' }}>
+                  🔥 EFSANEVİ KOZMİK WALKOUT! (SSR / UR DÜŞTÜ!) 🔥
+                </span>
+              </div>
+            ) : (
+              <div style={{ fontSize: '3rem', marginBottom: '6px' }}>✨</div>
+            )}
+            <h2 style={{ fontSize: '1.8rem', color: 'var(--accent)', margin: '0 0 6px' }}>
+              {packResult.pack.name} Açıldı!
+            </h2>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '20px', fontSize: '.88rem' }}>
+              <span style={{ color: '#86efac', fontWeight: 800 }}>🪙 +{packResult.cashback.toLocaleString('tr-TR')} TP Nakit İade</span>
+              {packResult.refundTotal > 0 && (
+                <span style={{ color: '#fef08a', fontWeight: 800 }}>✨ +{packResult.refundTotal.toLocaleString('tr-TR')} TP Kopya Kart İadesi</span>
+              )}
+              <span style={{ color: '#a5b4fc', fontWeight: 800 }}>⚡ +{packResult.xpReward} XP</span>
+            </div>
+
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+              {packResult.drawnCards.map((c, idx) => {
+                const rarity = getCardRarity(c.tier);
+                const isHighTier = rarity.isHolo;
+                const starInfo = getStarInfo(c.stars || 1, c.awakened || 0);
+                return (
+                  <div
+                    key={`${c.id}-${idx}`}
+                    className={`card ${isHighTier ? 'holo-foil-card' : ''}`}
+                    style={{
+                      padding: '12px',
+                      textAlign: 'center',
+                      background: 'var(--bg-2)',
+                      border: isHighTier ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      borderRadius: '14px',
+                      boxShadow: isHighTier ? '0 0 20px rgba(234, 179, 8, 0.4)' : 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>
+                        {rarity.code}
+                      </span>
+                      {c.isDuplicate ? (
+                        c.refundGiven ? (
+                          <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            🪙 +1.000 İade (MAX)
+                          </span>
+                        ) : (
+                          <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#fef08a', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            ✨ +1 Parça
+                          </span>
+                        )
+                      ) : (
+                        <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                          🎉 YENİ!
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ width: '100%', height: '140px', borderRadius: '10px', overflow: 'hidden', marginBottom: '8px', background: '#000' }}>
+                      <img src={c.image_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <strong style={{ fontSize: '.9rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.name}
+                    </strong>
+                    <div style={{ margin: '4px 0' }}><TierBadge tier={c.tier} /></div>
+                    <div style={{ fontSize: '.72rem', color: '#fef08a', marginBottom: '2px' }}>
+                      {starInfo.starString}
+                    </div>
+                    <div style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 800 }}>
+                      Güç: {Math.round((c.power_score || 50) * starInfo.multiplier)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setPackResult(null)}
+              style={{ padding: '10px 30px', fontWeight: 800 }}
+            >
+              ✓ Koleksiyona Ekle & Kapat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

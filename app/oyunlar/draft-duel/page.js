@@ -190,8 +190,8 @@ export default function DraftDuelPage() {
 
     try {
       const { data: p } = await supabase.from('profiles').select('coins, xp').eq('id', user.id).maybeSingle();
-      const newCoins = (p?.coins || 0) + 600;
-      const newXp = (p?.xp || 0) + 300;
+      const newCoins = (p?.coins || 0) + 1500;
+      const newXp = (p?.xp || 0) + 600;
 
       await supabase.from('profiles').update({ coins: newCoins, xp: newXp }).eq('id', user.id);
       await supabase.auth.updateUser({ data: { coins: newCoins, xp: newXp } });
@@ -200,7 +200,7 @@ export default function DraftDuelPage() {
       await fetch('/api/clans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'contribute_cp', user_id: user.id, points: 150 }),
+        body: JSON.stringify({ action: 'contribute_cp', user_id: user.id, points: 300 }),
       }).catch(() => {});
 
       if (typeof window !== 'undefined') {
@@ -233,19 +233,19 @@ export default function DraftDuelPage() {
               <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ display: 'block', fontSize: '.76rem', color: 'var(--text-dim)' }}>Zafer Ödülü</span>
                 <strong style={{ color: '#fef08a', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
-                  <CoinIcon size={16} /> 600 Tier Parası
+                  <CoinIcon size={16} /> 1.500 Tier Parası
                 </strong>
               </div>
               <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ display: 'block', fontSize: '.76rem', color: 'var(--text-dim)' }}>Deneyim</span>
                 <strong style={{ color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
-                  <EnergyIcon size={16} /> 300 XP
+                  <EnergyIcon size={16} /> 600 XP
                 </strong>
               </div>
               <div style={{ background: 'var(--bg-2)', padding: '12px 20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ display: 'block', fontSize: '.76rem', color: 'var(--text-dim)' }}>Klan Bonusu</span>
                 <strong style={{ color: '#86efac', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
-                  <ShieldIcon size={16} /> +150 Klan CP
+                  <ShieldIcon size={16} /> +300 Klan CP
                 </strong>
               </div>
             </div>
@@ -504,13 +504,13 @@ export default function DraftDuelPage() {
             {playerScore > botScore && (
               <div style={{ display: 'inline-flex', gap: '20px', alignItems: 'center', padding: '12px 24px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #22c55e', borderRadius: '12px', marginBottom: '28px' }}>
                 <span style={{ color: '#fef08a', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <CoinIcon size={16} /> +600 Tier Parası
+                  <CoinIcon size={16} /> +1.500 Tier Parası
                 </span>
                 <span style={{ color: '#a5b4fc', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <EnergyIcon size={16} /> +300 XP
+                  <EnergyIcon size={16} /> +600 XP
                 </span>
                 <span style={{ color: '#86efac', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <ShieldIcon size={16} /> +150 Klan CP
+                  <ShieldIcon size={16} /> +300 Klan CP
                 </span>
               </div>
             )}
