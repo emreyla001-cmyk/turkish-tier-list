@@ -380,7 +380,7 @@ export default function KartOyunuHub() {
           className={`filter-tab ${activeTab === 'packs' ? 'active' : ''}`}
           onClick={() => setActiveTab('packs')}
         >
-          📦 Paket Mağazası ({leaguesConfig.packs?.length || 4})
+          📦 Paket Mağazası ({GACHA_PACKS.length})
         </button>
         <button
           type="button"
@@ -598,7 +598,7 @@ export default function KartOyunuHub() {
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Tier Kart Paketleri</h3>
               <p style={{ color: 'var(--text-dim)', fontSize: '.86rem', margin: '4px 0 0' }}>
-                Her paketten rastgele 3 adet karakter kartı çıkar. Desteni zirveye taşı!
+                Her paketten 3 ile 8 arası taktiksel karakter kartı ve garantili TP iadesi çıkar. Zirveye oyna!
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
