@@ -89,6 +89,13 @@ export default function HeaderNav() {
                 <p>Birebir düellolar ve topluluk oylaması</p>
               </div>
             </a>
+            <a href="/kart-oyunu" onClick={closeDropdown} className="dropdown-item">
+              <span className="dropdown-icon">🃏</span>
+              <div>
+                <strong style={{ color: '#eab308' }}>Kart Arenası & Ligler</strong>
+                <p>5v5 kart düellosu, kupa ligleri ve paket açılımı</p>
+              </div>
+            </a>
             <a href="/tier-sistemi" onClick={closeDropdown} className="dropdown-item">
               <span className="dropdown-icon">📊</span>
               <div>
@@ -118,6 +125,13 @@ export default function HeaderNav() {
 
         {openDropdown === 'activity' && (
           <div className="nav-dropdown-menu">
+            <a href="/kart-oyunu" onClick={closeDropdown} className="dropdown-item">
+              <span className="dropdown-icon">🃏</span>
+              <div>
+                <strong style={{ color: '#facc15' }}>FUT Kart Arenası</strong>
+                <p>Paket aç, 5'li desteni kur ve kupa kazan</p>
+              </div>
+            </a>
             <a href="/oyunlar" onClick={closeDropdown} className="dropdown-item">
               <span className="dropdown-icon">🎮</span>
               <div>

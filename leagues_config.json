@@ -1,0 +1,43 @@
+{
+  "leagues": [
+    { "id": "lig_1", "name": "Sokak Dövüşçüsü", "icon": "🥉", "minTrophies": 0, "maxTrophies": 299, "color": "#cd7f32" },
+    { "id": "lig_2", "name": "Yeraltı Reisi", "icon": "🥈", "minTrophies": 300, "maxTrophies": 699, "color": "#c0c0c0" },
+    { "id": "lig_3", "name": "Baronlar Masası", "icon": "🥇", "minTrophies": 700, "maxTrophies": 1199, "color": "#ffd700" },
+    { "id": "lig_4", "name": "Bozkır Alpi", "icon": "💎", "minTrophies": 1200, "maxTrophies": 1799, "color": "#00f0ff" },
+    { "id": "lig_5", "name": "Tengri Divanı", "icon": "👑", "minTrophies": 1800, "maxTrophies": 99999, "color": "#ff007f" }
+  ],
+  "packs": [
+    {
+      "id": "pack_bronze",
+      "name": "Bronz Paket (Sokak)",
+      "price": 1000,
+      "icon": "🥉",
+      "tierFilter": ["10-C", "10-B", "10-A", "9-C"],
+      "desc": "Sıradan ve sokak seviyesi karakter kartları içerir (Tier 10 - 9C)."
+    },
+    {
+      "id": "pack_silver",
+      "name": "Gümüş Paket (Yeraltı)",
+      "price": 2500,
+      "icon": "🥈",
+      "tierFilter": ["9-B", "9-A", "8-C"],
+      "desc": "Duvar ve bina yıkıcı güçlü karakterler (Tier 9B - 8C)."
+    },
+    {
+      "id": "pack_gold",
+      "name": "Altın Paket (Kasaba & Şehir)",
+      "price": 5000,
+      "icon": "🥇",
+      "tierFilter": ["8-B", "8-A", "7-C", "7-B", "7-A"],
+      "desc": "Kasaba ve şehir ölçeğinde efsanevi karakterler (Tier 8 - 7)."
+    },
+    {
+      "id": "pack_cosmic",
+      "name": "Kozmik & İlahi Paket",
+      "price": 10000,
+      "icon": "👑",
+      "tierFilter": ["6-C", "6-B", "6-A", "5-C", "5-B", "5-A", "4-C", "3-C", "2-C", "1-A", "0"],
+      "desc": "Kıta, gezegen ve evren boyutundaki en üstün varlıklar (Tier 6 - 0)."
+    }
+  ]
+}
