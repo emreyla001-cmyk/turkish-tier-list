@@ -134,26 +134,30 @@ export default function KartOyunuHub() {
 
       const processedCards = drawn.map((card) => {
         const isDuplicate = myCards.includes(card.id);
-        const cur = updatedUpgrades[card.id] || { stars: 1, shards: 0 };
+        const cur = updatedUpgrades[card.id] || { stars: 1, awakened: 0, shards: 0 };
         let stars = cur.stars || 1;
+        let awakened = cur.awakened || 0;
         let shards = cur.shards || 0;
 
+        const sInfo = getStarInfo(stars, awakened);
+
         if (isDuplicate) {
-          if (stars >= MAX_STARS) {
-            refundTotal += 250; // Zaten 5 yıldızsa boşa gitmesin: 250 altın iade!
+          if (sInfo.isMax) {
+            refundTotal += 500; // Maksimum Seviyedeyse boşa gitmesin: 500 Tier Parası İade!
           } else {
             shards += 1;
           }
         }
 
-        updatedUpgrades[card.id] = { stars, shards };
+        updatedUpgrades[card.id] = { stars, awakened, shards };
 
         return {
           ...card,
           isDuplicate,
           stars,
+          awakened,
           shards,
-          refundGiven: isDuplicate && stars >= MAX_STARS,
+          refundGiven: isDuplicate && sInfo.isMax,
         };
       });
 
@@ -193,40 +197,61 @@ export default function KartOyunuHub() {
     }
   }
 
-  // Yıldız Seviyesi Yükseltme Fonksiyonu
+  // Yıldız ve Uyanış (Awakening) Seviyesi Yükseltme Fonksiyonu
   async function handleUpgradeCard(cardId) {
     if (!user) return;
-    const current = cardUpgrades[cardId] || { stars: 1, shards: 0 };
-    const starInfo = getStarInfo(current.stars);
+    const current = cardUpgrades[cardId] || { stars: 1, awakened: 0, shards: 0 };
+    const starInfo = getStarInfo(current.stars, current.awakened);
 
-    if (current.stars >= MAX_STARS) {
-      setMsg({ text: 'Bu karakter zaten maksimum 5 Yıldız seviyesindedir!', type: 'info' });
+    if (starInfo.isMax) {
+      setMsg({ text: '👑 Bu karakter zaten 5. Uyanış MAKSİMUM SEVİYEYE ulaşmıştır!', type: 'info' });
       return;
     }
 
     if (current.shards < starInfo.nextCostShards) {
       setMsg({
-        text: `Yetersiz karakter parçası! ${current.stars + 1}. Yıldız için ${starInfo.nextCostShards} parçaya ihtiyacın var. Mevcut parçan: ${current.shards}`,
+        text: `Yetersiz karakter parçası! Bu yükseltme için ${starInfo.nextCostShards} adet aynı karta (parçaya) ihtiyacın var. Mevcut parçan: ${current.shards}`,
         type: 'error',
       });
       return;
     }
 
-    const newStars = current.stars + 1;
+    let newStars = current.stars || 1;
+    let newAwakened = current.awakened || 0;
+
+    // Normal Sarı Yıldız Aşaması (1..5, her basamakta 2 kart)
+    if (newStars < 5) {
+      newStars += 1;
+      newAwakened = 0;
+    } else if (newStars === 5) {
+      // 5 sarı yıldızdan sonra 4 aynı kartla Uyanışa dönüşür, 5 uyanışa kadar çıkar
+      newAwakened = Math.min(MAX_AWAKENED, newAwakened + 1);
+    }
+
     const newShards = current.shards - starInfo.nextCostShards;
     const updated = {
       ...cardUpgrades,
-      [cardId]: { stars: newStars, shards: newShards },
+      [cardId]: { stars: newStars, awakened: newAwakened, shards: newShards },
     };
 
     setCardUpgrades(updated);
     cardAudio.playVictoryFanfare();
 
     const charObj = characters.find((c) => c.id === cardId);
-    const newBonus = getStarInfo(newStars).bonusPercent;
+    const nextInfo = getStarInfo(newStars, newAwakened);
+
+    let congratText = '';
+    if (nextInfo.isMax) {
+      congratText = `👑 EFSANEVİ BAŞARI! ${charObj?.name || 'Karakter'} MAKSİMUM SEVİYEYE (5. Uyanış) ulaştı! (+%${nextInfo.bonusPercent} Maksimum Güç Patlaması)`;
+    } else if (nextInfo.isAwakened) {
+      congratText = `⚡ MUAZZAM UYANIŞ! ${charObj?.name || 'Karakter'} ${nextInfo.awakened}. Uyanış seviyesine evrildi! (+%${nextInfo.bonusPercent} Güç Takviyesi)`;
+    } else {
+      congratText = `⭐ Tebrikler! ${charObj?.name || 'Karakter'} ${nextInfo.stars}. Yıldız seviyesine yükseltildi! (+%${nextInfo.bonusPercent} Güç Takviyesi)`;
+    }
+
     setMsg({
       type: 'success',
-      text: `🎉 Tebrikler! ${charObj?.name || 'Karakter'} ${newStars}. Yıldız seviyesine yükseltildi! (Arenada +%${newBonus} Güç Takviyesi aktif)`,
+      text: congratText,
     });
 
     await supabase.auth.updateUser({
@@ -645,38 +670,96 @@ export default function KartOyunuHub() {
                   </strong>
                   {(() => {
                     const rarity = getCardRarity(c.tier);
-                    const upg = cardUpgrades[c.id] || { stars: 1, shards: 0 };
-                    const sInfo = getStarInfo(upg.stars);
-                    const canUpgrade = upg.shards >= sInfo.nextCostShards && upg.stars < MAX_STARS;
+                    const upg = cardUpgrades[c.id] || { stars: 1, awakened: 0, shards: 0 };
+                    const sInfo = getStarInfo(upg.stars, upg.awakened);
+                    const canUpgrade = upg.shards >= sInfo.nextCostShards && !sInfo.isMax;
                     return (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '4px 0' }}>
-                          <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>
+                          <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px', boxShadow: rarity.glow }}>
                             {rarity.code}
                           </span>
                           <TierBadge tier={c.tier} />
                         </div>
-                        <div style={{ fontSize: '.72rem', color: '#fef08a', margin: '2px 0' }}>
-                          {sInfo.starString} {sInfo.bonusPercent > 0 && `(+%${sInfo.bonusPercent})`}
-                        </div>
+
+                        {sInfo.isMax ? (
+                          <div style={{ margin: '4px 0' }}>
+                            <span
+                              style={{
+                                background: 'linear-gradient(135deg, #eab308, #ef4444, #7928ca)',
+                                color: '#fff',
+                                fontSize: '.68rem',
+                                fontWeight: 900,
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                border: '1px solid #ffd700',
+                                boxShadow: '0 0 12px rgba(255, 215, 0, 0.7)',
+                                display: 'inline-block',
+                              }}
+                            >
+                              👑 MAKSİMUM SEVİYE
+                            </span>
+                            <div style={{ fontSize: '.72rem', color: '#ffd700', marginTop: '2px', fontWeight: 800 }}>
+                              {sInfo.starString} (+%{sInfo.bonusPercent})
+                            </div>
+                          </div>
+                        ) : sInfo.isAwakened ? (
+                          <div style={{ margin: '4px 0' }}>
+                            <span
+                              style={{
+                                background: 'linear-gradient(135deg, #dc2626, #9333ea)',
+                                color: '#fff',
+                                fontSize: '.68rem',
+                                fontWeight: 900,
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                boxShadow: '0 0 10px rgba(220, 38, 38, 0.6)',
+                                display: 'inline-block',
+                              }}
+                            >
+                              🔴 {sInfo.awakened}. UYANIŞ
+                            </span>
+                            <div style={{ fontSize: '.72rem', color: '#f87171', marginTop: '2px', fontWeight: 800 }}>
+                              {sInfo.starString} (+%{sInfo.bonusPercent})
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '.74rem', color: '#fef08a', margin: '3px 0', fontWeight: 800 }}>
+                            {sInfo.starString} {sInfo.bonusPercent > 0 && `(+%${sInfo.bonusPercent})`}
+                          </div>
+                        )}
+
                         <div style={{ fontSize: '.76rem', color: 'var(--accent)', fontWeight: 800 }}>
                           Güç: {Math.round((c.power_score || 50) * sInfo.multiplier)}
                         </div>
+
                         {canUpgrade ? (
                           <button
                             type="button"
                             className="btn"
-                            style={{ width: '100%', padding: '4px', fontSize: '.72rem', marginTop: '6px', background: 'linear-gradient(135deg, #f59e0b, #eab308)', color: '#111', fontWeight: 900 }}
+                            style={{
+                              width: '100%',
+                              padding: '5px',
+                              fontSize: '.72rem',
+                              marginTop: '6px',
+                              background: upg.stars === 5 ? 'linear-gradient(135deg, #dc2626, #9333ea)' : 'linear-gradient(135deg, #f59e0b, #eab308)',
+                              color: upg.stars === 5 ? '#fff' : '#111',
+                              fontWeight: 900,
+                              border: 'none',
+                              boxShadow: upg.stars === 5 ? '0 0 12px rgba(220, 38, 38, 0.6)' : 'none',
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleUpgradeCard(c.id);
                             }}
                           >
-                            ⭐ Yükselt ({upg.shards}/{sInfo.nextCostShards})
+                            {upg.stars === 5
+                              ? `⚡ ${((upg.awakened || 0) + 1)}. Uyanış (${upg.shards}/${sInfo.nextCostShards})`
+                              : `⭐ ${(upg.stars || 1) + 1}. Yıldız (${upg.shards}/${sInfo.nextCostShards})`}
                           </button>
                         ) : (
                           <div style={{ fontSize: '.68rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-                            {upg.stars >= MAX_STARS ? 'Maks Seviye' : `Parça: ${upg.shards}/${sInfo.nextCostShards}`}
+                            {sInfo.isMax ? '🏆 Zirve Seviye' : `Parça: ${upg.shards || 0}/${sInfo.nextCostShards}`}
                           </div>
                         )}
                       </>
@@ -765,7 +848,7 @@ export default function KartOyunuHub() {
               {openedPackCards.map((c) => {
                 const rarity = getCardRarity(c.tier);
                 const isHighTier = rarity.isHolo;
-                const starInfo = getStarInfo(c.stars || 1);
+                const starInfo = getStarInfo(c.stars || 1, c.awakened || 0);
                 return (
                   <div
                     key={c.id}
@@ -786,7 +869,7 @@ export default function KartOyunuHub() {
                       {c.isDuplicate ? (
                         c.refundGiven ? (
                           <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
-                            🪙 +250 İade
+                            🪙 +500 İade (MAX)
                           </span>
                         ) : (
                           <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#fef08a', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
