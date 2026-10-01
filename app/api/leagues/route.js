@@ -26,27 +26,20 @@ function writeLeaguesConfig(data) {
   }
 }
 
+import { withProtectedTransaction } from '../../lib/protectedApiWrapper';
+
 export async function GET() {
   const config = readLeaguesConfig();
   return NextResponse.json(config);
 }
 
-export async function POST(req) {
-  try {
-    const authHeader = req.headers.get('authorization') || req.headers.get('x-admin-token');
-    if (!authHeader || authHeader !== 'admin-secret') {
-      return NextResponse.json({ error: 'Yetkisiz erişim. Admin yetkisi gereklidir.' }, { status: 401 });
-    }
+export const POST = withProtectedTransaction(async (req, context, body) => {
+  const current = readLeaguesConfig();
+  const updated = {
+    ...current,
+    ...body,
+  };
+  writeLeaguesConfig(updated);
+  return NextResponse.json({ success: true, config: updated });
+}, { requireAdmin: true });
 
-    const body = await req.json();
-    const current = readLeaguesConfig();
-    const updated = {
-      ...current,
-      ...body,
-    };
-    writeLeaguesConfig(updated);
-    return NextResponse.json({ success: true, config: updated });
-  } catch (err) {
-    return NextResponse.json({ error: err.message || 'Hata oluştu' }, { status: 500 });
-  }
-}

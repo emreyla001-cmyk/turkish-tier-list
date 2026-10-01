@@ -4,7 +4,7 @@
  * and eliminates race conditions / double-spending risks across all endpoints.
  */
 
-import { supabase } from './supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 
 export async function processWalletTransaction({ userId, amount, type, description, idempotencyKey = null }) {
   // 1. Boundary Check: Amount cannot be NaN or invalid

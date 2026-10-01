@@ -36,33 +36,26 @@ function writeConfig(data) {
   }
 }
 
+import { withProtectedTransaction } from '../../lib/protectedApiWrapper';
+
 export async function GET() {
   const config = readConfig();
   return NextResponse.json(config);
 }
 
-export async function POST(req) {
-  try {
-    const authHeader = req.headers.get('authorization') || req.headers.get('x-admin-token');
-    if (!authHeader || authHeader !== 'admin-secret') {
-      return NextResponse.json({ error: 'Yetkisiz erişim. Admin yetkisi gereklidir.' }, { status: 401 });
-    }
+export const POST = withProtectedTransaction(async (req, context, body) => {
+  const current = readConfig();
+  const bilmeceOdul = Math.max(0, Number(body.bilmece_odul) || current.bilmece_odul || 500);
+  const kimAlirOdul = Math.max(0, Number(body.kim_alir_odul) || current.kim_alir_odul || 750);
 
-    const body = await req.json();
-    const current = readConfig();
-    const bilmeceOdul = Math.max(0, Number(body.bilmece_odul) || current.bilmece_odul || 500);
-    const kimAlirOdul = Math.max(0, Number(body.kim_alir_odul) || current.kim_alir_odul || 750);
+  const updated = {
+    ...current,
+    ...body,
+    bilmece_odul: bilmeceOdul,
+    kim_alir_odul: kimAlirOdul,
+    son_guncelleme: new Date().toISOString(),
+  };
+  writeConfig(updated);
+  return NextResponse.json({ success: true, config: updated });
+}, { requireAdmin: true });
 
-    const updated = {
-      ...current,
-      ...body,
-      bilmece_odul: bilmeceOdul,
-      kim_alir_odul: kimAlirOdul,
-      son_guncelleme: new Date().toISOString(),
-    };
-    writeConfig(updated);
-    return NextResponse.json({ success: true, config: updated });
-  } catch (err) {
-    return NextResponse.json({ error: err.message || 'Hata oluştu' }, { status: 500 });
-  }
-}
