@@ -105,8 +105,8 @@ export default function HeaderNav() {
   const navLinks = [
     { href: '/', label: 'Ana Sayfa' },
     { href: '/oyunlar', label: 'Oyunlar' },
-    { href: '/vs', label: 'VS Arenası' },
-    { href: '/kart-oyunu', label: 'Kart Oyunu' },
+    { href: '/vs', label: 'Karakter Karşılaşması' },
+    { href: '/kart-oyunu', label: 'Arena' },
     { href: '/koleksiyon', label: 'Koleksiyon' },
     { href: '/kaos', label: 'Kaos Duvarı' },
     { href: '/magaza', label: 'Mağaza' },
