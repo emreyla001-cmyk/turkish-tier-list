@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Avatar, NameTag } from './UserBadge';
 import { frameStyle, nameColorStyle, resolveFrame, resolveNameColor } from './cosmetics';
-import { CoinIcon } from './CyberIcons';
+import { CoinIcon, SwordsIcon, ShieldIcon, CrownIcon, FireIcon, CardDeckIcon, TrophyIcon } from './CyberIcons';
+import DarkModeToggle from './DarkModeToggle';
 import { getEffectiveCoins, getEffectiveXP } from '../lib/wallet';
 
 export default function HeaderNav() {
@@ -107,14 +108,15 @@ export default function HeaderNav() {
 
   return (
     <nav className="nav-links modern-nav" ref={navRef}>
-      {/* 1. GRUP: KATALOG & ARENALAR SEKMESİ */}
+      {/* 1. GRUP: ARENALAR SEKMESİ */}
       <div className="nav-dropdown-wrap">
         <button
           type="button"
           className={`nav-dropdown-trigger ${openDropdown === 'arena' ? 'active' : ''}`}
           onClick={() => toggleDropdown('arena')}
         >
-          <span>⚔️ Arenalar & Rehber</span>
+          <SwordsIcon size={16} />
+          <span>Arenalar & Rehber</span>
           <span className="dropdown-arrow">▾</span>
         </button>
 
@@ -128,21 +130,21 @@ export default function HeaderNav() {
               </div>
             </a>
             <a href="/vs" onClick={closeDropdown} className="dropdown-item">
-              <span className="dropdown-icon">⚔️</span>
+              <span className="dropdown-icon"><SwordsIcon size={18} /></span>
               <div>
                 <strong style={{ color: 'var(--accent)' }}>VS Arenası</strong>
                 <p>Birebir düellolar ve topluluk oylaması</p>
               </div>
             </a>
             <a href="/kart-oyunu" onClick={closeDropdown} className="dropdown-item">
-              <span className="dropdown-icon">🃏</span>
+              <span className="dropdown-icon"><CardDeckIcon size={18} /></span>
               <div>
-                <strong style={{ color: '#eab308' }}>Kart Arenası & Ligler</strong>
+                <strong style={{ color: '#f59e0b' }}>Kart Arenası & Ligler</strong>
                 <p>5v5 kart düellosu, kupa ligleri ve paket açılımı</p>
               </div>
             </a>
             <a href="/tier-sistemi" onClick={closeDropdown} className="dropdown-item">
-              <span className="dropdown-icon">📊</span>
+              <span className="dropdown-icon"><ShieldIcon size={18} /></span>
               <div>
                 <strong>Tier Sistemi</strong>
                 <p>10-B'den 1-A'ya güç kademeleri rehberi</p>
@@ -166,9 +168,12 @@ export default function HeaderNav() {
           border: '1px solid rgba(245, 158, 11, 0.3)',
           borderRadius: '8px',
           fontWeight: 700,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px'
         }}
       >
-        🔥 Kaos Duvarı
+        <FireIcon size={15} /> Kaos Duvarı
       </a>
 
       {/* 3. GRUP: ETKİNLİKLER & MAĞAZA SEKMESİ */}
@@ -178,7 +183,8 @@ export default function HeaderNav() {
           className={`nav-dropdown-trigger ${openDropdown === 'activity' ? 'active' : ''}`}
           onClick={() => toggleDropdown('activity')}
         >
-          <span>🎡 Etkinlikler</span>
+          <TrophyIcon size={16} />
+          <span>Etkinlikler & Mağaza</span>
           <span className="dropdown-arrow">▾</span>
         </button>
 
@@ -206,7 +212,7 @@ export default function HeaderNav() {
               </div>
             </a>
             <a href="/klanlar" onClick={closeDropdown} className="dropdown-item">
-              <span className="dropdown-icon">🏰</span>
+              <span className="dropdown-icon"><CrownIcon size={18} /></span>
               <div>
                 <strong style={{ color: '#f59e0b' }}>Klanlar & Loncalar</strong>
                 <p>Klan kur, ortak CP kas ve ligde yarış</p>
@@ -223,9 +229,17 @@ export default function HeaderNav() {
         )}
       </div>
 
+      {/* HAKKINDA LİNKİ */}
+      <a href="/hakkinda" className="nav-item-link" onClick={closeDropdown}>
+        ℹ️ Hakkında
+      </a>
+
+      {/* AYDINLIK / KARANLIK MODU TOGGLE */}
+      <DarkModeToggle />
+
       {/* 4. KULLANICI / PROFİL BÖLÜMÜ */}
       {!user ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
           <a href="/giris-yap" className="btn btn-ghost" style={{ padding: '6px 14px', fontSize: '.85rem' }}>
             Giriş Yap
           </a>
@@ -234,7 +248,7 @@ export default function HeaderNav() {
           </a>
         </div>
       ) : (
-        <div className="nav-dropdown-wrap">
+        <div className="nav-dropdown-wrap" style={{ marginLeft: 'auto' }}>
           <button
             type="button"
             className="user-nav-pill"
