@@ -84,37 +84,28 @@ export async function GET(req) {
   }
 }
 
-// POST /api/badges (Award a badge)
-export async function POST(req) {
-  try {
-    const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
-    const body = await req.json();
-    const { userId, badgeId } = body;
+import { withProtectedTransaction } from '../../lib/protectedApiWrapper';
 
-    // Server-side auth verification
-    if (!authHeader && !userId) {
-      return NextResponse.json({ error: 'Yetkisiz erişim. Oturum doğrulaması gerekli.' }, { status: 401 });
-    }
+export const POST = withProtectedTransaction(async (req, context, body) => {
+  const { userId, badgeId } = body;
 
-    if (!userId || typeof userId !== 'string' || !badgeId || typeof badgeId !== 'string') {
-      return NextResponse.json({ error: 'Geçersiz userId veya badgeId parametresi' }, { status: 400 });
-    }
-
-    const store = readBadges();
-    const current = store[userId] || [];
-
-    if (!current.includes(badgeId)) {
-      current.push(badgeId);
-      store[userId] = current;
-      writeBadges(store);
-    }
-
-    return NextResponse.json({
-      success: true,
-      badges: current,
-      awarded: BADGE_DEFINITIONS[badgeId] || { id: badgeId },
-    });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  if (!userId || typeof userId !== 'string' || !badgeId || typeof badgeId !== 'string') {
+    return NextResponse.json({ error: 'Geçersiz userId veya badgeId parametresi' }, { status: 400 });
   }
-}
+
+  const store = readBadges();
+  const current = store[userId] || [];
+
+  if (!current.includes(badgeId)) {
+    current.push(badgeId);
+    store[userId] = current;
+    writeBadges(store);
+  }
+
+  return NextResponse.json({
+    success: true,
+    badges: current,
+    awarded: BADGE_DEFINITIONS[badgeId] || { id: badgeId },
+  });
+});
+

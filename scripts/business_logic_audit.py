@@ -26,7 +26,7 @@ def audit_api_route(filepath):
 
     if is_mutation:
         # Check 1a: Does it enforce server-side auth/session check? (401 / 403)
-        has_auth = bool(re.search(r'\b(getSession|getUser|auth|cookies|headers|authToken|authorization|x-admin-token|x-user-id)\b', content))
+        has_auth = bool(re.search(r'\b(getSession|getUser|auth|cookies|headers|authToken|authorization|x-admin-token|x-user-id|withProtectedTransaction)\b', content))
         if not has_auth:
             issues.append("Mutating API route missing server-side authentication check (401 enforcement).")
 

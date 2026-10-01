@@ -82,135 +82,127 @@ export async function GET(req) {
   }
 }
 
-// POST /api/kaos (Yeni Paylaşım, Oy Verme, Yorum Ekleme)
-export async function POST(req) {
-  try {
-    const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
-    const body = await req.json();
-    const { action } = body;
-    const posts = readPosts();
+import { withProtectedTransaction } from '../../lib/protectedApiWrapper';
 
-    if (!authHeader && !body.userId && !body.user_id && !body.author) {
-      return NextResponse.json({ error: 'Yetkisiz erişim. Oturum gerekli.' }, { status: 401 });
+export const POST = withProtectedTransaction(async (req, context, body) => {
+  const { action } = body;
+  const posts = readPosts();
+
+  // 1. EYLEM: OY VERME (UPVOTE / DOWNVOTE)
+  if (action === 'vote') {
+    const { postId, userId, type } = body; // type: 'up' | 'down'
+    if (!postId || !userId || !type) {
+      return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
     }
 
-    // 1. EYLEM: OY VERME (UPVOTE / DOWNVOTE)
-    if (action === 'vote') {
-      const { postId, userId, type } = body; // type: 'up' | 'down'
-      if (!postId || !userId || !type) {
-        return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
-      }
+    const postIndex = posts.findIndex((p) => p.id === postId);
+    if (postIndex === -1) {
+      return NextResponse.json({ error: 'Paylaşım bulunamadı' }, { status: 404 });
+    }
 
-      const postIndex = posts.findIndex((p) => p.id === postId);
-      if (postIndex === -1) {
-        return NextResponse.json({ error: 'Paylaşım bulunamadı' }, { status: 404 });
-      }
+    const p = posts[postIndex];
+    p.upvoted_by = p.upvoted_by || [];
+    p.downvoted_by = p.downvoted_by || [];
 
-      const p = posts[postIndex];
-      p.upvoted_by = p.upvoted_by || [];
-      p.downvoted_by = p.downvoted_by || [];
+    const hasUpvoted = p.upvoted_by.includes(userId);
+    const hasDownvoted = p.downvoted_by.includes(userId);
 
-      const hasUpvoted = p.upvoted_by.includes(userId);
-      const hasDownvoted = p.downvoted_by.includes(userId);
-
-      if (type === 'up') {
-        if (hasUpvoted) {
-          // Geri al
-          p.upvoted_by = p.upvoted_by.filter((u) => u !== userId);
-          p.upvotes = Math.max(0, p.upvotes - 1);
-        } else {
-          p.upvoted_by.push(userId);
-          p.upvotes += 1;
-          if (hasDownvoted) {
-            p.downvoted_by = p.downvoted_by.filter((u) => u !== userId);
-            p.downvotes = Math.max(0, p.downvotes - 1);
-          }
-        }
-      } else if (type === 'down') {
+    if (type === 'up') {
+      if (hasUpvoted) {
+        // Geri al
+        p.upvoted_by = p.upvoted_by.filter((u) => u !== userId);
+        p.upvotes = Math.max(0, p.upvotes - 1);
+      } else {
+        p.upvoted_by.push(userId);
+        p.upvotes += 1;
         if (hasDownvoted) {
-          // Geri al
           p.downvoted_by = p.downvoted_by.filter((u) => u !== userId);
           p.downvotes = Math.max(0, p.downvotes - 1);
-        } else {
-          p.downvoted_by.push(userId);
-          p.downvotes += 1;
-          if (hasUpvoted) {
-            p.upvoted_by = p.upvoted_by.filter((u) => u !== userId);
-            p.upvotes = Math.max(0, p.upvotes - 1);
-          }
         }
       }
-
-      writePosts(posts);
-      return NextResponse.json({ success: true, post: p });
-    }
-
-    // 2. EYLEM: YORUM EKLEME
-    if (action === 'comment') {
-      const { postId, user_id, username, text, avatar_url } = body;
-      if (!postId || !user_id || !text?.trim()) {
-        return NextResponse.json({ error: 'Yorum metni zorunludur' }, { status: 400 });
+    } else if (type === 'down') {
+      if (hasDownvoted) {
+        // Geri al
+        p.downvoted_by = p.downvoted_by.filter((u) => u !== userId);
+        p.downvotes = Math.max(0, p.downvotes - 1);
+      } else {
+        p.downvoted_by.push(userId);
+        p.downvotes += 1;
+        if (hasUpvoted) {
+          p.upvoted_by = p.upvoted_by.filter((u) => u !== userId);
+          p.upvotes = Math.max(0, p.upvotes - 1);
+        }
       }
-
-      const postIndex = posts.findIndex((p) => p.id === postId);
-      if (postIndex === -1) {
-        return NextResponse.json({ error: 'Paylaşım bulunamadı' }, { status: 404 });
-      }
-
-      const newComment = {
-        id: 'c-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-        user_id,
-        username: username || 'Anonim',
-        avatar_url: avatar_url || null,
-        text: text.trim().slice(0, 500),
-        created_at: new Date().toISOString(),
-      };
-
-      posts[postIndex].comments = posts[postIndex].comments || [];
-      posts[postIndex].comments.push(newComment);
-
-      writePosts(posts);
-      return NextResponse.json({ success: true, comment: newComment });
     }
 
-    // 3. EYLEM: YENİ KAOS PAYLAŞIMI OLUŞTURMA
-    const { title, content, category, image_url, author } = body;
+    writePosts(posts);
+    return NextResponse.json({ success: true, post: p });
+  }
 
-    if (!title || !title.trim() || !content || !content.trim()) {
-      return NextResponse.json({ error: 'Başlık ve içerik zorunludur.' }, { status: 400 });
+  // 2. EYLEM: YORUM EKLEME
+  if (action === 'comment') {
+    const { postId, user_id, username, text, avatar_url } = body;
+    if (!postId || !user_id || !text?.trim()) {
+      return NextResponse.json({ error: 'Yorum metni zorunludur' }, { status: 400 });
     }
 
-    if (!author || !author.id) {
-      return NextResponse.json({ error: 'Paylaşım yapmak için giriş yapmalısınız.' }, { status: 401 });
+    const postIndex = posts.findIndex((p) => p.id === postId);
+    if (postIndex === -1) {
+      return NextResponse.json({ error: 'Paylaşım bulunamadı' }, { status: 404 });
     }
 
-    const newPost = {
-      id: 'chaos-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-      title: title.trim().slice(0, 150),
-      category: ['meme', 'tier_list', 'sicak_teori', 'tartisma'].includes(category) ? category : 'tartisma',
-      content: content.trim().slice(0, 3000),
-      image_url: image_url ? image_url.trim() : '',
-      author: {
-        id: author.id,
-        username: author.username || 'Kaos Sever',
-        role: author.role || 'user',
-        equipped_frame: author.equipped_frame || null,
-        equipped_name_color: author.equipped_name_color || null,
-        badges: author.badges || [],
-      },
-      upvotes: 1,
-      downvotes: 0,
-      upvoted_by: [author.id],
-      downvoted_by: [],
-      comments: [],
+    const newComment = {
+      id: 'c-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      user_id,
+      username: username || 'Anonim',
+      avatar_url: avatar_url || null,
+      text: text.trim().slice(0, 500),
       created_at: new Date().toISOString(),
     };
 
-    posts.unshift(newPost);
-    writePosts(posts);
+    posts[postIndex].comments = posts[postIndex].comments || [];
+    posts[postIndex].comments.push(newComment);
 
-    return NextResponse.json({ success: true, post: newPost });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    writePosts(posts);
+    return NextResponse.json({ success: true, comment: newComment });
   }
-}
+
+  // 3. EYLEM: YENİ KAOS PAYLAŞIMI OLUŞTURMA
+  const { title, content, category, image_url, author } = body;
+
+  if (!title || !title.trim() || !content || !content.trim()) {
+    return NextResponse.json({ error: 'Başlık ve içerik zorunludur.' }, { status: 400 });
+  }
+
+  if (!author || !author.id) {
+    return NextResponse.json({ error: 'Paylaşım yapmak için giriş yapmalısınız.' }, { status: 401 });
+  }
+
+  const newPost = {
+    id: 'chaos-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    title: title.trim().slice(0, 150),
+    category: ['meme', 'tier_list', 'sicak_teori', 'tartisma'].includes(category) ? category : 'tartisma',
+    content: content.trim().slice(0, 3000),
+    image_url: image_url ? image_url.trim() : '',
+    author: {
+      id: author.id,
+      username: author.username || 'Kaos Sever',
+      role: author.role || 'user',
+      equipped_frame: author.equipped_frame || null,
+      equipped_name_color: author.equipped_name_color || null,
+      badges: author.badges || [],
+    },
+    upvotes: 1,
+    downvotes: 0,
+    upvoted_by: [author.id],
+    downvoted_by: [],
+    comments: [],
+    created_at: new Date().toISOString(),
+  };
+
+  posts.unshift(newPost);
+  writePosts(posts);
+
+  return NextResponse.json({ success: true, post: newPost });
+});
+

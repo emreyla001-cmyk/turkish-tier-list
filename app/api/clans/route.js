@@ -61,129 +61,122 @@ export async function GET(req) {
   }
 }
 
-// POST /api/clans (Klan Kurma, Katılma, Ayrılma, Puan Ekleme)
-export async function POST(req) {
-  try {
-    const body = await req.json();
-    const { action } = body;
-    const clans = readClans();
+import { withProtectedTransaction } from '../../lib/protectedApiWrapper';
 
-    // 1. KLAN KURMA (Ücret: 5.000 Tier Parası)
-    if (action === 'create') {
-      const { user_id, username, name, tag, emblem, description } = body;
+export const POST = withProtectedTransaction(async (req, context, body) => {
+  const { action } = body;
+  const clans = readClans();
 
-      if (!user_id || !name?.trim() || !tag?.trim()) {
-        return NextResponse.json({ error: 'Klan adı ve etiketi zorunludur' }, { status: 400 });
-      }
+  // 1. KLAN KURMA (Ücret: 5.000 Tier Parası)
+  if (action === 'create') {
+    const { user_id, username, name, tag, emblem, description } = body;
 
-      // Kullanıcının zaten bir klanı var mı?
-      const alreadyInClan = clans.some((c) => c.members?.some((m) => m.id === user_id));
-      if (alreadyInClan) {
-        return NextResponse.json({ error: 'Zaten bir klan üyesisin! Önce mevcut klanından ayrılmalısın.' }, { status: 400 });
-      }
-
-      const cleanTag = tag.trim().toUpperCase().slice(0, 5);
-      const isTagTaken = clans.some((c) => c.tag?.toUpperCase() === cleanTag);
-      if (isTagTaken) {
-        return NextResponse.json({ error: `[${cleanTag}] klan etiketi zaten alınmış.` }, { status: 400 });
-      }
-
-      const newClan = {
-        id: 'clan-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-        name: name.trim().slice(0, 30),
-        tag: cleanTag,
-        emblem: emblem || '🛡️',
-        description: description?.trim().slice(0, 200) || 'Birlikte daha güçlüyüz!',
-        leader_id: user_id,
-        leader_name: username || 'Lider',
-        points: 500,
-        level: 1,
-        members: [
-          { id: user_id, username: username || 'Lider', role: 'leader', contributed_cp: 500 },
-        ],
-        created_at: new Date().toISOString(),
-      };
-
-      clans.unshift(newClan);
-      writeClans(clans);
-      return NextResponse.json({ success: true, clan: newClan });
+    if (!user_id || !name?.trim() || !tag?.trim()) {
+      return NextResponse.json({ error: 'Klan adı ve etiketi zorunludur' }, { status: 400 });
     }
 
-    // 2. KLANA KATILMA
-    if (action === 'join') {
-      const { clanId, user_id, username } = body;
-      if (!clanId || !user_id) {
-        return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
-      }
-
-      const alreadyInClan = clans.some((c) => c.members?.some((m) => m.id === user_id));
-      if (alreadyInClan) {
-        return NextResponse.json({ error: 'Zaten bir klandasın!' }, { status: 400 });
-      }
-
-      const clan = clans.find((c) => c.id === clanId);
-      if (!clan) {
-        return NextResponse.json({ error: 'Klan bulunamadı' }, { status: 404 });
-      }
-
-      if (clan.members?.length >= 30) {
-        return NextResponse.json({ error: 'Bu klan maksimum üye sayısına (30/30) ulaşmış!' }, { status: 400 });
-      }
-
-      clan.members = clan.members || [];
-      clan.members.push({
-        id: user_id,
-        username: username || 'Üye',
-        role: 'member',
-        contributed_cp: 0,
-      });
-
-      writeClans(clans);
-      return NextResponse.json({ success: true, clan });
+    // Kullanıcının zaten bir klanı var mı?
+    const alreadyInClan = clans.some((c) => c.members?.some((m) => m.id === user_id));
+    if (alreadyInClan) {
+      return NextResponse.json({ error: 'Zaten bir klan üyesisin! Önce mevcut klanından ayrılmalısın.' }, { status: 400 });
     }
 
-    // 3. KLANDAN AYRILMA
-    if (action === 'leave') {
-      const { clanId, user_id } = body;
-      const clan = clans.find((c) => c.id === clanId);
-      if (!clan) return NextResponse.json({ error: 'Klan bulunamadı' }, { status: 404 });
-
-      if (clan.leader_id === user_id) {
-        return NextResponse.json({ error: 'Klan lideri klandan ayrılamaz! Önce liderliği devretmeli veya klanı dağıtmalısınız.' }, { status: 400 });
-      }
-
-      clan.members = clan.members.filter((m) => m.id !== user_id);
-      writeClans(clans);
-      return NextResponse.json({ success: true });
+    const cleanTag = tag.trim().toUpperCase().slice(0, 5);
+    const isTagTaken = clans.some((c) => c.tag?.toUpperCase() === cleanTag);
+    if (isTagTaken) {
+      return NextResponse.json({ error: `[${cleanTag}] klan etiketi zaten alınmış.` }, { status: 400 });
     }
 
-    // 4. KLAN PUANI (CP) KAZANMA
-    if (action === 'contribute_cp') {
-      const { user_id, points } = body;
-      const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
-      if (!authHeader && !user_id) {
-        return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
-      }
+    const newClan = {
+      id: 'clan-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      name: name.trim().slice(0, 30),
+      tag: cleanTag,
+      emblem: emblem || '🛡️',
+      description: description?.trim().slice(0, 200) || 'Birlikte daha güçlüyüz!',
+      leader_id: user_id,
+      leader_name: username || 'Lider',
+      points: 500,
+      level: 1,
+      members: [
+        { id: user_id, username: username || 'Lider', role: 'leader', contributed_cp: 500 },
+      ],
+      created_at: new Date().toISOString(),
+    };
 
-      // Boundary & Falsy Check: Handle 0, NaN, invalid types, and default 50 only if undefined
-      const parsedPoints = points === undefined ? 50 : Number(points);
-      const numericPoints = isNaN(parsedPoints) ? 0 : Math.max(0, Math.min(1000, Math.floor(parsedPoints)));
-      const clan = clans.find((c) => c.members?.some((m) => m.id === user_id));
-      if (clan) {
-        clan.points = (clan.points || 0) + numericPoints;
-        const member = clan.members.find((m) => m.id === user_id);
-        if (member) {
-          member.contributed_cp = (member.contributed_cp || 0) + numericPoints;
-        }
-        clan.level = Math.floor(Math.sqrt((clan.points || 0) / 1000)) + 1;
-        writeClans(clans);
-        return NextResponse.json({ success: true, clanPoints: clan.points, clanLevel: clan.level });
-      }
-      return NextResponse.json({ success: false, reason: 'Klan bulunamadı' });
-    }
-
-    return NextResponse.json({ error: 'Geçersiz işlem' }, { status: 400 });
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    clans.unshift(newClan);
+    writeClans(clans);
+    return NextResponse.json({ success: true, clan: newClan });
   }
-}
+
+  // 2. KLANA KATILMA
+  if (action === 'join') {
+    const { clanId, user_id, username } = body;
+    if (!clanId || !user_id) {
+      return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
+    }
+
+    const alreadyInClan = clans.some((c) => c.members?.some((m) => m.id === user_id));
+    if (alreadyInClan) {
+      return NextResponse.json({ error: 'Zaten bir klandasın!' }, { status: 400 });
+    }
+
+    const clan = clans.find((c) => c.id === clanId);
+    if (!clan) {
+      return NextResponse.json({ error: 'Klan bulunamadı' }, { status: 404 });
+    }
+
+    if (clan.members?.length >= 30) {
+      return NextResponse.json({ error: 'Bu klan maksimum üye sayısına (30/30) ulaşmış!' }, { status: 400 });
+    }
+
+    clan.members = clan.members || [];
+    clan.members.push({
+      id: user_id,
+      username: username || 'Üye',
+      role: 'member',
+      contributed_cp: 0,
+    });
+
+    writeClans(clans);
+    return NextResponse.json({ success: true, clan });
+  }
+
+  // 3. KLANDAN AYRILMA
+  if (action === 'leave') {
+    const { clanId, user_id } = body;
+    const clan = clans.find((c) => c.id === clanId);
+    if (!clan) return NextResponse.json({ error: 'Klan bulunamadı' }, { status: 404 });
+
+    if (clan.leader_id === user_id) {
+      return NextResponse.json({ error: 'Klan lideri klandan ayrılamaz! Önce liderliği devretmeli veya klanı dağıtmalısınız.' }, { status: 400 });
+    }
+
+    clan.members = clan.members.filter((m) => m.id !== user_id);
+    writeClans(clans);
+    return NextResponse.json({ success: true });
+  }
+
+  // 4. KLAN PUANI (CP) KAZANMA
+  if (action === 'contribute_cp') {
+    const { user_id, points } = body;
+
+    // Boundary & Falsy Check: Handle 0, NaN, invalid types, and default 50 only if undefined
+    const parsedPoints = points === undefined ? 50 : Number(points);
+    const numericPoints = isNaN(parsedPoints) ? 0 : Math.max(0, Math.min(1000, Math.floor(parsedPoints)));
+    const clan = clans.find((c) => c.members?.some((m) => m.id === user_id));
+    if (clan) {
+      clan.points = (clan.points || 0) + numericPoints;
+      const member = clan.members.find((m) => m.id === user_id);
+      if (member) {
+        member.contributed_cp = (member.contributed_cp || 0) + numericPoints;
+      }
+      clan.level = Math.floor(Math.sqrt((clan.points || 0) / 1000)) + 1;
+      writeClans(clans);
+      return NextResponse.json({ success: true, clanPoints: clan.points, clanLevel: clan.level });
+    }
+    return NextResponse.json({ success: false, reason: 'Klan bulunamadı' });
+  }
+
+  return NextResponse.json({ error: 'Geçersiz işlem' }, { status: 400 });
+});
+

@@ -8,23 +8,38 @@
 import { NextResponse } from 'next/server';
 import { processWalletTransaction } from './walletTransactionManager';
 
-export function withProtectedTransaction(handler) {
+export function withProtectedTransaction(handler, options = {}) {
   return async function protectedHandler(req, context) {
     try {
       const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
+      const adminHeader = req.headers.get('x-admin-token');
       const idempotencyKey = req.headers.get('x-idempotency-key');
 
-      if (!authHeader) {
+      if (options.requireAdmin) {
+        if (!adminHeader || (adminHeader !== 'admin-secret' && adminHeader !== 'Bearer admin-secret')) {
+          return NextResponse.json(
+            { success: false, error: 'Yetkisiz erişim. Admin yetkisi gereklidir.' },
+            { status: 401 }
+          );
+        }
+      } else if (!options.allowGuest && !authHeader) {
         return NextResponse.json(
-          { success: false, error: 'Yetkisiz erişim. Oturum doğrulaması gerekli (HTTP 401).' },
+          { success: false, error: 'Yetkisiz erişim. Oturum doğrulaması gerekli.' },
           { status: 401 }
         );
       }
 
-      // If body contains transaction details, automatically wrap with processWalletTransaction
-      const body = await req.clone().json().catch(() => ({}));
-      
-      if (body.transaction) {
+      let body = {};
+      try {
+        const text = await req.text();
+        if (text) {
+          body = JSON.parse(text);
+        }
+      } catch (e) {
+        body = {};
+      }
+
+      if (body && body.transaction) {
         const { amount, type, description } = body.transaction;
         const txResult = await processWalletTransaction({
           userId: authHeader,
