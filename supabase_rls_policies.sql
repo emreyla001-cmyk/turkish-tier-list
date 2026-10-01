@@ -1,0 +1,32 @@
+-- ========================================================
+-- TURKISH TIER LIST - SUPABASE RLS (ROW LEVEL SECURITY) DDL
+-- ========================================================
+
+-- 1. Enable RLS on core tables
+ALTER TABLE IF EXISTS public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.wallet_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.gacha_pulls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.admin_logs ENABLE ROW LEVEL SECURITY;
+
+-- 2. Profiles: Users can read all public profiles, but edit only their own
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+CREATE POLICY "Users can update own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- 3. Wallet Transactions: Users can view ONLY their own financial history
+DROP POLICY IF EXISTS "Users can view own transactions" ON public.wallet_transactions;
+CREATE POLICY "Users can view own transactions" ON public.wallet_transactions
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Only server role can insert transactions" ON public.wallet_transactions;
+CREATE POLICY "Only server role can insert transactions" ON public.wallet_transactions
+  FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+-- 4. Admin Logs: Only service_role or admin users can read/write
+DROP POLICY IF EXISTS "Strict admin log isolation" ON public.admin_logs;
+CREATE POLICY "Strict admin log isolation" ON public.admin_logs
+  FOR ALL USING (auth.role() = 'service_role');
