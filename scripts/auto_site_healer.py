@@ -218,6 +218,11 @@ def run_full_site_healing_sweep():
     log("=========================================================")
 
     fixes_applied = 0
+    # Step 0: Automatic Feature & Cross-Link Integration Audit
+    code, out, err = run_cmd("python scripts/feature_integration_auditor.py")
+    if "Total auto-links added:" in out:
+        log(f"Feature Integration Auditor: {out.strip()}", level="INFO")
+
     fixes_applied += audit_and_fix_client_directives()
     fixes_applied += audit_and_fix_cosmetics()
     fixes_applied += audit_and_fix_theme_contrast()
