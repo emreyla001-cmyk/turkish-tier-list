@@ -16,6 +16,18 @@
   --s: #e6455b; --a: #e68a25; --b: #e6c825; --c: #6fbf73; --d: #5b8ce6;
 }
 
+html.light {
+  --bg: #f8fafc;
+  --bg-2: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --card: #ffffff;
+  --card-hover: #e2e8f0;
+  --border: rgba(0, 0, 0, 0.12);
+  --text: #0f172a;
+  --text-dim: #475569;
+  --text-light: #1e293b;
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {

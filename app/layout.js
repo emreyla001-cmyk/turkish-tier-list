@@ -44,14 +44,16 @@ export default function RootLayout({ children }) {
               </a>
             </div>
 
+            <HeaderNav />
+
             {/* Hızlı Arama Butonu (Ctrl+K) */}
             <div className="nav-search-wrap">
               <SpotlightSearch />
             </div>
 
             <div className="flex items-center space-x-2">
-            <DarkModeToggle />
-          </div>
+              <DarkModeToggle />
+            </div>
           </div>
         </header>
 
