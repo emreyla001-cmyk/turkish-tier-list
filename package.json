@@ -9,7 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "dev:auto": "node dev-auto.js"
+    "dev:auto": "node dev-auto.js",
+    "heal": "python scripts/auto_site_healer.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

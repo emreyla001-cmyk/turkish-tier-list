@@ -1,3 +1,4 @@
+"use client";
 import { getAnimatedFrameInfo, nameColorStyle, resolveFrame } from './cosmetics';
 
 export const ROLES = {
