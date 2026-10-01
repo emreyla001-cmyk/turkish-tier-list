@@ -7,21 +7,37 @@ import { TrophyIcon, CoinIcon, EnergyIcon, CrownIcon } from '../components/Cyber
 import { getCardRarity } from '../lib/cardRarity';
 import { getEffectiveCoins, getEffectiveXP } from '../lib/wallet';
 
-export function getAlbumCardReward(tier) {
-  const t = (tier || '').toUpperCase();
+export function getAlbumCardReward(character) {
+  const t = (typeof character === 'string' ? character : character?.tier || '').toUpperCase();
+  const power = typeof character === 'object' ? (Number(character?.power_score) || 5) : 5;
+
+  let baseCoins = 200;
+  let baseXP = 80;
+  let label = 'Standart (C)';
+
   if (t === 'TIER 0' || t === 'HIGH 1-A' || t === '1-A' || t === 'S-TIER' || t.startsWith('S-')) {
-    return { coins: 2500, xp: 1000, label: 'Mitolojik Kozmik (SSR)' };
+    baseCoins = 2500;
+    baseXP = 1000;
+    label = 'Mitolojik Kozmik (SSR)';
+  } else if (t.includes('A-TIER') || t.startsWith('7-') || t.startsWith('HIGH 7-')) {
+    baseCoins = 1200;
+    baseXP = 500;
+    label = 'Efsanevi (UR)';
+  } else if (t.includes('B-TIER') || t.startsWith('9-') || t.startsWith('8-')) {
+    baseCoins = 600;
+    baseXP = 250;
+    label = 'Epik (SR)';
+  } else if (t.includes('C-TIER') || t.startsWith('10-')) {
+    baseCoins = 300;
+    baseXP = 125;
+    label = 'Nadir (R)';
   }
-  if (t.includes('A-TIER') || t.startsWith('7-') || t.startsWith('HIGH 7-')) {
-    return { coins: 1200, xp: 500, label: 'Efsanevi (UR)' };
-  }
-  if (t.includes('B-TIER') || t.startsWith('9-') || t.startsWith('8-')) {
-    return { coins: 600, xp: 250, label: 'Epik (SR)' };
-  }
-  if (t.includes('C-TIER') || t.startsWith('10-')) {
-    return { coins: 300, xp: 125, label: 'Nadir (R)' };
-  }
-  return { coins: 150, xp: 60, label: 'Standart (C)' };
+
+  // Karakterin özel güç puanına göre (power_score) dinamik ölçekleme
+  const finalCoins = Math.round(baseCoins + (power * 80));
+  const finalXP = Math.round(baseXP + (power * 35));
+
+  return { coins: finalCoins, xp: finalXP, label };
 }
 
 export default function KoleksiyonAlbumPage() {
@@ -145,7 +161,7 @@ export default function KoleksiyonAlbumPage() {
     const newlyClaimedIds = [];
 
     unclaimedOwnedCards.forEach((c) => {
-      const rew = getAlbumCardReward(c.tier);
+      const rew = getAlbumCardReward(c);
       addedCoins += rew.coins;
       addedXp += rew.xp;
       newlyClaimedIds.push(c.id);
