@@ -21,6 +21,7 @@
     "postcss": "^8.5.28"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "chokidar": "^5.0.0"
   }
 }

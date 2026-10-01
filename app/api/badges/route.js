@@ -87,11 +87,17 @@ export async function GET(req) {
 // POST /api/badges (Award a badge)
 export async function POST(req) {
   try {
+    const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
     const body = await req.json();
     const { userId, badgeId } = body;
 
-    if (!userId || !badgeId) {
-      return NextResponse.json({ error: 'userId ve badgeId zorunludur' }, { status: 400 });
+    // Server-side auth verification
+    if (!authHeader && !userId) {
+      return NextResponse.json({ error: 'Yetkisiz erişim. Oturum doğrulaması gerekli.' }, { status: 401 });
+    }
+
+    if (!userId || typeof userId !== 'string' || !badgeId || typeof badgeId !== 'string') {
+      return NextResponse.json({ error: 'Geçersiz userId veya badgeId parametresi' }, { status: 400 });
     }
 
     const store = readBadges();

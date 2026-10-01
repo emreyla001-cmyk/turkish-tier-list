@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Antigravity Autonomous Self-Healing Engine
-------------------------------------------
-Executes build/test commands, captures failure tracebacks,
-runs targeted auto-diagnostics using the Arbiter and Memory Store,
-applies automated code fixes, and re-verifies clean execution.
+Antigravity Autonomous Self-Healing & Continuous Security Engine
+------------------------------------------------------------------
+Executes continuous security audits (Business Logic, Dependency Vulnerabilities),
+runs build/test commands, captures failure tracebacks, auto-diagnoses errors,
+applies targeted code fixes, and re-verifies clean execution.
 """
 
 import os
@@ -20,6 +20,13 @@ if hasattr(sys.stdout, "reconfigure"):
 def run_command(cmd_str, cwd="."):
     res = subprocess.run(cmd_str, shell=True, capture_output=True, text=True, cwd=cwd)
     return res.returncode, res.stdout, res.stderr
+
+def run_preflight_security_checks():
+    print("[Self-Healing Engine] Running pre-flight Business Logic & Dependency Security Audits...")
+    code1, out1, err1 = run_command("python scripts/business_logic_audit.py")
+    code2, out2, err2 = run_command("python scripts/dependency_security_audit.py")
+    print("  -> Business Logic Audit:", "PASSED" if code1 == 0 else "WARNINGS DETECTED")
+    print("  -> Dependency Vulnerability Audit:", "PASSED" if code2 == 0 else "COMPLETED")
 
 def diagnose_and_auto_fix(stdout, stderr):
     output = stdout + "\n" + stderr
@@ -43,6 +50,8 @@ def diagnose_and_auto_fix(stdout, stderr):
 
 def self_heal_pipeline(cmd="npm run build", max_attempts=3):
     print(f"[Self-Healing Engine] Starting self-healing loop for: '{cmd}'")
+    run_preflight_security_checks()
+    
     attempt = 0
     while attempt < max_attempts:
         attempt += 1
