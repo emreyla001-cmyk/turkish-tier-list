@@ -115,6 +115,7 @@ export default function HeaderNav() {
   const exploreSubLinks = [
     { href: '/oyunlar', label: 'Mini Oyunlar', desc: 'Bilmece, Kim Alır & Düellolar' },
     { href: '/koleksiyon', label: 'Koleksiyon Albümü', desc: 'Açılan kartlar ve albüm ödülleri' },
+    { href: '/sikayet-istek', label: 'Şikayet & İstek', desc: 'Görüş, öneri ve hata bildirimi' },
     { href: '/klanlar', label: 'Klanlar & Loncalar', desc: 'Topluluk klanları ve rekabet' },
     { href: '/kaos', label: 'Kaos Duvarı', desc: 'Rastgele kart kapışmaları' },
     { href: '/gorevler', label: 'Görevler', desc: 'Günlük görevler ve rozetler' },
@@ -146,11 +147,13 @@ export default function HeaderNav() {
           className="nav-dropdown-wrap"
           onMouseEnter={() => setOpenExploreDropdown(true)}
           onMouseLeave={() => setOpenExploreDropdown(false)}
+          style={{ position: 'relative' }}
         >
           <button
             type="button"
             className={`unified-nav-item nav-explore-btn ${isExploreActive ? 'active' : ''}`}
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               setOpenExploreDropdown((prev) => !prev);
             }}
@@ -160,7 +163,11 @@ export default function HeaderNav() {
           </button>
 
           {openExploreDropdown && (
-            <div className="nav-dropdown-menu nav-explore-dropdown">
+            <div
+              className="nav-dropdown-menu nav-explore-dropdown"
+              onClick={(e) => e.stopPropagation()}
+              style={{ zIndex: 9999, top: 'calc(100% + 2px)' }}
+            >
               {exploreSubLinks.map((sub) => {
                 const isSubActive = pathname === sub.href;
                 return (
@@ -169,6 +176,7 @@ export default function HeaderNav() {
                     href={sub.href}
                     onClick={() => setOpenExploreDropdown(false)}
                     className={`dropdown-item ${isSubActive ? 'active' : ''}`}
+                    style={{ cursor: 'pointer' }}
                   >
                     <div>
                       <strong style={{ color: isSubActive ? 'var(--accent)' : 'inherit' }}>{sub.label}</strong>
