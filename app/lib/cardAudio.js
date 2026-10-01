@@ -15,6 +15,19 @@ class UltraCardAudioManager {
         this.masterGain = this.ctx.createGain();
         this.masterGain.gain.value = 0.85; // Master ses seviyesi
         this.masterGain.connect(this.ctx.destination);
+
+        // Kullanıcı herhangi bir yere tıkladığı an AudioContext'i derhal uyandır
+        const resumeAudio = () => {
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+          window.removeEventListener('click', resumeAudio);
+          window.removeEventListener('touchstart', resumeAudio);
+          window.removeEventListener('keydown', resumeAudio);
+        };
+        window.addEventListener('click', resumeAudio, { once: true });
+        window.addEventListener('touchstart', resumeAudio, { once: true });
+        window.addEventListener('keydown', resumeAudio, { once: true });
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
