@@ -9,6 +9,10 @@ import subprocess
 import sys
 import json
 
+# Windows konsol UTF-8 çıktı yapılandırması (cp1254 UnicodeEncodeError önleyici)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 def run_claude_review(prompt_text):
     turkish_prompt = f"{prompt_text} - Lütfen tüm incelemeyi ve önerileri Türkçe olarak yaz."
     cmd = f'claude -p "{turkish_prompt}" < NUL'
