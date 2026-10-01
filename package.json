@@ -11,7 +11,8 @@
     "start": "next start",
     "dev:auto": "node dev-auto.js",
     "heal": "python scripts/auto_site_healer.py",
-    "scan:live": "node scripts/site_health_scan.js"
+    "scan:live": "node scripts/site_health_scan.js",
+    "orchestrate": "python scripts/master_autonomous_orchestrator.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
