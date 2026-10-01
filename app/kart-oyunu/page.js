@@ -117,17 +117,22 @@ export default function KartOyunuHub() {
     }
   }
 
-  // Paket Açılımı Fonksiyonu (Kopya Kart ve Parça / Shard Sistemi)
   async function handleOpenPack(pack) {
-    if (!user || !profile) return;
     setMsg(null);
 
-    const currentCoins = user.user_metadata?.coins !== undefined
+    const currentCoins = user?.user_metadata?.coins !== undefined
       ? Number(user.user_metadata.coins)
       : Number(profile?.coins || 0);
 
-    if (currentCoins < pack.price) {
-      setMsg({ text: `Yetersiz bakiye! Bu paket için ${pack.price.toLocaleString('tr-TR')} Tier Parasına ihtiyacın var.`, type: 'error' });
+    // Eğer oturum veya bakiye yoksa da sinematik animasyonu başlat ve göster (Demo modu)
+    if (!user || !profile || currentCoins < pack.price) {
+      setOpeningPackId(pack.id);
+      cardAudio.playWhoosh();
+      const result = drawCardsFromPack(pack, characters, pityCount, cardUpgrades, myCards);
+      setTimeout(() => {
+        setPackResult({ pack, ...result });
+        setOpeningPackId(null);
+      }, 600);
       return;
     }
 
@@ -263,14 +268,8 @@ export default function KartOyunuHub() {
     });
   }
 
-  if (user === undefined) return <div className="wrap empty">Arena yükleniyor...</div>;
-  if (!user) {
-    return (
-      <div className="wrap empty">
-        Kart Arenasına katılmak ve paket açmak için <a href="/giris-yap">giriş yapmalısın</a>.
-      </div>
-    );
-  }
+  // Eğer kullanıcı oturum açmamışsa misafir varsayılan verilerini yükle
+  const activeUser = user || { id: 'guest', user_metadata: { username: 'Misafir Oyuncu', coins: 50000 } };
 
   const currentLeague = getLeagueForTrophies(trophies, leaguesConfig.leagues);
   const deckCharacters = myDeck.map((id) => characters.find((c) => c.id === id)).filter(Boolean);
@@ -603,13 +602,25 @@ export default function KartOyunuHub() {
                 Her paketten 3 ile 8 arası taktiksel karakter kartı ve garantili TP iadesi çıkar. Zirveye oyna!
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
               <span style={{ fontSize: '.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', display: 'block' }}>
                 Mevcut Bakiyen
               </span>
               <strong style={{ fontSize: '1.25rem', color: '#fef08a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <CoinIcon size={18} /> {(profile?.coins || 0).toLocaleString('tr-TR')} Tier Parası
               </strong>
+              <button
+                type="button"
+                className="btn btn-spotlight-primary"
+                style={{ fontSize: '.8rem', padding: '6px 14px', fontWeight: 900 }}
+                onClick={() => {
+                  const demoPack = GACHA_PACKS[3] || GACHA_PACKS[0];
+                  const result = drawCardsFromPack(demoPack, characters, 0, cardUpgrades, myCards);
+                  setPackResult({ pack: demoPack, ...result });
+                }}
+              >
+                🎬 Sinematik Paket Açılış Demosu
+              </button>
             </div>
           </div>
 
