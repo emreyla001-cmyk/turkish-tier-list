@@ -1829,10 +1829,139 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
   animation: walkoutFlares 2s infinite alternate ease-in-out;
 }
 
-@keyframes walkoutFlares {
-  0% { box-shadow: 0 0 25px rgba(234, 179, 8, 0.3), inset 0 0 15px rgba(234, 179, 8, 0.2); }
-  100% { box-shadow: 0 0 60px rgba(234, 179, 8, 0.8), inset 0 0 30px rgba(234, 179, 8, 0.5); }
+
+
+/* ========================================================
+   SİNEMATİK POSTER KARTLARI (RETUCH & PHOTO OVERLAY)
+   ======================================================== */
+.poster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 18px;
+  padding: 16px 0;
 }
+
+.poster-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.poster-card:hover {
+  transform: translateY(-5px) scale(1.01);
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 20px rgba(6, 182, 212, 0.25);
+}
+
+.poster-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background: #090c14;
+}
+
+.poster-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  filter: contrast(1.06) brightness(0.96) saturate(1.08);
+  transition: transform .35s cubic-bezier(0.4, 0, 0.2, 1), filter .35s ease;
+  will-change: transform, filter;
+}
+
+.poster-card:hover .poster-media img {
+  transform: scale(1.07);
+  filter: contrast(1.12) brightness(1.02) saturate(1.15);
+}
+
+.poster-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 9, 14, 0) 35%, rgba(7, 9, 14, 0.75) 70%, rgba(7, 9, 14, 0.98) 100%);
+  pointer-events: none;
+}
+
+.poster-badges-top-left {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.poster-new-tag {
+  font-size: .65rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: .05em;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.poster-cat-tag {
+  font-size: .65rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 2px 7px;
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+}
+
+.poster-tier-float {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+}
+
+.poster-details {
+  position: relative;
+  z-index: 3;
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--bg-card);
+}
+
+.poster-name {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 2px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.poster-series {
+  font-size: .8rem;
+  color: var(--text-dim);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 
 
