@@ -1256,59 +1256,62 @@ export default function MagazaPage() {
             {GACHA_PACKS.map((pack) => (
               <div
                 key={pack.id}
-                className="card"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  padding: '22px',
-                  textAlign: 'center',
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.5))',
-                  border: openingPackId === pack.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                  borderRadius: '16px',
-                  boxShadow: openingPackId === pack.id ? '0 0 25px rgba(0, 240, 255, 0.4)' : 'none',
-                  transition: 'all .3s ease',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
-                    <span className="tag" style={{ background: pack.badgeColor, color: '#000', fontWeight: 900, fontSize: '.75rem' }}>
-                      {pack.badge}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '3.2rem', marginBottom: '10px' }}>{pack.icon}</div>
-                  <h3 style={{ fontSize: '1.15rem', margin: '0 0 6px', color: '#fff' }}>{pack.name}</h3>
-                  <p style={{ fontSize: '.82rem', color: 'var(--text-dim)', minHeight: '44px', lineHeight: 1.4 }}>
-                    {pack.desc}
-                  </p>
-                  <div style={{ fontSize: '.75rem', color: '#86efac', fontWeight: 700, margin: '6px 0 2px' }}>
-                    🎁 +{pack.cashback.toLocaleString('tr-TR')} TP Nakit İade
-                  </div>
-                  <div style={{ fontSize: '.7rem', color: 'var(--text-dim)', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '6px', margin: '8px 0' }}>
-                    {pack.ratesText}
-                  </div>
-                  <div style={{ fontSize: '.7rem', color: '#f0abfc', fontWeight: 700, margin: '4px 0 8px' }}>
-                    {getPackOddsText(pack)}
-                  </div>
-                  <div style={{ margin: '14px 0', fontSize: '1.25rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    <CoinIcon size={20} /> {pack.price.toLocaleString('tr-TR')}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ width: '100%', fontWeight: 800, padding: '10px' }}
-                  onClick={() => handleOpenPack(pack)}
-                  disabled={openingPackId !== null}
+                className="card shop-item booster-pack-card"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    padding: '24px',
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, rgba(20, 25, 45, 0.95), rgba(10, 13, 22, 0.98))',
+                    border: openingPackId === pack.id ? '2px solid var(--accent)' : '1px solid rgba(230, 179, 37, 0.35)',
+                    borderRadius: '20px',
+                    boxShadow: openingPackId === pack.id ? '0 0 30px rgba(0, 240, 255, 0.5)' : '0 12px 30px rgba(0,0,0,0.5)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
                 >
-                  {openingPackId === pack.id ? 'Paket Yırtılıyor...' : `${pack.cardCount} Kart Aç`}
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+                  <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(230, 179, 37, 0.25), transparent)', pointerEvents: 'none' }} />
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                      <span className="tag" style={{ background: pack.badgeColor, color: '#000', fontWeight: 900, fontSize: '.75rem', letterSpacing: '.05em', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                        {pack.badge}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '3.5rem', marginBottom: '12px', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }}>{pack.icon}</div>
+                    <h3 style={{ fontSize: '1.2rem', margin: '0 0 6px', color: '#fff', fontWeight: 900 }}>{pack.name}</h3>
+                    <p style={{ fontSize: '.84rem', color: 'var(--text-dim)', minHeight: '44px', lineHeight: 1.45 }}>
+                      {pack.desc}
+                    </p>
+                    <div style={{ fontSize: '.78rem', color: '#86efac', fontWeight: 800, margin: '8px 0 4px', background: 'rgba(134, 239, 172, 0.1)', padding: '4px 10px', borderRadius: '8px' }}>
+                      🎁 +{pack.cashback.toLocaleString('tr-TR')} TP Nakit İade
+                    </div>
+                    <div style={{ fontSize: '.72rem', color: 'var(--text-dim)', background: 'rgba(0,0,0,0.4)', padding: '6px 10px', borderRadius: '8px', margin: '8px 0', border: '1px solid var(--border)' }}>
+                      {pack.ratesText}
+                    </div>
+                    <div style={{ fontSize: '.72rem', color: '#f0abfc', fontWeight: 800, margin: '4px 0 10px' }}>
+                      {getPackOddsText(pack)}
+                    </div>
+                    <div style={{ margin: '14px 0', fontSize: '1.3rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <CoinIcon size={22} /> {pack.price.toLocaleString('tr-TR')}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-spotlight-primary"
+                    style={{ width: '100%', fontWeight: 900, padding: '12px', borderRadius: '12px', fontSize: '.9rem' }}
+                    onClick={() => handleOpenPack(pack)}
+                    disabled={openingPackId !== null}
+                  >
+                    {openingPackId === pack.id ? 'Paket Yırtılıyor...' : `${pack.cardCount} Kart Aç`}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
       {/* KOZMETİK EŞYA LİSTELERİ */}
       {filteredKinds.filter((k) => k !== 'packs').map((kind) => {
@@ -1325,10 +1328,9 @@ export default function MagazaPage() {
                 const isSpecial = it.kind === 'special_permit';
                 const has = owned.has(it.id);
                 const isEquipped =
-                  (it.kind === 'frame' && profile?.equipped_frame === it.id) ||
-                  (it.kind === 'background' && profile?.equipped_background === it.id) ||
-                  (it.kind === 'name_color' && profile?.equipped_name_color === it.id) ||
-                  (it.kind === 'avatar' && profile?.avatar_url === it.value);
+                  (it.kind === 'frame' && (profile?.equipped_frame === it.id || profile?.equipped_frame === it.value || (typeof profile?.equipped_frame === 'string' && profile.equipped_frame.includes(it.id)))) ||
+                  (it.kind === 'background' && (profile?.equipped_background === it.id || profile?.equipped_background === it.value || (typeof profile?.equipped_background === 'string' && profile.equipped_background.includes(it.id)))) ||
+                  (it.kind === 'name_color' && (profile?.equipped_name_color === it.id || profile?.equipped_name_color === it.value || (typeof profile?.equipped_name_color === 'string' && profile.equipped_name_color.includes(it.id))));
 
                 const isAffordable = (profile?.coins || 0) >= it.price;
                 const isLoading = loadingAction === it.id;
