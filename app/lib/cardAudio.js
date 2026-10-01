@@ -263,6 +263,18 @@ class CardAudioManager {
       });
     } catch {}
   }
+  // Aliases for convenience & backwards compatibility
+  playVictory() {
+    this.playVictoryFanfare();
+  }
+
+  playClash(isSuper = false) {
+    this.playClashImpact(isSuper);
+  }
+
+  playDefeat() {
+    this.playDefeatTone();
+  }
 }
 
 export const cardAudio = new CardAudioManager();
