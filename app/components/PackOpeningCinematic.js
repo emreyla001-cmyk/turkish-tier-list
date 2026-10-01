@@ -81,10 +81,10 @@ export default function PackOpeningCinematic({ packResult, onClose }) {
       try { cardAudio.playRarityReveal(rarity); } catch {}
     }, 500);
 
-    // Auto-advance to next card
+    // Auto-advance to next card (dokunulmazsa 4-6 saniye bekle, dokunulursa tıkla hemen geç)
     if (autoAdvance) {
       const rarity = getCardRarity(cards[revealIdx]?.tier).code;
-      const dur = rarity === 'UR' ? 2800 : rarity === 'SSR' ? 2200 : 1500;
+      const dur = rarity === 'UR' ? 6000 : rarity === 'SSR' ? 5000 : 4200;
       addTimer(() => setRevealIdx(prev => prev + 1), dur);
     }
     return () => clearTimeout(flipDelay);
