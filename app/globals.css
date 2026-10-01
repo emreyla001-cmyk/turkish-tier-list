@@ -327,8 +327,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 6px;
-  overflow: visible;
-  flex-wrap: wrap;
+  position: relative;
 }
 
 .unified-nav-item {
