@@ -1,45 +1,45 @@
-# Turkish Tier List — Proje Hafızası ve Durum Özeti
+# Turkish Tier List — Proje Hafızası ve Sistem Kuralları
 
-> Bu dosya, projede çalışan herhangi bir yapay zeka modeline (OmniRoute, Claude, Gemini, Cursor vb.) projenin geçmişini, kurallarını ve en son kalınan noktayı tek seferde aktarmak için hazırlanmıştır.
+> Bu dosya, projede çalışan herhangi bir yapay zeka modeline projenin geçmişini, otonom sistem kurallarını ve en son gelişmeleri otomatik aktarmak için sürekli güncellenir.
 
 ---
 
 ## 1. Proje Kimliği ve Teknolojiler
 * **Proje:** Turkish Tier List (Türkiye Pop-Kültür, Dizi, Film ve Karakter Tier Listesi & Kart Oyunu)
-* **Teknoloji Yığını:** Next.js 14 (App Router), React 18, Tailwind CSS, Supabase (PostgreSQL, Auth, Storage, Realtime).
+* **Teknoloji Yığını:** Next.js 14 (App Router), React 18, Tailwind CSS, Supabase, Playwright E2E, ChromaDB Vector Memory.
 * **Klasör Konumu:** `C:\Users\EMRE\Desktop\turkish-tier-list-TAM`
-* **Canlı Dal:** GitHub `main`
+* **Canlı Dal (Production):** GitHub `main` -> Railway (`https://turkish-tier-list-web-production.up.railway.app/`)
 
 ---
 
-## 2. Kullanıcının Kesin Kuralları ve Tercihleri
-1. **Sıfır Sahte / Bot Veri Kuralı:** Veritabanına veya siteye asla sahte kullanıcı, bot klan, uydurma oy veya otomatik üye eklenmez. Her şey temiz ve gerçekçi olmalıdır.
-2. **"Bana Sorma, Halledip Test Et":** Gerekli iyileştirmeleri doğrudan koda dök, `npm run build` ile doğrula ve temiz çalışır halde teslim et.
-3. **Ekonomi ve Gacha Dengesi:**
-   - **UR (Ultra Rare):** Hemen çıkmaz, oyunu domine etmeyi engellemek için elit ve uzun vadeli ödül olarak kalmalıdır.
-   - **SSR:** Her pakette değil; Mobile Legends Adventure mantığıyla şansa bağlı olarak 2 ya da 3 pakette bir çıkmalıdır.
-   - **Ekonomi:** Kullanıcıya oyun oynatarak (kart savaşı, bilmece, kim alır vb.) bol para kazandırıp mağazada çok harcatacak zengin içerikler (paketler, hareketli çerçeveler, unvanlar, arka planlar) sunulmalıdır.
-4. **Çoklu Oturum / Ajan Güvenliği:** Kodlarda asla `git stash` kullanılmaz; her commit öncesi build alınır.
+## 2. Kullanıcının Kesin Kuralları ve Çalışma İlkeleri
+1. **"Sana Güveniyorum, Otomatik Halledip Test Et":**
+   - Kullanıcıya gereksiz sorular sorma. İhtiyaçları analiz et, kodu doğrudan yaz, `python scripts/dual_brain_arbiter.py` ve `npm run build` ile doğrula, GitHub'a push et.
+2. **Sıfır Sahte / Bot Veri Kuralı:**
+   - Veritabanına veya siteye asla sahte kullanıcı, bot klan, uydurma oy eklenmez.
+3. **Localhost Geliştirme Otomasyonu:**
+   - Dev sunucusu `npm run dev:auto` ile çalışır. Dosya değişince otomatik başlar, 5 dk işlem yapılmazsa SSD alanını korumak için otomatik kapanır.
+4. **Custom Domain Yönlendirme Uyarısı:**
+   - `next.config.js` içinde `example.com` gibi sahte redirect kuralları tutulmaz.
+5. **Ajan Güvenliği:**
+   - Kodlarda asla `git stash` kullanılmaz.
 
 ---
 
-## 3. Tamamlanan ve Çalışır Durumdaki Modüller
-* **3 Katmanlı Cüzdan ve XP Sistemi (`app/lib/wallet.js` & `app/lib/gamificationUtils.js`):**
-  - XP ve Bakiye; `user_metadata`, `localStorage` ve `profiles` tablosunda anında eşitlenir.
-  - OmniRoute tabanlı **Anti-Cheat (Hız Limiti)** devrededir (Dakikada maks 1500 XP sınırı ile sonsuz döngü ve hileler engellenir).
-  - Seviye kademeleri (Çırak, Gezgin, Usta, Şampiyon, Efsane) aktiftir.
-* **Mağaza & Kozmetikler (`app/magaza`, `app/components/cosmetics.js`, `app/profil`):**
-  - Hareketli avatar çerçeveleri (VIP, Neon, Alev, Kozmik vb.).
-  - Hareketli profil arka planları (Profil banner'ında ve arka planında canlı görünüm).
-  - Profil kozmetik galerisinde sahip olunan arka planları seçip donatma.
-* **Oyun Modları (`app/kart-oyunu/savas`, `app/oyunlar/*`):**
-  - Kart Savaşı, Karakter Bilmece, Kim Alır, Draft Duel.
-* **OmniRoute Entegrasyonu:**
-  - Yerel sunucu port 20128'de hazır. Google Gemini, OpenRouter ve Ollama (RTX 4060 Llama 3.2) bağlı.
+## 3. Otonom Ajan Sistem Altyapısı (Systemic Engine Stack)
+* **1. Dual-Brain Pre-Commit Arbiter (`scripts/dual_brain_arbiter.py`):**
+  - Kod yazıldıktan hemen sonra 'use client', stateful regex (/g), ReDoS ve güvenlik hatalarını bağımsız hakem gibi denetler.
+* **2. Autonomous Self-Healing Engine (`scripts/self_healing_engine.py`):**
+  - `npm run build` veya testlerde hata çıkarsa otomatik olarak hatayı analiz eder, kodu düzeltir ve yeşil ışık yakana kadar yeniden dener.
+* **3. Semantic Pre-Hook Memory (`scripts/semantic_memory_hook.py` & `scripts/vector_memory_indexer.py`):**
+  - `~/.gemini/antigravity/vector_memory_db` dizinindeki ChromaDB vektör deposuna tüm mimari kararlar ve çözümler indekslenmiştir.
+* **4. Playwright Visual & E2E Testing (`playwright.config.js` & `tests/e2e-visual.spec.js`):**
+  - Masaüstü (Chrome) ve Mobil (iPhone 12) çözünürlüklerinde arayüz ve dark-mode doğrulaması yapar.
 
 ---
 
-## 4. Sıradaki Yapılacak İşler Listesi
-1. **Gacha Oranlarının Matematiksel Rafinesi:** Kart paketlerindeki UR ve SSR çıkma yüzdelerini MLA (Mobile Legends Adventure) gacha matematiğiyle tam oturtmak.
-2. **Discord Tarzı Hareketli Avatarlar & Çerçeveler:** Hareketli çerçevelerin ve efektlerin mağaza ve profil entegrasyonunu genişletmek.
-3. **Kart Oyununa AI Rakip / Karakter Sohbeti:** İleride OmniRoute yerel API'si üzerinden siteye yapay zeka desteği kazandırmak.
+## 4. Tamamlanan ve Çalışır Durumdaki Modüller
+* **Gacha Engine & Paketler (`app/lib/gachaEngine.js`):** Bronze, Silver ve yeni Platin paketleri active.
+* **Dark Mode & Header/Footer:** `DarkModeToggle.jsx`, `/legal.html` DMCA sayfası.
+* **Admin Paneli (`app/admin/page.js`):** Basit token-tabanlı (`admin-secret`) kontrol.
+* **Multi-Stage Docker Altyapısı (`Dockerfile`):** Railway üzerinde 30-45 saniyelik önbellekli hızlı derleme.
