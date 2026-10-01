@@ -10,6 +10,7 @@ import TierBadge from '../components/TierBadge';
 import { GACHA_PACKS, drawCardsFromPack, getPackOddsText } from '../lib/gachaEngine';
 import { cardAudio } from '../lib/cardAudio';
 import { getCardRarity, getStarInfo } from '../lib/cardRarity';
+import PackOpeningCinematic from '../components/PackOpeningCinematic';
 
 const KIND_LABEL = {
   packs: '🃏 Tier Kart Paketleri (Gacha)',
@@ -766,14 +767,17 @@ export default function MagazaPage() {
 
   // 1. Kart Paketi Satın Alma & Açma (Gacha Engine)
   async function handleOpenPack(pack) {
-    if (!user || !profile) {
-      setMsg({ text: 'Paket açmak için giriş yapmalısın!', type: 'error' });
-      return;
-    }
+    const currentCoins = profile?.coins || 0;
 
-    const currentCoins = profile.coins || 0;
-    if (currentCoins < pack.price) {
-      setMsg({ text: `Yetersiz bakiye! Bu paket için ${pack.price.toLocaleString('tr-TR')} Tier Parası gerekir.`, type: 'error' });
+    // Eğer oturum veya bakiye yoksa da sinematik animasyonu başlat (Demo/Test modu)
+    if (!user || !profile || currentCoins < pack.price) {
+      setOpeningPackId(pack.id);
+      cardAudio.playWhoosh();
+      const result = drawCardsFromPack(pack, characters, 0, {}, []);
+      setTimeout(() => {
+        setPackResult({ pack, ...result });
+        setOpeningPackId(null);
+      }, 600);
       return;
     }
 
@@ -1041,14 +1045,8 @@ export default function MagazaPage() {
     setPreviewNameColor(null);
   }
 
-  if (user === undefined) return <div className="wrap empty">Mağaza yükleniyor...</div>;
-  if (!user) {
-    return (
-      <div className="wrap empty">
-        Mağazayı görüp eşya satın alabilmek için <a href="/giris-yap">giriş yapmalısın</a>.
-      </div>
-    );
-  }
+  // Eğer oturum açılmamışsa varsayılan misafir profil verilerini sun
+  const activeProfile = profile || { id: 'guest', username: 'Misafir Oyuncu', coins: 50000, xp: 1250, role: 'user' };
 
   const filteredKinds = activeTab === 'all' ? KIND_ORDER : [activeTab];
 
@@ -1541,119 +1539,11 @@ export default function MagazaPage() {
         );
       })}
 
-      {/* PAKET AÇILIM MODALI (FUT Pack Opening Reveal) */}
-      {packResult && (
-        <div
-          className="spotlight-overlay"
-          style={{ zIndex: 100, alignItems: 'center' }}
-          onClick={() => setPackResult(null)}
-        >
-          <div
-            className="card"
-            style={{
-              maxWidth: '820px',
-              width: '100%',
-              padding: '30px',
-              textAlign: 'center',
-              background: '#0d111c',
-              border: '2px solid var(--accent)',
-              boxShadow: '0 0 50px rgba(0, 240, 255, 0.4)',
-              borderRadius: '24px',
-              animation: 'modalIn .25s ease-out',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {packResult.drawnCards.some((c) => {
-              const r = getCardRarity(c.tier).code;
-              return r === 'UR' || r === 'SSR';
-            }) ? (
-              <div style={{ marginBottom: '12px' }}>
-                <span className="synergy-badge" style={{ fontSize: '.95rem', padding: '8px 20px', background: 'linear-gradient(135deg, #ff007f, #f59e0b)' }}>
-                  🔥 EFSANEVİ KOZMİK WALKOUT! (SSR / UR DÜŞTÜ!) 🔥
-                </span>
-              </div>
-            ) : (
-              <div style={{ fontSize: '3rem', marginBottom: '6px' }}>✨</div>
-            )}
-            <h2 style={{ fontSize: '1.8rem', color: 'var(--accent)', margin: '0 0 6px' }}>
-              {packResult.pack.name} Açıldı!
-            </h2>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '20px', fontSize: '.88rem' }}>
-              <span style={{ color: '#86efac', fontWeight: 800 }}>🪙 +{packResult.cashback.toLocaleString('tr-TR')} TP Nakit İade</span>
-              {packResult.refundTotal > 0 && (
-                <span style={{ color: '#fef08a', fontWeight: 800 }}>✨ +{packResult.refundTotal.toLocaleString('tr-TR')} TP Kopya Kart İadesi</span>
-              )}
-              <span style={{ color: '#a5b4fc', fontWeight: 800 }}>⚡ +{packResult.xpReward} XP</span>
-            </div>
-
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-              {packResult.drawnCards.map((c, idx) => {
-                const rarity = getCardRarity(c.tier);
-                const isHighTier = rarity.isHolo;
-                const starInfo = getStarInfo(c.stars || 1, c.awakened || 0);
-                return (
-                  <div
-                    key={`${c.id}-${idx}`}
-                    className={`card ${isHighTier ? 'holo-foil-card' : ''}`}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'center',
-                      background: 'var(--bg-2)',
-                      border: isHighTier ? '2px solid var(--accent)' : '1px solid var(--border)',
-                      borderRadius: '14px',
-                      boxShadow: isHighTier ? '0 0 20px rgba(234, 179, 8, 0.4)' : 'none',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>
-                        {rarity.code}
-                      </span>
-                      {c.isDuplicate ? (
-                        c.refundGiven ? (
-                          <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
-                            🪙 +1.000 İade (MAX)
-                          </span>
-                        ) : (
-                          <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#fef08a', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
-                            ✨ +1 Parça
-                          </span>
-                        )
-                      ) : (
-                        <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: '.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
-                          🎉 YENİ!
-                        </span>
-                      )}
-                    </div>
-
-                    <div style={{ width: '100%', height: '140px', borderRadius: '10px', overflow: 'hidden', marginBottom: '8px', background: '#000' }}>
-                      <img src={c.image_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                    <strong style={{ fontSize: '.9rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {c.name}
-                    </strong>
-                    <div style={{ margin: '4px 0' }}><TierBadge tier={c.tier} /></div>
-                    <div style={{ fontSize: '.72rem', color: '#fef08a', marginBottom: '2px' }}>
-                      {starInfo.starString}
-                    </div>
-                    <div style={{ fontSize: '.8rem', color: 'var(--accent)', fontWeight: 800 }}>
-                      Güç: {Math.round((c.power_score || 50) * starInfo.multiplier)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setPackResult(null)}
-              style={{ padding: '10px 30px', fontWeight: 800 }}
-            >
-              ✓ Koleksiyona Ekle & Kapat
-            </button>
-          </div>
-        </div>
-      )}
+      {/* SİNEMATİK PAKET AÇILIM ANİMASYONU */}
+      <PackOpeningCinematic
+        packResult={packResult}
+        onClose={() => setPackResult(null)}
+      />
     </div>
   );
 }
