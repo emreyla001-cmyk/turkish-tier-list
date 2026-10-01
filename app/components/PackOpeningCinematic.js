@@ -45,15 +45,20 @@ export default function PackOpeningCinematic({ packResult, onClose }) {
   // Stage pipeline
   useEffect(() => {
     if (!packResult) return;
-    // Stage 0: appear (1.5s)
-    addTimer(() => setStage(1), 1500);
     // Stage 1: shake (1s)
-    addTimer(() => setStage(2), 2500);
+    addTimer(() => {
+      setStage(1);
+      try { cardAudio.playPackTear(); } catch {}
+    }, 1500);
     // Stage 2: burst (0.8s) → start reveal
+    addTimer(() => {
+      setStage(2);
+      try { cardAudio.playPackOpening(); } catch {}
+    }, 2500);
+    // Stage 3: reveal start
     addTimer(() => {
       setStage(3);
       setRevealIdx(0);
-      try { cardAudio.playPackOpening(); } catch {}
     }, 3300);
 
     return () => timersRef.current.forEach(clearTimeout);
@@ -63,20 +68,17 @@ export default function PackOpeningCinematic({ packResult, onClose }) {
   useEffect(() => {
     if (stage !== 3 || revealIdx < 0) return;
     if (revealIdx >= cards.length) {
-      addTimer(() => setStage(4), 400);
+      addTimer(() => {
+        setStage(4);
+        try { cardAudio.playVictoryFanfare(); } catch {}
+      }, 400);
       return;
     }
     // Flip current card after short delay
     const flipDelay = addTimer(() => {
       setFlipped(prev => ({ ...prev, [revealIdx]: true }));
-      try { cardAudio.playCardFlip(); } catch {}
-
-      // SSR/UR gets extra dramatic pause
       const rarity = getCardRarity(cards[revealIdx]?.tier).code;
-      const isHigh = rarity === 'UR' || rarity === 'SSR';
-      if (isHigh) {
-        try { cardAudio.playClashImpact(rarity === 'UR'); } catch {}
-      }
+      try { cardAudio.playRarityReveal(rarity); } catch {}
     }, 500);
 
     // Auto-advance to next card
