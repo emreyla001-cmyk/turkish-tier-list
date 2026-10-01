@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { processWalletTransaction } from './walletTransactionManager';
+import { checkRateLimit } from './rateLimiter';
 
 export function withProtectedTransaction(handler, options = {}) {
   return async function protectedHandler(req, context) {
@@ -14,6 +15,16 @@ export function withProtectedTransaction(handler, options = {}) {
       const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
       const adminHeader = req.headers.get('x-admin-token');
       const idempotencyKey = req.headers.get('x-idempotency-key');
+      const identifier = authHeader || req.headers.get('x-forwarded-for') || 'anonymous_client';
+
+      // 1. Application-Level Rate Limiting Enforcement
+      const rateLimitResult = checkRateLimit(identifier, options.rateLimit || 10, options.rateWindowMs || 10000);
+      if (!rateLimitResult.allowed) {
+        return NextResponse.json(
+          { success: false, error: 'Çok fazla istek gönderildi (Rate Limit). Lütfen bekleyin.' },
+          { status: 429 }
+        );
+      }
 
       if (options.requireAdmin) {
         if (!adminHeader || (adminHeader !== 'admin-secret' && adminHeader !== 'Bearer admin-secret')) {
