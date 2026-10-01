@@ -1,8 +1,8 @@
 """
-OPENAI / DEEPSEEK CLOUD API ARBITER (PLAN D)
+OPENAI / DEEPSEEK BULUT API HAKEMİ (PLAN D)
 ---------------------------------------------
-Fallback API Arbiter supporting OpenAI GPT-4o / DeepSeek Cloud APIs
-for zero-downtime failover resilience.
+Yedekleme API Hakemi - Kesintisiz çalışma garantisi (zero-downtime failover) için 
+OpenAI GPT-4o ve DeepSeek Cloud API'lerini destekler.
 """
 
 import os
@@ -15,13 +15,13 @@ API_URL = os.environ.get("OPENAI_API_URL") or "https://api.openai.com/v1/chat/co
 
 def query_openai_fallback(prompt_text, model="gpt-4o"):
     if not OPENAI_API_KEY:
-        return {"success": False, "error": "OPENAI_API_KEY or DEEPSEEK_API_KEY not set in environment."}
+        return {"success": False, "error": "OPENAI_API_KEY veya DEEPSEEK_API_KEY çevre değişkenlerinde tanımlanmamış."}
 
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You are a senior security and code review auditor enforcing VERIFICATION_RULES.md."},
-            {"role": "user", "content": prompt_text}
+            {"role": "system", "content": "Sen VERIFICATION_RULES.md standartlarını uygulayan, tüm analiz ve yanıtlarını Türkçe veren kıdemli bir kod ve güvenlik denetçisisin."},
+            {"role": "user", "content": f"{prompt_text}\nLütfen yanıtını 100% Türkçe olarak yaz."}
         ],
         "temperature": 0.2
     }
@@ -41,19 +41,19 @@ def query_openai_fallback(prompt_text, model="gpt-4o"):
             content = res_data.get("choices", [{}])[0].get("message", {}).get("content", "")
             return {"success": True, "output": content}
     except Exception as e:
-        return {"success": False, "error": f"OpenAI/DeepSeek API Error: {str(e)}"}
+        return {"success": False, "error": f"OpenAI/DeepSeek API Hatası: {str(e)}"}
 
 if __name__ == "__main__":
-    prompt = sys.argv[1] if len(sys.argv) > 1 else "Audit security and boundary checks."
+    prompt = sys.argv[1] if len(sys.argv) > 1 else "Güvenlik ve sınır değer kontrollerini Türkçe denetle."
     print("=================================================")
-    print("   OPENAI / DEEPSEEK API ARBITER (PLAN D)        ")
+    print("   OPENAI / DEEPSEEK BULUT API HAKEMİ (PLAN D)    ")
     print("=================================================\n")
 
     res = query_openai_fallback(prompt)
     if res["success"]:
-        print("[Plan D Output]:")
+        print("[Plan D Yanıtı]:")
         print(res["output"])
     else:
-        print("[Plan D Status]:", res["error"])
+        print("[Plan D Durumu]:", res["error"])
 
     print("\n=================================================")

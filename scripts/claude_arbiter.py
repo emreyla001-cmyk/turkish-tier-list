@@ -1,18 +1,19 @@
-#!/usr/bin/env python3
-/**
- * CLAUDE CODE CLI AUTOMATED ARBITER
- * Integrates local machine's Claude Code CLI (v2.1.284) to independently review
- * code changes against VERIFICATION_RULES.md before commits/pushes.
- */
+"""
+CLAUDE CODE CLI OTOMATİK HAKEMİ (PLAN B)
+----------------------------------------
+Yerel bilgisayardaki Claude Code CLI (v2.1.284) entegrasyonu ile kod değişikliklerini 
+ve diff çıktılarını commit/push öncesinde VERIFICATION_RULES.md kurallarına göre Türkçe inceletir.
+"""
 
 import subprocess
 import sys
 import json
 
 def run_claude_review(prompt_text):
-    cmd = ["claude", "-p", prompt_text]
+    turkish_prompt = f"{prompt_text} - Lütfen tüm incelemeyi ve önerileri Türkçe olarak yaz."
+    cmd = f'claude -p "{turkish_prompt}" < NUL'
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=60, shell=True)
         if res.returncode == 0:
             return {"success": True, "output": res.stdout.strip()}
         else:
@@ -21,16 +22,16 @@ def run_claude_review(prompt_text):
         return {"success": False, "error": str(e)}
 
 if __name__ == "__main__":
-    prompt = sys.argv[1] if len(sys.argv) > 1 else "Review git diff for security and boundary bugs according to VERIFICATION_RULES.md."
+    prompt = sys.argv[1] if len(sys.argv) > 1 else "Git diff değişikliklerini VERIFICATION_RULES.md standartlarına göre Türkçe olarak incele."
     print("=================================================")
-    print("   LOCAL CLAUDE CODE CLI AUTOMATED REVIEW        ")
+    print("   YEREL CLAUDE CODE CLI OTOMATİK İNCELEME (PLAN B)")
     print("=================================================\n")
     
     result = run_claude_review(prompt)
     if result["success"]:
-        print("[Claude Output]:")
+        print("[Claude Yanıtı]:")
         print(result["output"])
     else:
-        print("[Claude CLI Status]:", result["error"])
+        print("[Claude CLI Durumu]:", result["error"])
     
     print("\n=================================================")
