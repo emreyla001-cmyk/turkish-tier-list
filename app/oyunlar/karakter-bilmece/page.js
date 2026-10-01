@@ -7,6 +7,8 @@ import { Avatar } from '../../components/UserBadge';
 import { getDailyPlays, incrementDailyPlay, MAX_DAILY_PLAYS } from '../../lib/dailyLimit';
 import { addCoins, addXP } from '../../lib/wallet';
 
+const MAX_GUESSES = 6;
+
 export default function KarakterBilmecePage() {
   const [config, setConfig] = useState(null);
   const [characters, setCharacters] = useState([]);
@@ -14,11 +16,13 @@ export default function KarakterBilmecePage() {
   const [search, setSearch] = useState('');
   const [guesses, setGuesses] = useState([]);
   const [won, setWon] = useState(false);
+  const [lost, setLost] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [dailyPlays, setDailyPlays] = useState(0);
+  const [hasDeductedPlay, setHasDeductedPlay] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -74,7 +78,7 @@ export default function KarakterBilmecePage() {
     );
   }
 
-  if (dailyPlays >= MAX_DAILY_PLAYS && !won) {
+  if (dailyPlays >= MAX_DAILY_PLAYS && !won && !lost && guesses.length === 0) {
     return (
       <div className="wrap" style={{ maxWidth: '600px', textAlign: 'center', padding: '60px 20px' }}>
         <div style={{ fontSize: '3.5rem', marginBottom: '12px' }}>⏳</div>
@@ -91,8 +95,17 @@ export default function KarakterBilmecePage() {
     );
   }
 
-  function handleGuess(char) {
-    if (!char || won || guesses.some((g) => g.id === char.id)) return;
+  async function handleGuess(char) {
+    if (!char || won || lost || guesses.length >= MAX_GUESSES || guesses.some((g) => g.id === char.id)) return;
+
+    // İlk seçimde 1 günlük hak hemen düşülür (Yarıda bırakıp çıkarsa hak gitmiş olur)
+    if (!hasDeductedPlay && user && dailyPlays < MAX_DAILY_PLAYS) {
+      setHasDeductedPlay(true);
+      incrementDailyPlay(supabase, user, 'bilmece').then((newCount) => {
+        setDailyPlays(newCount);
+      });
+    }
+
     const newGuesses = [char, ...guesses];
     setGuesses(newGuesses);
     setSearch('');
@@ -100,6 +113,8 @@ export default function KarakterBilmecePage() {
     if (char.id === targetChar.id) {
       setWon(true);
       claimReward(newGuesses.length);
+    } else if (newGuesses.length >= MAX_GUESSES) {
+      setLost(true);
     }
   }
 
@@ -107,21 +122,15 @@ export default function KarakterBilmecePage() {
     if (!user || rewardClaimed) return;
     setRewardClaimed(true);
 
-    if (dailyPlays < MAX_DAILY_PLAYS) {
-      incrementDailyPlay(supabase, user, 'bilmece').then((newCount) => {
-        setDailyPlays(newCount);
-      });
+    const baseReward = config?.bilmece_odul || 500;
+    const finalCoins = config?.cift_odul ? baseReward * 2 : baseReward;
+    const finalXp = config?.cift_odul ? 500 : 250;
 
-      const baseReward = config?.bilmece_odul || 500;
-      const finalCoins = config?.cift_odul ? baseReward * 2 : baseReward;
-      const finalXp = config?.cift_odul ? 500 : 250;
-
-      try {
-        await addCoins(user, finalCoins);
-        await addXP(user, finalXp);
-      } catch (e) {
-        console.error('Ödül verilemedi:', e);
-      }
+    try {
+      await addCoins(user, finalCoins);
+      await addXP(user, finalXp);
+    } catch (e) {
+      console.error('Ödül verilemedi:', e);
     }
   }
 
@@ -143,7 +152,7 @@ export default function KarakterBilmecePage() {
       emojiGrid += `${sameSeries}${sameCat}${sameTier}\n`;
     });
 
-    return `Turkish Tier List - Günün Karakteri 🧠 (${today})\n${guesses.length} Denemede Buldum!\n\n${emojiGrid}\nSen de bil: https://turkishtierlist.com/oyunlar/karakter-bilmece`;
+    return `Turkish Tier List - Günün Karakteri 🧠 (${today})\n${won ? `${guesses.length}/${MAX_GUESSES} Denemede Buldum!` : 'Karakteri Bulamadım 💀'}\n\n${emojiGrid}\nSen de bil: https://turkishtierlist.com/oyunlar/karakter-bilmece`;
   }
 
   function handleCopyShare() {
@@ -163,14 +172,17 @@ export default function KarakterBilmecePage() {
           <span className="tag" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fef08a', fontWeight: 800 }}>
             🎮 Kalan Günlük Hak: {Math.max(0, MAX_DAILY_PLAYS - dailyPlays)} / {MAX_DAILY_PLAYS}
           </span>
+          <span className="tag" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ff4d6d', fontWeight: 800 }}>
+            🎯 Tahmin Hakkı: {guesses.length} / {MAX_GUESSES}
+          </span>
         </div>
         <h1 style={{ fontSize: '2rem', margin: '8px 0 6px' }}>🧩 Günün Karakterini Bil</h1>
         <p style={{ color: 'var(--text-dim)', fontSize: '.92rem', margin: 0 }}>
-          Dizi, kategori ve güç göstergelerini takip ederek gizli karakteri en az denemede tahmin et.
+          Dizi, kategori ve güç göstergelerini takip ederek gizli karakteri en fazla <strong>{MAX_GUESSES} denemede</strong> tahmin et.
         </p>
       </div>
 
-      {/* Kazandın Kutlaması & Viral Paylaşım */}
+      {/* Kazandın Kutlaması */}
       {won && (
         <div
           className="card"
@@ -188,7 +200,7 @@ export default function KarakterBilmecePage() {
           <div style={{ fontSize: '3rem' }}>🎉</div>
           <h2 style={{ color: '#8ce99a', margin: '4px 0 8px' }}>Tebrikler, Doğru Bildin!</h2>
           <p style={{ fontSize: '1.05rem', margin: '0 0 16px' }}>
-            Gizli karakter: <strong>{targetChar?.name}</strong> ({targetChar?.series}) · <strong>{guesses.length}</strong> denemede buldun!
+            Gizli karakter: <strong>{targetChar?.name}</strong> ({targetChar?.series}) · <strong>{guesses.length}/{MAX_GUESSES}</strong> denemede buldun!
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
@@ -230,8 +242,36 @@ export default function KarakterBilmecePage() {
         </div>
       )}
 
+      {/* Kaybettin Ekranı */}
+      {lost && !won && (
+        <div
+          className="card"
+          style={{
+            marginBottom: '24px',
+            padding: '24px',
+            textAlign: 'center',
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(153, 27, 27, 0.05))',
+            border: '2px solid #ef4444',
+            boxShadow: '0 0 30px rgba(239, 68, 68, 0.2)',
+            borderRadius: '16px',
+            animation: 'modalIn .25s ease-out',
+          }}
+        >
+          <div style={{ fontSize: '3rem' }}>💀</div>
+          <h2 style={{ color: '#ff4d6d', margin: '4px 0 8px' }}>Tahmin Hakkın Bitti ({MAX_GUESSES}/{MAX_GUESSES})</h2>
+          <p style={{ fontSize: '1.05rem', margin: '0 0 16px' }}>
+            Bugünkü gizli karakter: <strong>{targetChar?.name}</strong> ({targetChar?.series} · Tier {targetChar?.tier}) idi.
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            <a href="/oyunlar" className="btn btn-ghost">← Mini Oyunlara Dön</a>
+            <a href="/vs" className="btn">⚔️ Karakter Karşılaşmasında Şansını Dene</a>
+          </div>
+        </div>
+      )}
+
       {/* Arama / Tahmin Kutusu */}
-      {!won && (
+      {!won && !lost && guesses.length < MAX_GUESSES && (
         <div style={{ position: 'relative', marginBottom: '24px' }}>
           <input
             type="text"
