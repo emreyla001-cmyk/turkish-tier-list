@@ -1,0 +1,130 @@
+[
+  {
+    "url": "http://localhost:3004",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/ -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/ -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  },
+  {
+    "url": "http://localhost:3004/vs",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/vs -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/vs\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/vs\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/vs -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/vs\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/vs\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  },
+  {
+    "url": "http://localhost:3004/magaza",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/magaza -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/magaza\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/magaza\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/magaza -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/magaza\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/magaza\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  },
+  {
+    "url": "http://localhost:3004/profil",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/profil -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/profil\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/profil\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/profil -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/profil\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/profil\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  },
+  {
+    "url": "http://localhost:3004/koleksiyon",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/koleksiyon -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/koleksiyon\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/koleksiyon\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/koleksiyon -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/koleksiyon\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/koleksiyon\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  },
+  {
+    "url": "http://localhost:3004/hakkinda",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/hakkinda -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/hakkinda\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/hakkinda\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/hakkinda -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/hakkinda\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/hakkinda\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  },
+  {
+    "url": "http://localhost:3004/kaos",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/kaos -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/kaos\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/kaos\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/kaos -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/kaos\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/kaos\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  },
+  {
+    "url": "http://localhost:3004/kart-oyunu",
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "failedRequests": [
+      "[desktop] GET http://localhost:3004/kart-oyunu -> net::ERR_CONNECTION_REFUSED",
+      "[desktop] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/kart-oyunu\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/kart-oyunu\", waiting until \"networkidle\"\u001b[22m\n",
+      "[mobile] GET http://localhost:3004/kart-oyunu -> net::ERR_CONNECTION_REFUSED",
+      "[mobile] NAVIGATION ERROR: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3004/kart-oyunu\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3004/kart-oyunu\", waiting until \"networkidle\"\u001b[22m\n"
+    ],
+    "brokenImages": [],
+    "loadTimeMs": null,
+    "missingMeta": [],
+    "layoutOverflow": [],
+    "discoveredLinks": []
+  }
+]

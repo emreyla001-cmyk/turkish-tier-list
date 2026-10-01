@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import TierBadge from './TierBadge';
 import { getTribute } from './tributes';
 
-// Her 1.5 saat = 90 dakika = 5,400,000 milisaniye
 const INTERVAL_MS = 90 * 60 * 1000;
 
 function getScheduledIndex(length) {
@@ -20,34 +19,33 @@ function getMinutesRemaining() {
 export default function HeroSpotlight({ featuredCharacters = [] }) {
   const charCount = featuredCharacters.length;
 
-  // Başlangıçta zaman dilimine göre deterministik karakter indeksi
   const [activeIdx, setActiveIdx] = useState(() => getScheduledIndex(charCount));
   const [isManual, setIsManual] = useState(false);
   const [remainingMinutes, setRemainingMinutes] = useState(() => getMinutesRemaining());
 
-  // 1.5 saatlik zaman dilimi senkronizasyonu ve otomatik geçiş
+  // 3D Parallax Tilt state
+  const cardRef = useRef(null);
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0, glareX: 50, glareY: 50, isHover: false });
+
+  // 1.5 saatlik senkronizasyon
   useEffect(() => {
     if (charCount <= 1) return;
 
-    // Sayfa açıldığında doğru dilimi teyit et
     const scheduled = getScheduledIndex(charCount);
     if (!isManual) {
       setActiveIdx(scheduled);
     }
 
-    // Kalan dakikayı her 30 saniyede bir güncelle
     const minuteTicker = setInterval(() => {
       setRemainingMinutes(getMinutesRemaining());
     }, 30000);
 
-    // Kalan sürenin bitiş anında otomatik olarak sıradaki karaktere geç
     const msToNext = INTERVAL_MS - (Date.now() % INTERVAL_MS);
     const timeout = setTimeout(() => {
       setActiveIdx(getScheduledIndex(charCount));
       setIsManual(false);
       setRemainingMinutes(90);
 
-      // Ardından her 1.5 saatte bir dön
       const recurring = setInterval(() => {
         setActiveIdx(getScheduledIndex(charCount));
         setIsManual(false);
@@ -63,12 +61,9 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
     };
   }, [charCount, isManual]);
 
-  if (!featuredCharacters || charCount === 0) return null;
-
   const current = featuredCharacters[activeIdx] || featuredCharacters[0];
   const tribute = current ? getTribute(current.name, current.series) : null;
 
-  // Aktif karakterin etrafındaki 5 karakteri gösteren mini navigasyon havuzu
   const nearbyIndices = useMemo(() => {
     if (charCount <= 5) return Array.from({ length: charCount }, (_, i) => i);
     const indices = [];
@@ -98,6 +93,30 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
     setActiveIdx(getScheduledIndex(charCount));
   };
 
+  // BDSN & Eszter Bial seviyesinde 3D Mouse Tilt & Light Glare Efekti
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+
+    const rx = ((y - cy) / cy) * -18; // Max 18 deg tilt
+    const ry = ((x - cx) / cx) * 18;
+
+    const glareX = (x / rect.width) * 100;
+    const glareY = (y / rect.height) * 100;
+
+    setTilt({ rx, ry, glareX, glareY, isHover: true });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ rx: 0, ry: 0, glareX: 50, glareY: 50, isHover: false });
+  };
+
+  if (!featuredCharacters || charCount === 0) return null;
+
   return (
     <section className="hero-spotlight">
       {/* Arka plan sinematik ambiyans katmanı */}
@@ -121,7 +140,7 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
                 color: 'var(--accent)',
                 border: '1px solid rgba(230, 179, 37, 0.35)',
               }}
-              title="Afiş görseli her 1.5 saatte bir kataloğumuzdaki tüm fotoğraflı karakterler arasında otomatik olarak değişir."
+              title="Afiş görseli her 1.5 saatte bir otomatik değişir."
             >
               🕒 1.5 Saatte Bir Yenilenir ({remainingMinutes} dk kaldı)
             </span>
@@ -129,7 +148,10 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
             <TierBadge tier={current.tier} />
           </div>
 
-          <h1 className="hero-spotlight-title">{current.name}</h1>
+          <h1 className="hero-spotlight-title" key={current.id + '-title'}>
+            {current.name}
+          </h1>
+
           <p className="hero-spotlight-series">
             Evren: <strong>{current.series || 'Bilinmiyor'}</strong>
           </p>
@@ -140,7 +162,6 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
               : 'Türk kurgusunun en güçlü figürlerinden biri. Detaylı scaling, güç analizi ve tartışmalar sayfada.'}
           </p>
 
-          {/* Vefat eden usta sanatçılarımız için saygı şeridi */}
           {tribute && (
             <div
               style={{
@@ -163,28 +184,31 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
             </div>
           )}
 
-          {/* Hızlı Stat Önizlemesi */}
+          {/* Hızlı Stat Önizlemesi & Neon Barlar */}
           <div className="hero-spotlight-stats">
-            <div className="stat-pill">
-              <span className="stat-icon">⚡</span>
-              <span className="stat-label">Güç</span>
-              <strong className="stat-num">{current.power_score ?? '—'}/10</strong>
-            </div>
-            <div className="stat-pill">
-              <span className="stat-icon">🧠</span>
-              <span className="stat-label">Zeka</span>
-              <strong className="stat-num">{current.intelligence_score ?? '—'}/10</strong>
-            </div>
-            <div className="stat-pill">
-              <span className="stat-icon">🏃</span>
-              <span className="stat-label">Hız</span>
-              <strong className="stat-num">{current.speed_score ?? '—'}/10</strong>
-            </div>
-            <div className="stat-pill">
-              <span className="stat-icon">🛡️</span>
-              <span className="stat-label">Dayanıklılık</span>
-              <strong className="stat-num">{current.durability_score ?? '—'}/10</strong>
-            </div>
+            {[
+              { icon: '⚡', label: 'Güç', val: current.power_score, color: '#ef4444' },
+              { icon: '🧠', label: 'Zeka', val: current.intelligence_score, color: '#3b82f6' },
+              { icon: '🏃', label: 'Hız', val: current.speed_score, color: '#f59e0b' },
+              { icon: '🛡️', label: 'Dayanıklılık', val: current.durability_score, color: '#22c55e' },
+            ].map((st) => (
+              <div key={st.label} className="stat-pill" style={{ position: 'relative', overflow: 'hidden' }}>
+                <span className="stat-icon">{st.icon}</span>
+                <span className="stat-label">{st.label}</span>
+                <strong className="stat-num">{st.val ?? '—'}/10</strong>
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    width: `${Math.min(100, ((st.val || 5) / 10) * 100)}%`,
+                    height: '2px',
+                    background: st.color,
+                    boxShadow: `0 0 8px ${st.color}`,
+                  }}
+                />
+              </div>
+            ))}
           </div>
 
           <div className="hero-spotlight-actions">
@@ -199,25 +223,10 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
             </a>
           </div>
 
-          {/* Modern Vitrin Navigasyonu (Tüm 73+ Karakter Arasında Gezinme) */}
+          {/* Mini Vitrin Navigasyonu */}
           {charCount > 1 && (
-            <div
-              style={{
-                marginTop: '10px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                {/* Sol Ok */}
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={handlePrev}
@@ -228,7 +237,6 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
                   ◀
                 </button>
 
-                {/* Çevredeki 5 Karakter Butonu */}
                 {nearbyIndices.map((idx) => {
                   const c = featuredCharacters[idx];
                   if (!c) return null;
@@ -249,7 +257,6 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
                   );
                 })}
 
-                {/* Sağ Ok */}
                 <button
                   type="button"
                   onClick={handleNext}
@@ -260,15 +267,7 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
                   ▶
                 </button>
 
-                {/* Sayaç ve Durum */}
-                <span
-                  style={{
-                    fontSize: '.75rem',
-                    color: 'var(--text-dim)',
-                    marginLeft: '4px',
-                    fontWeight: 600,
-                  }}
-                >
+                <span style={{ fontSize: '.75rem', color: 'var(--text-dim)', marginLeft: '4px', fontWeight: 600 }}>
                   {activeIdx + 1} / {charCount} Karakter
                 </span>
 
@@ -289,7 +288,6 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
                       alignItems: 'center',
                       gap: '4px',
                     }}
-                    title="Şu anki 1.5 saatlik canlı vitrin karakterine dön"
                   >
                     <span>🔄</span> Canlı Dilime Dön
                   </button>
@@ -299,9 +297,40 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
           )}
         </div>
 
-        {/* Sağ Taraf: Büyük Poster Vitrini */}
+        {/* SAĞ TARAF: BÜYÜLEYİCİ 3D INTERACTIVE TILT POSTER VİTRİNİ */}
         <div className="hero-spotlight-visual">
-          <div className="spotlight-poster-card" key={current.id + '-card'}>
+          {/* Arkadaki 3D Döner Enerji Aurası Halka Katmanları */}
+          <div className="hero-energy-ring" />
+          <div className="hero-energy-ring secondary" />
+
+          <div
+            ref={cardRef}
+            className="spotlight-poster-card"
+            key={current.id + '-card'}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{
+              transform: tilt.isHover
+                ? `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(1.04)`
+                : undefined,
+              transition: tilt.isHover ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out, box-shadow 0.5s ease-out',
+            }}
+          >
+            {/* Holografik Dynamic Light Glare (Mouse takipli parlama şeridi) */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: tilt.isHover
+                  ? `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255, 255, 255, 0.35) 0%, rgba(0, 240, 255, 0.15) 30%, transparent 70%)`
+                  : undefined,
+                pointerEvents: 'none',
+                zIndex: 4,
+                mixBlendMode: 'overlay',
+                transition: 'opacity 0.2s',
+              }}
+            />
+
             {current.image_url ? (
               <img src={current.image_url} alt={current.name} className="poster-img" />
             ) : (

@@ -155,7 +155,7 @@ export default function HeaderNav() {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setOpenExploreDropdown((prev) => !prev);
+              setOpenExploreDropdown(true);
             }}
             style={{ cursor: 'pointer', outline: 'none' }}
           >

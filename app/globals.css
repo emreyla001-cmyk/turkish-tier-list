@@ -657,21 +657,50 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
   padding: 60px 0 50px;
   border-bottom: 1px solid var(--border);
-  background: #0b0d14;
+  background: #060810;
 }
+
+/* Animated radial aurora behind hero */
+.hero-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(ellipse 50% 60% at 20% 40%, rgba(6,182,212,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 50% at 75% 55%, rgba(139,92,246,0.10) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 45% at 50% 80%, rgba(236,72,153,0.06) 0%, transparent 70%);
+  animation: heroAuroraDrift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes heroAuroraDrift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-3%, 2%) scale(1.08); }
+}
+
 .hero-spotlight-bg {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center 25%;
-  filter: blur(40px) brightness(0.25);
-  transform: scale(1.15);
-  opacity: 0.6;
+  filter: blur(40px) brightness(0.3) saturate(1.4);
+  transform: scale(1.2);
+  opacity: 0.55;
+  animation: heroBgPulse 8s ease-in-out infinite alternate;
 }
+
+@keyframes heroBgPulse {
+  0% { filter: blur(40px) brightness(0.25) saturate(1.2); opacity: 0.5; }
+  100% { filter: blur(50px) brightness(0.35) saturate(1.6); opacity: 0.65; }
+}
+
 .hero-spotlight-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(9,11,16,0.3) 0%, rgba(9,11,16,0.85) 75%, var(--bg) 100%);
+  background: linear-gradient(180deg, rgba(6,8,16,0.2) 0%, rgba(6,8,16,0.8) 70%, var(--bg) 100%);
 }
 .hero-spotlight-content {
   position: relative;
@@ -703,7 +732,23 @@ a { color: inherit; text-decoration: none; }
   font-weight: 800;
   margin: 0 0 6px;
   color: #fff;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(6,182,212,0.15);
+  background: linear-gradient(90deg, #fff 20%, #00f0ff 50%, #a855f7 70%, #fff 90%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: heroTitleShimmer 6s ease-in-out infinite, heroTitleEntrance 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+@keyframes heroTitleShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes heroTitleEntrance {
+  0% { opacity: 0; transform: translateY(20px); filter: blur(8px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 .hero-spotlight-series {
   font-size: 1.05rem;
@@ -806,26 +851,154 @@ a { color: inherit; text-decoration: none; }
   transform: scale(1.08);
 }
 
-/* Sağ Vitrin Posteri */
-.hero-spotlight-visual { display: flex; justify-content: center; }
+/* Sağ Vitrin Posteri (3D Cyber Holo Frame) */
+.hero-spotlight-visual {
+  display: flex;
+  justify-content: center;
+  perspective: 1000px;
+  position: relative;
+}
+
+/* Arkadaki 3D Döner Enerji Halkası */
+.hero-energy-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 380px;
+  height: 380px;
+  margin-top: -190px;
+  margin-left: -190px;
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 240, 255, 0.45);
+  box-shadow: 0 0 40px rgba(0, 240, 255, 0.3), inset 0 0 30px rgba(168, 85, 247, 0.25);
+  animation: energyRingSpin 16s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-energy-ring.secondary {
+  width: 440px;
+  height: 440px;
+  margin-top: -220px;
+  margin-left: -220px;
+  border: 1px dotted rgba(236, 72, 153, 0.35);
+  animation: energyRingSpin 24s linear infinite reverse;
+}
+
+@keyframes energyRingSpin {
+  0% { transform: rotate(0deg) rotateX(25deg); }
+  100% { transform: rotate(360deg) rotateX(25deg); }
+}
+
+@keyframes spotlightSwitchIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0) scale(0.92) rotateY(-8deg);
+    filter: blur(10px);
+  }
+  65% {
+    opacity: 1;
+    transform: translate3d(0, -4px, 0) scale(1.02) rotateY(2deg);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+    filter: blur(0px);
+  }
+}
+
+@keyframes heroCardAura {
+  0%, 100% {
+    box-shadow:
+      0 20px 50px rgba(0,0,0,0.85),
+      0 0 40px rgba(6,182,212,0.5),
+      0 0 80px rgba(6,182,212,0.2),
+      inset 0 0 25px rgba(6,182,212,0.25);
+    border-color: rgba(6,182,212,0.7);
+  }
+  33% {
+    box-shadow:
+      0 24px 60px rgba(0,0,0,0.9),
+      0 0 50px rgba(139,92,246,0.6),
+      0 0 100px rgba(139,92,246,0.25),
+      inset 0 0 30px rgba(139,92,246,0.3);
+    border-color: rgba(139,92,246,0.8);
+  }
+  66% {
+    box-shadow:
+      0 22px 55px rgba(0,0,0,0.88),
+      0 0 45px rgba(236,72,153,0.5),
+      0 0 90px rgba(236,72,153,0.2),
+      inset 0 0 28px rgba(236,72,153,0.25);
+    border-color: rgba(236,72,153,0.7);
+  }
+}
+
+@keyframes heroCardFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
 .spotlight-poster-card {
   position: relative;
-  width: 280px;
+  width: 290px;
   aspect-ratio: 3/4;
-  border-radius: 20px;
+  border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 40px var(--accent-glow);
-  border: 2px solid rgba(230, 179, 37, 0.5);
-  background: #111;
+  animation:
+    spotlightSwitchIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    heroCardAura 6s ease-in-out infinite,
+    heroCardFloat 4s ease-in-out infinite;
+  border: 2px solid rgba(6, 182, 212, 0.6);
+  background: #0f172a;
+  will-change: transform, opacity, box-shadow;
+  transform-style: preserve-3d;
 }
-.poster-img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Holographic sweep overlay on poster card */
+.spotlight-poster-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(255,255,255,0.12) 42%,
+    rgba(0,240,255,0.25) 48%,
+    rgba(168,85,247,0.2) 52%,
+    rgba(236,72,153,0.15) 56%,
+    transparent 75%
+  );
+  background-size: 250% 100%;
+  animation: heroCardHoloSweep 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes heroCardHoloSweep {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.spotlight-poster-card:hover .poster-img {
+  transform: scale(1.08) rotate(1deg);
+}
+
 .poster-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 4rem; color: var(--text-dim); }
 .poster-badge-float { position: absolute; top: 14px; right: 14px; z-index: 3; }
 
 @media (max-width: 860px) {
   .hero-spotlight-content { grid-template-columns: 1fr; }
   .hero-spotlight-visual { order: -1; }
-  .spotlight-poster-card { width: 220px; }
+  .spotlight-poster-card { width: 230px; }
 }
 
 /* ========================================================
@@ -2291,52 +2464,55 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
 }
 
 /* ========================================================
-   ADVANCED KINETIC MOTION DESIGN ENGINE (GPU & SPRING DYNAMICS)
+   HIGH-IMPACT KINETIC MOTION ENGINE (BDSN / DROPBOX / ESZTER BIAL)
    ======================================================== */
 
-/* 1. Staggered Grid & Spring Entrance Animations */
+/* 1. High-Visibility Staggered Slide & Blur Reveal */
 @keyframes staggerSpringReveal {
   0% {
     opacity: 0;
-    transform: translate3d(0, 22px, 0) scale(0.96) rotateX(4deg);
+    transform: translate3d(0, 32px, 0) scale(0.94) rotateX(6deg);
+    filter: blur(8px);
   }
-  60% {
+  65% {
     opacity: 1;
-    transform: translate3d(0, -2px, 0) scale(1.008);
+    transform: translate3d(0, -4px, 0) scale(1.015);
+    filter: blur(0px);
   }
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0px);
   }
 }
 
 .stagger-in {
-  animation: staggerSpringReveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  will-change: transform, opacity;
+  animation: staggerSpringReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity, filter;
   transform-origin: center bottom;
   backface-visibility: hidden;
 }
 
-/* Kademeli Giriş Gecikmeleri (Stagger Delays) */
+/* Kademeli Giriş Gecikmeleri (Stagger Delays - High Contrast) */
 .stagger-grid > *:nth-child(1)  { animation-delay: 0ms; }
-.stagger-grid > *:nth-child(2)  { animation-delay: 30ms; }
-.stagger-grid > *:nth-child(3)  { animation-delay: 60ms; }
-.stagger-grid > *:nth-child(4)  { animation-delay: 90ms; }
-.stagger-grid > *:nth-child(5)  { animation-delay: 120ms; }
-.stagger-grid > *:nth-child(6)  { animation-delay: 150ms; }
-.stagger-grid > *:nth-child(7)  { animation-delay: 180ms; }
-.stagger-grid > *:nth-child(8)  { animation-delay: 210ms; }
-.stagger-grid > *:nth-child(9)  { animation-delay: 240ms; }
-.stagger-grid > *:nth-child(10) { animation-delay: 270ms; }
-.stagger-grid > *:nth-child(11) { animation-delay: 300ms; }
-.stagger-grid > *:nth-child(12) { animation-delay: 330ms; }
+.stagger-grid > *:nth-child(2)  { animation-delay: 50ms; }
+.stagger-grid > *:nth-child(3)  { animation-delay: 100ms; }
+.stagger-grid > *:nth-child(4)  { animation-delay: 150ms; }
+.stagger-grid > *:nth-child(5)  { animation-delay: 200ms; }
+.stagger-grid > *:nth-child(6)  { animation-delay: 250ms; }
+.stagger-grid > *:nth-child(7)  { animation-delay: 300ms; }
+.stagger-grid > *:nth-child(8)  { animation-delay: 350ms; }
+.stagger-grid > *:nth-child(9)  { animation-delay: 400ms; }
+.stagger-grid > *:nth-child(10) { animation-delay: 450ms; }
+.stagger-grid > *:nth-child(11) { animation-delay: 500ms; }
+.stagger-grid > *:nth-child(12) { animation-delay: 550ms; }
 
-/* 2. Holographic Light Sweep & Hover Mechanics */
+/* 2. Bold Holographic Light Flare & High-Impact Hover Mechanics */
 .poster-card,
 .card {
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.25s ease !important;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease !important;
   will-change: transform, box-shadow;
   position: relative;
   overflow: hidden;
@@ -2348,31 +2524,33 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
   position: absolute;
   top: -50%;
   left: -150%;
-  width: 200%;
-  height: 200%;
+  width: 220%;
+  height: 220%;
   background: linear-gradient(
     115deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.18) 48%,
-    rgba(0, 240, 255, 0.25) 52%,
-    transparent 65%
+    transparent 30%,
+    rgba(255, 255, 255, 0.28) 46%,
+    rgba(0, 240, 255, 0.45) 50%,
+    rgba(168, 85, 247, 0.35) 54%,
+    transparent 70%
   );
   transform: rotate(25deg);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.35s ease, transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 5;
 }
 
 .poster-card:hover::after,
 .card.holo-foil-card:hover::after {
   opacity: 1;
-  transform: translate3d(100%, 100%, 0) rotate(25deg);
+  transform: translate3d(120%, 120%, 0) rotate(25deg);
 }
 
 .poster-card:hover {
-  transform: translate3d(0, -6px, 0) scale(1.02);
-  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.65), 0 0 24px rgba(6, 182, 212, 0.3) !important;
+  transform: translate3d(0, -9px, 0) scale(1.035);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.75), 0 0 32px rgba(6, 182, 212, 0.45), 0 0 16px rgba(168, 85, 247, 0.3) !important;
+  border-color: rgba(0, 240, 255, 0.6) !important;
 }
 
 .poster-media img {
