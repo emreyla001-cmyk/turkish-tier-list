@@ -5,6 +5,7 @@ import Heartbeat from './components/Heartbeat';
 import BanGuard from './components/BanGuard';
 import SpotlightSearch from './components/SpotlightSearch';
 import MobileNav from './components/MobileNav';
+import BDSNAmbientCanvas from './components/BDSNAmbientCanvas';
 
 export const metadata = {
   title: {
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <BDSNAmbientCanvas />
         <Heartbeat />
         <BanGuard />
 
