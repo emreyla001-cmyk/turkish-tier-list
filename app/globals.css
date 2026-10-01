@@ -2290,6 +2290,90 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
   text-overflow: ellipsis;
 }
 
+/* ========================================================
+   MODERN MOTION DESIGN & KINETIC ANIMATIONS (SCHOOL OF MOTION INSPIRED)
+   ======================================================== */
+
+/* 1. Staggered Grid & Card Entrance Animations */
+@keyframes staggerReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.stagger-in {
+  animation: staggerReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Kademeli Giriş Gecikmeleri (Stagger Delays) */
+.stagger-grid > *:nth-child(1)  { animation-delay: 0ms; }
+.stagger-grid > *:nth-child(2)  { animation-delay: 35ms; }
+.stagger-grid > *:nth-child(3)  { animation-delay: 70ms; }
+.stagger-grid > *:nth-child(4)  { animation-delay: 105ms; }
+.stagger-grid > *:nth-child(5)  { animation-delay: 140ms; }
+.stagger-grid > *:nth-child(6)  { animation-delay: 175ms; }
+.stagger-grid > *:nth-child(7)  { animation-delay: 210ms; }
+.stagger-grid > *:nth-child(8)  { animation-delay: 245ms; }
+.stagger-grid > *:nth-child(9)  { animation-delay: 280ms; }
+.stagger-grid > *:nth-child(10) { animation-delay: 315ms; }
+.stagger-grid > *:nth-child(11) { animation-delay: 350ms; }
+.stagger-grid > *:nth-child(12) { animation-delay: 385ms; }
+
+/* 2. Kinetic Card Micro-Interactions & Hover Dynamics */
+.poster-card,
+.card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease !important;
+}
+
+.poster-card:hover {
+  transform: translateY(-5px) scale(1.015);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(6, 182, 212, 0.25) !important;
+}
+
+.poster-media img {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.poster-card:hover .poster-media img {
+  transform: scale(1.07);
+}
+
+/* 3. Kinetic Ambient Glow & Shimmer */
+@keyframes kineticPulse {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.25), inset 0 0 12px rgba(6, 182, 212, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.45), inset 0 0 20px rgba(139, 92, 246, 0.2);
+  }
+}
+
+.kinetic-glow {
+  animation: kineticPulse 4s ease-in-out infinite;
+}
+
+/* 4. Reduced Motion Accessibility Safety */
+@media (prefers-reduced-motion: reduce) {
+  .stagger-in,
+  .stagger-grid > *,
+  .poster-card,
+  .poster-media img,
+  .kinetic-glow {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+
 
 
 
