@@ -1,8 +1,8 @@
 """
-OLLAMA YEREL YAPAY ZEKA OTOMATİK HAKEMİ VE ÇEVRİMDİŞİ ASİSTAN (PLAN A)
----------------------------------------------------------------------
-Antigravity'yi yerel Ollama yapay zeka modellerine (Llama 3.2 / Qwen / DeepSeek) bağlar.
-%100 ücretsiz, çevrimdışı, hızlı ve Antigravity yetenekleriyle donatılmış Türkçe yanıtlar sunar.
+OLLAMA YEREL YAPAY ZEKA ASİSTANI VE KESİNTİSİZ SOHBET MOTORU (PLAN A)
+--------------------------------------------------------------------
+Antigravity'yi yerel Ollama yapay zeka modellerine bağlar.
+Sürekli sohbet (interactive mode), temiz arayüz ve akıcı Türkçe yanıtlar sunar.
 """
 
 import subprocess
@@ -15,19 +15,17 @@ import urllib.request
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_CHAT_URL = "http://localhost:11434/api/chat"
 
-SYSTEM_PROMPT = """Sen Antigravity Akıllı Çevrimdışı Yapay Zeka Asistanısın.
-Görevlerin:
-1. Kullanıcının sorularına, kodlama isteklerine ve sistem sorularına doğrudan, net, öz ve Türkçe olarak yanıt ver.
-2. Asla gereksiz basmakalıp şablonlar veya alakasız güvenlik formları üretme.
-3. Sorulan soruya odaklan; kod istendiyse kod yaz, açıklama istendiyse açıklama yap.
-4. Yanıtlarını Türkçe ve akıcı bir dille sun.
-"""
+SYSTEM_PROMPT = (
+    "Sen yardımsever, kibar ve mantıklı bir Türkçe yapay zeka asistanısın. "
+    "Kullanıcıyla doğal, samimi bir Türkçe ile sohbet et. "
+    "'Naber' veya 'Merhaba' gibi selamlaşmalara 'İyiyim, teşekkür ederim! Size nasıl yardımcı olabilirim?' şeklinde samimi karşılık ver."
+)
 
-SECURITY_AUDIT_PROMPT = """Sen Antigravity Kod Güvenlik Denetçisisin.
-Aşağıdaki kod değişikliğini güvenlik açıkları, sınır değer durumları ve VERIFICATION_RULES.md açısından Türkçe olarak kısaca incele.
-"""
+SECURITY_AUDIT_PROMPT = (
+    "Sen Antigravity Kod Güvenlik Denetçisisin. Aşağıdaki kod değişikliklerini güvenlik açıkları ve sınır değerler açısından Türkçe olarak kısaca incele."
+)
 
 def ensure_ollama_running():
     """Ollama servisi çalışmıyorsa arka planda otomatik başlatır."""
@@ -45,59 +43,90 @@ def ensure_ollama_running():
             return False
     return True
 
-def query_ollama(prompt_text, model="llama3.2:latest", is_audit=False):
+def query_ollama_chat(messages, model="llama3.2:latest"):
     ensure_ollama_running()
-
-    sys_instruction = SECURITY_AUDIT_PROMPT if is_audit else SYSTEM_PROMPT
 
     payload = {
         "model": model,
-        "prompt": f"{sys_instruction}\n\nKullanıcı İsteği: {prompt_text}\n\nYanıtın (Türkçe):",
+        "messages": messages,
         "stream": False,
         "options": {
             "num_ctx": 2048,
             "num_predict": 512,
-            "temperature": 0.4,
-            "top_k": 30,
-            "top_p": 0.85
+            "temperature": 0.6,
+            "top_p": 0.9
         }
     }
 
     try:
         req = urllib.request.Request(
-            OLLAMA_URL,
+            OLLAMA_CHAT_URL,
             data=json.dumps(payload).encode('utf-8'),
             headers={'Content-Type': 'application/json'},
             method='POST'
         )
         with urllib.request.urlopen(req, timeout=30) as response:
             res_data = json.loads(response.read().decode('utf-8'))
-            return {"success": True, "output": res_data.get("response", "").strip()}
+            msg = res_data.get("message", {}).get("content", "").strip()
+            return {"success": True, "output": msg}
     except Exception as e:
+        return {"success": False, "error": f"Ollama Bağlantı Hatası: {str(e)}"}
+
+def start_interactive_chat(model="llama3.2:latest"):
+    ensure_ollama_running()
+    print("=======================================================================")
+    print("                YAPAY ZEKA İLE KESİNTİSİZ SOHBET MODU                  ")
+    print("   (Çıkmak ve Ana Menüye dönmek için 'cikis' yazın veya Enter'a basın)   ")
+    print("=======================================================================\n")
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT}
+    ]
+
+    while True:
         try:
-            cmd = f'ollama run {model} "{sys_instruction} Kullanıcı isteği: {prompt_text}"'
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=30, shell=True)
-            if res.returncode == 0:
-                return {"success": True, "output": res.stdout.strip()}
-            return {"success": False, "error": f"Ollama Bağlantı Hatası: {str(e)}"}
-        except Exception as cli_err:
-            return {"success": False, "error": f"Ollama CLI Hatası: {str(e)}"}
+            user_input = input("Siz: ").strip()
+            if not user_input or user_input.lower() in ["cikis", "çıkış", "exit", "q", "menu"]:
+                print("\nSohbetten çıkılıyor, ana menüye dönülüyor...\n")
+                break
+
+            messages.append({"role": "user", "content": user_input})
+
+            res = query_ollama_chat(messages, model=model)
+            if res["success"]:
+                reply = res["output"]
+                print(f"\nAsistan: {reply}\n")
+                print("-" * 60)
+                messages.append({"role": "assistant", "content": reply})
+
+                # Sohbet geçmişini 10 mesajla sınırla
+                if len(messages) > 10:
+                    messages = [messages[0]] + messages[-8:]
+            else:
+                print(f"\nHata: {res['error']}\n")
+
+        except KeyboardInterrupt:
+            print("\nSohbet sonlandırıldı.")
+            break
+        except Exception as e:
+            print(f"\nHata Oluştu: {str(e)}\n")
 
 if __name__ == "__main__":
-    is_audit = "--audit" in sys.argv
-    args = [arg for arg in sys.argv[1:] if arg != "--audit"]
-    prompt = args[0] if args else "Merhaba, bana nasıl yardımcı olabilirsin?"
-
-    print("=================================================")
-    print("   ANTIGRAVITY ÇEVRİMDİŞİ YAPAY ZEKA ASİSTANI    ")
-    print("=================================================\n")
-
-    res = query_ollama(prompt, is_audit=is_audit)
-    if res["success"]:
-        print("[Asistan Yanıtı]:")
-        print(res["output"])
+    if "--interactive" in sys.argv or "-i" in sys.argv:
+        start_interactive_chat()
     else:
-        print("[Sistem Durumu]:", res["error"])
-        print("Not: Servisi manuel başlatmak için terminalde 'ollama serve' komutunu çalıştırabilirsiniz.")
+        is_audit = "--audit" in sys.argv
+        args = [arg for arg in sys.argv[1:] if arg not in ["--audit", "--interactive", "-i"]]
+        prompt = args[0] if args else "Merhaba"
 
-    print("\n=================================================")
+        sys_prompt = SECURITY_AUDIT_PROMPT if is_audit else SYSTEM_PROMPT
+        msgs = [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": prompt}
+        ]
+
+        res = query_ollama_chat(msgs)
+        if res["success"]:
+            print(f"\n[Asistan Yanıtı]:\n{res['output']}\n")
+        else:
+            print(f"\n[Sistem Durumu]: {res['error']}\n")
