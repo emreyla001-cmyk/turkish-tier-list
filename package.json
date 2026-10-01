@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "dev:auto": "node dev-auto.js",
-    "heal": "python scripts/auto_site_healer.py"
+    "heal": "python scripts/auto_site_healer.py",
+    "scan:live": "node scripts/site_health_scan.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
