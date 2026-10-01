@@ -9,10 +9,10 @@ echo =======================================================================
 echo          ANTIGRAVITY CEVRIMDISI ASISTAN VE HAKEM SISTEMI
 echo =======================================================================
 echo.
-echo   [1] Yerel Cevrimdisi AI Incelemesi Yap (Ollama Llama 3.2 - Plan A)
+echo   [1] Yerel AI Kod Ve Guvenlik Incelemesi Yap (Ollama Plan A)
 echo   [2] Statik Guvenlik Ve Is Mantigi Taramasi (Plan E)
 echo   [3] Pre-Commit Ve ReDoS Guvenlik Denetimi (Plan E)
-echo   [4] Ozel Soru / Kod Incelemesi Gonder
+echo   [4] Serbest Soru Sor / Yapay Zekayla Sohbet Et (Yerel AI)
 echo   [5] Cikis
 echo.
 echo =======================================================================
@@ -33,11 +33,11 @@ goto MENU
 :OLLAMA_REVIEW
 cls
 echo =======================================================================
-echo   YEREL CEVRIMDISI AI INCELEMESI CALISTIRILIYOR (Ollama Plan A)...
+echo   YEREL AI KOD INCELEMESI CALISTIRILIYOR...
 echo =======================================================================
 echo.
 cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
-py -3 "scripts\ollama_arbiter.py" "Son yapilan kod degisikliklerini guvenlik, sinir degerler ve VERIFICATION_RULES.md acisindan Turkce olarak incele."
+py -3 "scripts\ollama_arbiter.py" --audit "Son yapılan kod değişikliklerini güvenlik ve sınır değerler açısından Türkçe incele."
 echo.
 echo =======================================================================
 echo Inceleme Tamamlandi.
@@ -75,11 +75,11 @@ goto MENU
 :CUSTOM_QUERY
 cls
 echo =======================================================================
-echo   OZEL SORU / KOD INCELEMESI
+echo   SERBEST YAPAY ZEKA SOHBETI (CEVRIMDISI YEREL AI)
 echo =======================================================================
 echo.
 set custom_prompt=
-set /p custom_prompt=Sorunuzu veya inceleme talebinizi yazin: 
+set /p custom_prompt=Sorunuzu yazin: 
 echo.
 cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
 py -3 "scripts\ollama_arbiter.py" "%custom_prompt%"
