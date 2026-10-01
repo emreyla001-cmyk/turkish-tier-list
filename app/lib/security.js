@@ -5,14 +5,14 @@
 
 // Tehlikeli HTML etiketleri ve nitelikleri
 const DANGEROUS_PATTERNS = [
-  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-  /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
-  /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi,
-  /<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi,
-  /<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>/gi,
-  /<meta\b[^<]*(?:(?!<\/meta>)<[^<]*)*>/gi,
-  /<link\b[^<]*(?:(?!<\/link>)<[^<]*)*>/gi,
-  /on\w+\s*=\s*(?:["'][^"']*["']|[^\s>]+)/gi, // onerror, onclick, onload vb.
+  /<script\b[\s\S]*?<\/script>/gi,
+  /<iframe\b[\s\S]*?<\/iframe>/gi,
+  /<object\b[\s\S]*?<\/object>/gi,
+  /<embed\b[\s\S]*?<\/embed>/gi,
+  /<applet\b[\s\S]*?<\/applet>/gi,
+  /<meta\b[\s\S]*?>/gi,
+  /<link\b[\s\S]*?>/gi,
+  /on\w+\s*=\s*(?:["'][^"']*["']|[^\s>]+)/gi,
   /javascript\s*:/gi,
   /vbscript\s*:/gi,
   /data:\s*text\/html/gi,
@@ -88,6 +88,7 @@ export function validateComment(text, maxLength = 1000) {
 
   // Şüpheli XSS içeriği var mı?
   for (const p of DANGEROUS_PATTERNS) {
+    p.lastIndex = 0;
     if (p.test(trimmed)) {
       return { valid: false, error: 'Metinde güvenlik kurallarına aykırı kod veya karakter tespit edildi.' };
     }
