@@ -1,6 +1,5 @@
 import './globals.css';
 import HeaderNav from './components/HeaderNav';
-import DarkModeToggle from './components/DarkModeToggle.jsx';
 import Logo from './components/Logo';
 import Heartbeat from './components/Heartbeat';
 import BanGuard from './components/BanGuard';
@@ -13,7 +12,7 @@ export const metadata = {
     template: '%s | Turkish Tier List',
   },
   description:
-    'Türk dizi ve filmlerindeki karakterlerin güç, zeka, hız ve dayanıklılık sıralaması. Gerekçeleriyle incele, VS arenasında karşılaştır, toplulukla tartış.',
+    'Türk dizi, film, mitoloji ve kurgusal evrenlerindeki karakterlerin güç sıralaması, VS düelloları ve topluluk tartışmaları.',
   openGraph: {
     title: 'Turkish Tier List',
     description: 'Türk kurgusundaki karakterlerin güç sıralaması, VS düelloları ve topluluk tartışmaları.',
@@ -36,56 +35,65 @@ export default function RootLayout({ children }) {
       <body>
         <Heartbeat />
         <BanGuard />
+
+        {/* MERLİNTOON / UZAYMANGA MODELİ ÜST HEADER */}
         <header className="site-header">
-          <div className="wrap nav">
-            <div className="nav-brand-group">
-              <a href="/" className="brand">
-                <Logo /> <span>Turkish Tier List</span>
-              </a>
-            </div>
+          <div className="wrap main-header-container">
+            {/* SOL LOGO & MARKA */}
+            <a href="/" className="brand-logo-link">
+              <Logo size={32} />
+              <span className="brand-title">Turkish Tier List</span>
+            </a>
 
-            <HeaderNav />
-
-            {/* Hızlı Arama Butonu (Ctrl+K) */}
-            <div className="nav-search-wrap">
-              <SpotlightSearch />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <DarkModeToggle />
+            {/* ORTA: TEK ÇİZGİ MENÜ & HIZLI ARAMA */}
+            <div className="header-nav-center">
+              <HeaderNav />
+              <div className="header-spotlight-inline">
+                <SpotlightSearch />
+              </div>
             </div>
           </div>
         </header>
 
         <main>{children}</main>
 
+        {/* MODERN FOOTER (MERLİNTOON & UZAYMANGA FOOTER STYLE) */}
         <footer className="site-footer">
           <div className="wrap">
             <div className="footer-grid">
               <div>
-                <a href="/" className="brand">
-                  <Logo id="logo-g2" /> Turkish Tier List
+                <a href="/" className="brand-logo-link" style={{ marginBottom: '12px' }}>
+                  <Logo size={32} id="logo-g2" />
+                  <span className="brand-title">Turkish Tier List</span>
                 </a>
-                <p>
-                  Türk dizi, film ve kurgusal evrenlerindeki karakterlerin güç sıralamasını bilimsel scaling kurallarıyla ortaya koyan, topluluk destekli modern başvuru platformu.
+                <p style={{ color: 'var(--text-dim)', fontSize: '.88rem', lineHeight: 1.6, maxWidth: '420px' }}>
+                  Türk dizi, film, mitoloji ve kurgusal evrenlerindeki karakterlerin güç sıralamasını bilimsel scaling standartlarıyla ortaya koyan topluluk platformu.
                 </p>
               </div>
-              <div className="footer-links">
-                <a href="/#karakterler">Karakter Kataloğu</a>
-                <a href="/vs">VS Arenası (Düellolar)</a>
-                <a href="/tier-sistemi">Tier Sistemi Rehberi</a>
-                <a href="/karakter-oner">Yeni Karakter Öner</a>
-                <a href="/sohbet">Canlı Sohbet Odası</a>
-                <a href="/kayit-ol">Topluluğa Katıl</a>
+              <div className="footer-links-grid">
+                <div>
+                  <h4 style={{ fontSize: '.85rem', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--accent)', margin: '0 0 10px' }}>Keşfet</h4>
+                  <a href="/#karakterler">Karakter Kataloğu</a>
+                  <a href="/vs">VS Arenası (Düellolar)</a>
+                  <a href="/kart-oyunu">Kart Oyunu & Ligler</a>
+                  <a href="/tier-sistemi">Tier Sistemi Rehberi</a>
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '.85rem', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--accent)', margin: '0 0 10px' }}>Topluluk & Mağaza</h4>
+                  <a href="/magaza">Kozmetik Mağazası</a>
+                  <a href="/klanlar">Klanlar & Loncalar</a>
+                  <a href="/sohbet">Canlı Sohbet Odası</a>
+                  <a href="/hakkinda">Hakkında & Adil Kullanım</a>
+                </div>
               </div>
             </div>
             <div className="footer-copy">
-              © 2026 Turkish Tier List. Bu site resmî bir yapım veya yayıncı sitesi değildir; tüm karakter ve yapım hakları ilgili sahiplerine aittir.
+              © 2026 Turkish Tier List. Tüm hakları saklıdır. Bu platform parodi, inceleme ve adil kullanım (Fair Use) ilkesine dayanır.
             </div>
           </div>
         </footer>
 
-        {/* Mobil Ekranlar İçin Alt Navigasyon Çubuğu */}
+        {/* MOBİL ALT NAVİGASYON ÇUBUĞU */}
         <MobileNav />
       </body>
     </html>
