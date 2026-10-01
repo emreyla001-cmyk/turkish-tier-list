@@ -12,7 +12,7 @@ echo.
 echo   [1] Yerel AI Kod Ve Guvenlik Incelemesi Yap (Ollama Plan A)
 echo   [2] Statik Guvenlik Ve Is Mantigi Taramasi (Plan E)
 echo   [3] Pre-Commit Ve ReDoS Guvenlik Denetimi (Plan E)
-echo   [4] Serbest Soru Sor / Yapay Zekayla Sohbet Et (Yerel AI)
+echo   [4] Yapay Zekayla Kesintisiz Sohbet Et (Sohbet Modu)
 echo   [5] Cikis
 echo.
 echo =======================================================================
@@ -22,7 +22,7 @@ set /p choice=Lutfen bir secenek girin (1-5):
 if "%choice%"=="1" goto OLLAMA_REVIEW
 if "%choice%"=="2" goto STATIC_AUDIT
 if "%choice%"=="3" goto DUAL_BRAIN
-if "%choice%"=="4" goto CUSTOM_QUERY
+if "%choice%"=="4" goto INTERACTIVE_CHAT
 if "%choice%"=="5" goto END
 
 echo.
@@ -32,61 +32,32 @@ goto MENU
 
 :OLLAMA_REVIEW
 cls
-echo =======================================================================
-echo   YEREL AI KOD INCELEMESI CALISTIRILIYOR...
-echo =======================================================================
-echo.
 cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
-py -3 "scripts\ollama_arbiter.py" --audit "Son yapılan kod değişikliklerini güvenlik ve sınır değerler açısından Türkçe incele."
+py -3 "scripts\ollama_arbiter.py" --audit "Son yapilan kod degisikliklerini guvenlik ve sinir degerler acisindan Turkce incele."
 echo.
-echo =======================================================================
-echo Inceleme Tamamlandi.
 pause
 goto MENU
 
 :STATIC_AUDIT
 cls
-echo =======================================================================
-echo   STATIK GUVENLIK VE IS MANTIGI TARAMASI CALISTIRILIYOR...
-echo =======================================================================
-echo.
 cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
 py -3 "scripts\business_logic_audit.py"
 echo.
-echo =======================================================================
-echo Tarama Tamamlandi.
 pause
 goto MENU
 
 :DUAL_BRAIN
 cls
-echo =======================================================================
-echo   PRE-COMMIT VE REDOS GUVENLIK DENETIMI CALISTIRILIYOR...
-echo =======================================================================
-echo.
 cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
 py -3 "scripts\dual_brain_arbiter.py"
 echo.
-echo =======================================================================
-echo Denetim Tamamlandi.
 pause
 goto MENU
 
-:CUSTOM_QUERY
+:INTERACTIVE_CHAT
 cls
-echo =======================================================================
-echo   SERBEST YAPAY ZEKA SOHBETI (CEVRIMDISI YEREL AI)
-echo =======================================================================
-echo.
-set custom_prompt=
-set /p custom_prompt=Sorunuzu yazin: 
-echo.
 cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
-py -3 "scripts\ollama_arbiter.py" "%custom_prompt%"
-echo.
-echo =======================================================================
-echo Yanit Tamamlandi.
-pause
+py -3 "scripts\ollama_arbiter.py" --interactive
 goto MENU
 
 :END
