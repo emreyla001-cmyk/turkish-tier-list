@@ -2,8 +2,7 @@ import { getCardRarity } from './cardRarity';
 import { getStarInfo } from './cardRarity';
 
 /**
- * Türk Tier List - Yüksek Heyecanlı Gacha & Paket Kataloğu
- * Her paketin kart sayısı, fiyatı, düşme oranları ve garantili hediyeleri belirlenmiştir.
+ * Türk Tier List - Hoyoverse & Blue Archive Standartlarında Gacha Kataloğu
  */
 export const GACHA_PACKS = [
   {
@@ -85,25 +84,8 @@ export const GACHA_PACKS = [
     guaranteedMinRarity: 'SR',
     guaranteedCount: 2,
   },
-    {
-      id: 'pack_platinum',
-      name: 'Platin Paket (Altın Varlıklar)',
-      price: 15000,
-      icon: '🏆',
-      cardCount: 6,
-      cashback: 3000,
-      xpReward: 1800,
-      badge: '🏆 1x SR Garanti (Yüksek Şans)',
-      badgeColor: '#ffd700',
-      desc: '6 Karakter Kartı. En az 1x SR (Elite) kart garantilidir. (+3.000 TP İade)',
-      ratesText: 'Platin oran — R: %40,5 · SR: %28,5 · SSR: %5,6 · UR: %0,225',
-      rates: { R: 0.405, SR: 0.285, SSR: 0.0556, UR: 0.00225 },
-      guaranteedMinRarity: 'SR',
-      guaranteedCount: 1,
-    },
 ];
 
-// Paket içindeki her kartın bağımsız SSR oranından, pity hariç paket şansını hesaplar.
 export function getPackOddsText(pack) {
   const cardCount = pack.cardCount || 3;
   const ssrChance = 1 - Math.pow(1 - (pack.rates?.SSR || 0), cardCount);
@@ -112,24 +94,33 @@ export function getPackOddsText(pack) {
 }
 
 /**
- * Ağırlıklı Rastgele Kart Çekilişi (MLA / AFK Arena Tarzı Gacha)
- * - UR çok nadir ve kıymetlidir (asla doğrudan paketle garantilenmez).
- * - SSR şansa bağlı olarak ortalama 2-3 pakette bir denk gelir.
- * - SR kartlar takım omurgası ve parça (shard) kaynağıdır.
+ * Hoyoverse Soft Pity & Hard Pity Dinamik Düşme Oranı Hesaplayıcı
  */
-export function rollRaritySlot(packRates, forcedMinRarity = null) {
+export function rollRaritySlot(packRates, forcedMinRarity = null, pityCount = 0) {
+  // Hoyoverse Soft Pity: 5. paketten sonra her denemede SSR/UR şansı katlanarak artar
+  let bonusSSR = 0;
+  let bonusUR = 0;
+
+  if (pityCount >= 5) {
+    const extraPity = pityCount - 4;
+    bonusSSR = extraPity * 0.12; // +%12 her pakette
+    bonusUR = extraPity * 0.02;  // +%2 her pakette
+  }
+
+  const effectiveUR = (packRates.UR || 0.005) + bonusUR;
+  const effectiveSSR = (packRates.SSR || 0.05) + bonusSSR;
+
   if (forcedMinRarity === 'SR') {
-    // 1x SR garantisi: en az SR verir, ama eğer şanslıysa pack'in SSR/UR oranıyla SSR veya UR'a yükselebilir!
     const r = Math.random();
-    if (r < (packRates.UR || 0.005)) return 'UR';
-    if (r < ((packRates.UR || 0.005) + (packRates.SSR || 0.05))) return 'SSR';
+    if (r < effectiveUR) return 'UR';
+    if (r < (effectiveUR + effectiveSSR)) return 'SSR';
     return 'SR';
   }
 
   const rand = Math.random();
-  const urThreshold = packRates.UR;
-  const ssrThreshold = urThreshold + packRates.SSR;
-  const srThreshold = ssrThreshold + packRates.SR;
+  const urThreshold = effectiveUR;
+  const ssrThreshold = urThreshold + effectiveSSR;
+  const srThreshold = ssrThreshold + (packRates.SR || 0.3);
 
   if (rand < urThreshold) return 'UR';
   if (rand < ssrThreshold) return 'SSR';
@@ -137,15 +128,10 @@ export function rollRaritySlot(packRates, forcedMinRarity = null) {
   return 'R';
 }
 
-/**
- * Verilen nadirlik sınıfına (R, SR, SSR, UR) ait havuzdan güç puanına göre ağırlıklı seçim yapar.
- * Aynı nadirlik içinde bile power_score çok yüksek olan tanrısal kartlar daha nadir gelir.
- */
 export function pickCardFromRarityPool(pool) {
   if (!pool || pool.length === 0) return null;
   if (pool.length === 1) return pool[0];
 
-  // Ağırlık hesaplama: power_score'un kareköküne ters orantı (güç çok yüksekse biraz daha nadir)
   const weights = pool.map((c) => {
     const p = Math.max(20, Number(c.power_score) || 50);
     return 100 / Math.sqrt(p);
@@ -165,14 +151,13 @@ export function pickCardFromRarityPool(pool) {
 }
 
 /**
- * Paketten kart çekme ana motoru
+ * Paketten kart çekme ana motoru (Hoyoverse Pity + Blue Archive Shards)
  */
 export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpgrades = {}, myCards = []) {
   if (!allCharacters || allCharacters.length === 0) {
     return { drawnCards: [], nextPity: pityCount, refundTotal: 0, cashback: 0 };
   }
 
-  // Karakterleri nadirliklerine göre grupla
   const grouped = { UR: [], SSR: [], SR: [], R: [] };
   allCharacters.forEach((c) => {
     const rarity = getCardRarity(c.tier).code;
@@ -183,7 +168,6 @@ export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpg
     }
   });
 
-  // Eğer havuzda boşluk varsa yedek olarak tüm karakterleri doldur
   ['UR', 'SSR', 'SR', 'R'].forEach((key) => {
     if (grouped[key].length === 0) {
       grouped[key] = allCharacters;
@@ -191,27 +175,22 @@ export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpg
   });
 
   const cardCount = pack.cardCount || 3;
-  const isPityActive = pityCount >= 9;
+  const isHardPityActive = pityCount >= 9;
   const drawn = [];
 
-  // Garantili slot sayısı ve tipi (Yalnızca SR taban garantisi, SSR/UR kesinlikle şansa bağlı!)
   const guaranteedMin = pack.guaranteedMinRarity || null;
   const guaranteedSlots = pack.guaranteedCount || (guaranteedMin ? 1 : 0);
 
   for (let slot = 0; slot < cardCount; slot++) {
     let targetRarity;
 
-    // 1. Onuncu paketin son slotunda pity: nadirlik havuzundaki gerçek SSR kart garantilenir.
-    if (slot === cardCount - 1 && isPityActive) {
+    // Hard Pity Eşiği (9. paketten sonra kesin SSR/UR garantisi)
+    if (slot === cardCount - 1 && isHardPityActive) {
       targetRarity = 'SSR';
-    }
-    // 2. Paketin garantili SR slotları (Örn: Gümüş'te 1 SR, Tengri'de 2 SR)
-    else if (slot < guaranteedSlots) {
-      targetRarity = rollRaritySlot(pack.rates, guaranteedMin);
-    }
-    // 3. Normal rastgele gacha slotu (MLA drop oranları)
-    else {
-      targetRarity = rollRaritySlot(pack.rates);
+    } else if (slot < guaranteedSlots) {
+      targetRarity = rollRaritySlot(pack.rates, guaranteedMin, pityCount);
+    } else {
+      targetRarity = rollRaritySlot(pack.rates, null, pityCount);
     }
 
     const pool = grouped[targetRarity] || allCharacters;
@@ -219,14 +198,12 @@ export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpg
     drawn.push(picked);
   }
 
-  // Pity sayacı hesabı: Eğer UR veya SSR çıktıysa pity sıfırlanır, çıkmadıysa +1 artar
   const hasHighRarity = drawn.some((c) => {
     const r = getCardRarity(c.tier).code;
     return r === 'UR' || r === 'SSR';
   });
   const nextPity = hasHighRarity ? 0 : Math.min(10, pityCount + 1);
 
-  // Kopya kart, yükseltme ve iade hesabı
   let refundTotal = 0;
   const updatedUpgrades = { ...currentUpgrades };
 
@@ -241,7 +218,7 @@ export function drawCardsFromPack(pack, allCharacters, pityCount = 0, currentUpg
 
     if (isDuplicate) {
       if (sInfo.isMax) {
-        refundTotal += 1000; // Maksimum Seviyedeyse 1.000 Tier Parası devasa nakit iade!
+        refundTotal += 1000;
       } else {
         shards += 1;
       }
