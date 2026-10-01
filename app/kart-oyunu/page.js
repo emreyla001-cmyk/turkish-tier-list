@@ -9,7 +9,7 @@ import { getCardRarity, getStarInfo, MAX_STARS } from '../lib/cardRarity';
 import { getStamina, buyStaminaPotion, POTION_COST, POTION_REFILL } from '../lib/stamina';
 import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon, FireIcon } from '../components/CyberIcons';
 import { GACHA_PACKS, drawCardsFromPack, getPackOddsText } from '../lib/gachaEngine';
-import KoleksiyonAlbumPage from '../koleksiyon/page';
+import KoleksiyonAlbumView from '../components/KoleksiyonAlbumView';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -708,10 +708,164 @@ export default function KartOyunuHub() {
         </div>
       )}
 
-      {/* 3. SEKME: KART KOLEKSİYONU & ALBÜM ÖDÜLLERİ */}
+      {/* 3. SEKME: KART KOLEKSİYONU & ALBÜM ÖDÜLLERİ & DESTE DÜZENLEME */}
       {activeTab === 'collection' && (
-        <div style={{ animation: 'modalIn .2s ease-out' }}>
-          <KoleksiyonAlbumPage />
+        <div style={{ animation: 'modalIn .2s ease-out', display: 'flex', flexDirection: 'column', gap: '30px' }}>
+          <KoleksiyonAlbumView />
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.3rem' }}>🃏 Deste Oluşturma & Kart Geliştirme ({myCollectionCharacters.length} Karakter)</h3>
+                <span style={{ fontSize: '.86rem', color: 'var(--text-dim)' }}>
+                  Savaş destene eklemek veya çıkarmak için kartın üzerine tıkla. Parçaların yettiğinde kartların seviyesini yükselt!
+                </span>
+              </div>
+            </div>
+
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '14px' }}>
+              {myCollectionCharacters.map((c) => {
+                const inDeck = myDeck.includes(c.id);
+                return (
+                  <div
+                    key={c.id}
+                    className="card"
+                    onClick={() => toggleDeckCard(c.id)}
+                    style={{
+                      padding: '12px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      border: inDeck ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      boxShadow: inDeck ? '0 0 16px var(--accent-glow)' : 'none',
+                      borderRadius: '12px',
+                      position: 'relative',
+                    }}
+                  >
+                    {inDeck && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          background: 'var(--accent)',
+                          color: '#111',
+                          fontSize: '.7rem',
+                          fontWeight: 900,
+                          padding: '2px 6px',
+                          borderRadius: '10px',
+                        }}
+                      >
+                        ✓ Destede
+                      </span>
+                    )}
+                    <div style={{ width: '100%', height: '140px', borderRadius: '8px', overflow: 'hidden', marginBottom: '8px', background: '#000' }}>
+                      <img src={c.image_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <strong style={{ fontSize: '.88rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.name}
+                    </strong>
+                    {(() => {
+                      const rarity = getCardRarity(c.tier);
+                      const upg = cardUpgrades[c.id] || { stars: 1, awakened: 0, shards: 0 };
+                      const sInfo = getStarInfo(upg.stars, upg.awakened);
+                      const canUpgrade = upg.shards >= sInfo.nextCostShards && !sInfo.isMax;
+                      return (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '4px 0' }}>
+                            <span style={{ background: rarity.badgeBg, color: '#fff', fontSize: '.68rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px', boxShadow: rarity.glow }}>
+                              {rarity.code}
+                            </span>
+                            <TierBadge tier={c.tier} />
+                          </div>
+
+                          {sInfo.isMax ? (
+                            <div style={{ margin: '4px 0' }}>
+                              <span
+                                style={{
+                                  background: 'linear-gradient(135deg, #eab308, #ef4444, #7928ca)',
+                                  color: '#fff',
+                                  fontSize: '.68rem',
+                                  fontWeight: 900,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #ffd700',
+                                  boxShadow: '0 0 12px rgba(255, 215, 0, 0.7)',
+                                  display: 'inline-block',
+                                }}
+                              >
+                                👑 MAKSİMUM SEVİYE
+                              </span>
+                              <div style={{ fontSize: '.72rem', color: '#ffd700', marginTop: '2px', fontWeight: 800 }}>
+                                {sInfo.starString} (+%{sInfo.bonusPercent})
+                              </div>
+                            </div>
+                          ) : sInfo.isAwakened ? (
+                            <div style={{ margin: '4px 0' }}>
+                              <span
+                                style={{
+                                  background: 'linear-gradient(135deg, #dc2626, #9333ea)',
+                                  color: '#fff',
+                                  fontSize: '.68rem',
+                                  fontWeight: 900,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  boxShadow: '0 0 10px rgba(220, 38, 38, 0.6)',
+                                  display: 'inline-block',
+                                }}
+                              >
+                                🔴 {sInfo.awakened}. UYANIŞ
+                              </span>
+                              <div style={{ fontSize: '.72rem', color: '#f87171', marginTop: '2px', fontWeight: 800 }}>
+                                {sInfo.starString} (+%{sInfo.bonusPercent})
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '.74rem', color: '#fef08a', margin: '3px 0', fontWeight: 800 }}>
+                              {sInfo.starString} {sInfo.bonusPercent > 0 && `(+%${sInfo.bonusPercent})`}
+                            </div>
+                          )}
+
+                          <div style={{ fontSize: '.76rem', color: 'var(--accent)', fontWeight: 800 }}>
+                            Güç: {Math.round((c.power_score || 50) * sInfo.multiplier)}
+                          </div>
+
+                          {canUpgrade ? (
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{
+                                width: '100%',
+                                padding: '5px',
+                                fontSize: '.72rem',
+                                marginTop: '6px',
+                                background: upg.stars === 5 ? 'linear-gradient(135deg, #dc2626, #9333ea)' : 'linear-gradient(135deg, #f59e0b, #eab308)',
+                                color: upg.stars === 5 ? '#fff' : '#111',
+                                fontWeight: 900,
+                                border: 'none',
+                                boxShadow: upg.stars === 5 ? '0 0 12px rgba(220, 38, 38, 0.6)' : 'none',
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpgradeCard(c.id);
+                              }}
+                            >
+                              {upg.stars === 5
+                                ? `⚡ ${((upg.awakened || 0) + 1)}. Uyanış (${upg.shards}/${sInfo.nextCostShards})`
+                                : `⭐ ${(upg.stars || 1) + 1}. Yıldız (${upg.shards}/${sInfo.nextCostShards})`}
+                            </button>
+                          ) : (
+                            <div style={{ fontSize: '.68rem', color: 'var(--text-dim)', marginTop: '4px' }}>
+                              {sInfo.isMax ? '🏆 Zirve Seviye' : `Parça: ${upg.shards || 0}/${sInfo.nextCostShards}`}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
