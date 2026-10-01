@@ -135,9 +135,10 @@ export const ANIMATED_FRAMES_INFO = {
 export function getAnimatedFrameInfo(val) {
   if (!val || typeof val !== 'string') return null;
   if (ANIMATED_FRAMES_INFO[val]) return ANIMATED_FRAMES_INFO[val];
-  // ID veya gradient eşleşmesi
   for (const [key, info] of Object.entries(ANIMATED_FRAMES_INFO)) {
-    if (val.includes(key)) return info;
+    if (val === key || val.includes(key)) return info;
+    const knownGrad = KNOWN_FRAMES[key];
+    if (knownGrad && (val === knownGrad || val.includes(knownGrad))) return info;
   }
   return null;
 }
@@ -168,7 +169,7 @@ export const KNOWN_NAME_COLORS = {
   nc_azure: '#5b8ce6',
   nc_emerald: '#6fbf73',
   nc_rainbow: 'linear-gradient(90deg,#e6455b,#e68a25,#e6c825,#6fbf73,#5b8ce6,#9b59e6)',
-  // Hareketli İsim Renkleri & Efektler
+  // Hareketli İsim Renkleri & Efektler (Geçerli CSS Gradient Değerleri)
   nc_flame: 'linear-gradient(90deg,#ff4500,#ff8c00,#ffd700,#ff4500)',
   nc_cyber_cyan: 'linear-gradient(90deg,#00f0ff,#7000ff,#00f0ff)',
   nc_plasma: 'linear-gradient(90deg,#d946ef,#8b5cf6,#ec4899,#d946ef)',

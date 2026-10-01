@@ -29,6 +29,36 @@ html.light {
   --text-light: #1e293b;
 }
 
+html.light h1, 
+html.light h2, 
+html.light h3, 
+html.light h4, 
+html.light .brand-title, 
+html.light .poster-name, 
+html.light .hero-spotlight-title, 
+html.light .fighter-meta h3, 
+html.light .card h3, 
+html.light .section-head h2 {
+  color: #0f172a !important;
+}
+
+html.light .poster-series, 
+html.light .section-head p, 
+html.light .card p, 
+html.light .unified-nav-item, 
+html.light .footer-links-grid a {
+  color: #475569;
+}
+
+html.light .poster-details {
+  background: #ffffff;
+}
+
+html.light .site-header {
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -97,7 +127,7 @@ body::after {
 
 h1, h2, h3, h4 { font-family: 'Sora', system-ui, sans-serif; line-height: 1.25; letter-spacing: -0.01em; }
 a { color: inherit; text-decoration: none; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+.wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
 .text-center { text-align: center; }
 
 /* ========================================================
@@ -107,7 +137,7 @@ a { color: inherit; text-decoration: none; }
   position: sticky;
   top: 0;
   z-index: 50;
-  padding: 10px 0;
+  padding: 14px 0;
   border-bottom: 1px solid var(--border);
   background: rgba(7, 9, 14, 0.92);
   backdrop-filter: blur(20px);
@@ -118,7 +148,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 28px;
 }
 
 .brand-logo-link {
