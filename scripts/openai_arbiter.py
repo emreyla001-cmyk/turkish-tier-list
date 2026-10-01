@@ -10,6 +10,10 @@ import sys
 import json
 import urllib.request
 
+# Windows konsol UTF-8 çıktı yapılandırması (cp1254 UnicodeEncodeError önleyici)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
 API_URL = os.environ.get("OPENAI_API_URL") or "https://api.openai.com/v1/chat/completions"
 
