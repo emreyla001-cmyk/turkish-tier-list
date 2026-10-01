@@ -20,9 +20,13 @@
    - Veritabanına veya siteye asla sahte kullanıcı, bot klan, uydurma oy eklenmez.
 3. **Localhost Geliştirme Otomasyonu:**
    - Dev sunucusu `npm run dev:auto` ile çalışır. Dosya değişince otomatik başlar, 5 dk işlem yapılmazsa SSD alanını korumak için otomatik kapanır.
-4. **Custom Domain Yönlendirme Uyarısı:**
-   - `next.config.js` içinde `example.com` gibi sahte redirect kuralları tutulmaz.
-5. **Ajan Güvenliği:**
+5. **5 Temel Mühendislik ve Disiplin Şablonu (Claude Discipline Checklist):**
+   - **A. "Ben" Değil "Sistem" Güvenilir Olacak**: Her yeni fonksiyonda Idempotency, RBAC Yetki, Negatif Bakiye ve RLS denetimi zorunludur.
+   - **B. Küçük Adım, Hemen Doğrulama (Atomic TDD)**: Tek seferde devasa kod yazmak yerine küçük parçayı yaz ➔ hemen `dual_brain_arbiter.py` & Playwright ile doğrula ➔ ekle.
+   - **C. Kritik Kod Okuma & Doğrulama**: Para, yetki ve silme işlemlerinde kod mantığı tam anlaşılmadan onay verilmez.
+   - **D. Kategori Düzeyinde Çözüm**: Tekil bug düzeltmek yerine o hata kategorisini yok et (Örn: Tüm bakiye/para güncellemeleri tek bir merkezi `walletTransactionManager.js` süzgecinden geçer).
+   - **E. 5 Dakikalık Geri Dönülebilirlik (Atomic Rollback)**: Her değişiklik atomik commit'lerle saklanır, hata anında 5 dakikada eski stabil sürüme dönülebilir.
+6. **Ajan Güvenliği:**
    - Kodlarda asla `git stash` kullanılmaz.
 
 ---
