@@ -1,88 +1,93 @@
 @echo off
-chcp 65001 >nul
-title Antigravity Çevrimdışı Asistan & Güvenlik Hakemi
+title Antigravity Offline Assistant
 color 0A
 cls
 
 :MENU
+cls
 echo =======================================================================
-echo          ANTIGRAVITY ÇEVRİMDİŞİ ASİSTAN & ÇOKLU BEYİN HAKEMİ
+echo          ANTIGRAVITY CEVRIMDISI ASISTAN VE HAKEM SISTEMI
 echo =======================================================================
 echo.
-echo   [1] Yerel Çevrimdışı AI İncelemesi Yap (Ollama Llama 3.2 - Plan A)
-echo   [2] Statik Güvenlik & İş Mantığı Taraması (Plan E)
-echo   [3] Pre-Commit & ReDoS Güvenlik Denetimi (Plan E)
-echo   [4] Özel Soru / Kod İncelemesi Gönder
-echo   [5] Çıkış
+echo   [1] Yerel Cevrimdisi AI Incelemesi Yap (Ollama Llama 3.2 - Plan A)
+echo   [2] Statik Guvenlik Ve Is Mantigi Taramasi (Plan E)
+echo   [3] Pre-Commit Ve ReDoS Guvenlik Denetimi (Plan E)
+echo   [4] Ozel Soru / Kod Incelemesi Gonder
+echo   [5] Cikis
 echo.
 echo =======================================================================
-set /p choice=Lütfen bir seçenek girin (1-5): 
+set choice=
+set /p choice=Lutfen bir secenek girin (1-5): 
 
 if "%choice%"=="1" goto OLLAMA_REVIEW
 if "%choice%"=="2" goto STATIC_AUDIT
 if "%choice%"=="3" goto DUAL_BRAIN
 if "%choice%"=="4" goto CUSTOM_QUERY
-if "%choice%"=="5" exit
+if "%choice%"=="5" goto END
 
 echo.
-echo Geçersiz seçenek! Tekrar deneyin.
+echo Gecersiz secenek! Tekrar deneyin.
 timeout /t 2 >nul
 goto MENU
 
 :OLLAMA_REVIEW
 cls
 echo =======================================================================
-echo   YEREL ÇEVRİMDİŞİ AI İNCELEMESİ ÇALIŞTIRILIYOR (Ollama Plan A)...
+echo   YEREL CEVRIMDISI AI INCELEMESI CALISTIRILIYOR (Ollama Plan A)...
 echo =======================================================================
 echo.
-cd /d C:\Users\EMRE\Desktop\turkish-tier-list-TAM
-python scripts\ollama_arbiter.py "Son yapılan kod değişikliklerini güvenlik, sınır değerler ve VERIFICATION_RULES.md açısından Türkçe olarak incele."
+cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
+py -3 "scripts\ollama_arbiter.py" "Son yapilan kod degisikliklerini guvenlik, sinir degerler ve VERIFICATION_RULES.md acisindan Turkce olarak incele."
 echo.
 echo =======================================================================
-echo İnceleme Tamamlandı.
+echo Inceleme Tamamlandi.
 pause
 goto MENU
 
 :STATIC_AUDIT
 cls
 echo =======================================================================
-echo   STATİK GÜVENLİK & İŞ MANTIĞI TARAMASI ÇALIŞTIRILIYOR...
+echo   STATIK GUVENLIK VE IS MANTIGI TARAMASI CALISTIRILIYOR...
 echo =======================================================================
 echo.
-cd /d C:\Users\EMRE\Desktop\turkish-tier-list-TAM
-python scripts\business_logic_audit.py
+cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
+py -3 "scripts\business_logic_audit.py"
 echo.
 echo =======================================================================
-echo Tarama Tamamlandı.
+echo Tarama Tamamlandi.
 pause
 goto MENU
 
 :DUAL_BRAIN
 cls
 echo =======================================================================
-echo   PRE-COMMIT & REDOS GÜVENLİK DENETİMİ ÇALIŞTIRILIYOR...
+echo   PRE-COMMIT VE REDOS GUVENLIK DENETIMI CALISTIRILIYOR...
 echo =======================================================================
 echo.
-cd /d C:\Users\EMRE\Desktop\turkish-tier-list-TAM
-python scripts\dual_brain_arbiter.py
+cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
+py -3 "scripts\dual_brain_arbiter.py"
 echo.
 echo =======================================================================
-echo Denetim Tamamlandı.
+echo Denetim Tamamlandi.
 pause
 goto MENU
 
 :CUSTOM_QUERY
 cls
 echo =======================================================================
-echo   ÖZEL SORU / KOD İNCELEMESİ
+echo   OZEL SORU / KOD INCELEMESI
 echo =======================================================================
 echo.
-set /p custom_prompt=Sorunuzu veya inceleme talebinizi yazın: 
+set custom_prompt=
+set /p custom_prompt=Sorunuzu veya inceleme talebinizi yazin: 
 echo.
-cd /d C:\Users\EMRE\Desktop\turkish-tier-list-TAM
-python scripts\ollama_arbiter.py "%custom_prompt%"
+cd /d "C:\Users\EMRE\Desktop\turkish-tier-list-TAM"
+py -3 "scripts\ollama_arbiter.py" "%custom_prompt%"
 echo.
 echo =======================================================================
-echo Yanıt Tamamlandı.
+echo Yanit Tamamlandi.
 pause
 goto MENU
+
+:END
+exit
