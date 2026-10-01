@@ -19,6 +19,7 @@ export default function VersusPage() {
   const [simStep, setSimStep] = useState(0);
   const [aiReport, setAiReport] = useState(null);
   const [simError, setSimError] = useState(null);
+  const [blindMode, setBlindMode] = useState(false);
 
   const duelKey = id1 && id2 ? `duel_${id1}_vs_${id2}` : null;
 
@@ -148,14 +149,24 @@ export default function VersusPage() {
 
   return (
     <div className="wrap" style={{ paddingBottom: '70px' }}>
-      {/* Üst Banner */}
+      {/* Üst Banner & Kör Seçim Modu Geçişi */}
       <div className="section-head text-center" style={{ marginTop: '28px' }}>
-        <span className="kicker kicker-red" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <span>🤖</span> YAPAY ZEKA HAKEMLİ DÜELLO ARENASI
-        </span>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <span className="kicker kicker-red" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span>🤖</span> YAPAY ZEKA HAKEMLİ DÜELLO ARENASI
+          </span>
+          <button
+            type="button"
+            className={`btn ${blindMode ? 'btn-spotlight-primary' : 'btn-ghost'}`}
+            style={{ fontSize: '.78rem', padding: '4px 12px', borderRadius: '20px' }}
+            onClick={() => setBlindMode(!blindMode)}
+          >
+            {blindMode ? '👁️ Kör Seçim Modu Aktif (Tierler Gizli)' : '🙈 Kör Seçim Moduna Geç (Onyargısız Seçim)'}
+          </button>
+        </div>
         <h1 style={{ marginTop: '8px' }}>Karakter Kıyaslama & Yapay Zeka VS Simülatörü</h1>
         <p style={{ maxWidth: '680px', margin: '8px auto 0', color: 'var(--text-dim)' }}>
-          İki dövüşçü seçin. Yapay zeka botumuz stat analizleri, lore verileri ve kanonik güç ölçeklemesiyle (power scaling) dövüşün nasıl sonuçlanacağını kanıtlarıyla anlatsın!
+          İki dövüşçü seçin. Yapay zeka botumuz kaba kas gücünün yanı sıra <strong>ruhsal yetenekleri, mistik hax yetilerini ve kanonik feat'leri</strong> hesaba katarak zafer sonucunu anlatsın!
         </p>
       </div>
 
@@ -166,7 +177,7 @@ export default function VersusPage() {
           <select value={id1} onChange={(e) => setId1(e.target.value)}>
             {characters.map((c) => (
               <option key={c.id} value={c.id} disabled={c.id === id2}>
-                {c.name} ({c.series || 'Kurgu'}) — {c.tier || 'Tier ?'}
+                {c.name} ({c.series || 'Kurgu'}) {blindMode && !hasVoted && !aiReport ? '' : `— ${c.tier || 'Tier ?'}`}
               </option>
             ))}
           </select>
@@ -181,7 +192,7 @@ export default function VersusPage() {
           <select value={id2} onChange={(e) => setId2(e.target.value)}>
             {characters.map((c) => (
               <option key={c.id} value={c.id} disabled={c.id === id1}>
-                {c.name} ({c.series || 'Kurgu'}) — {c.tier || 'Tier ?'}
+                {c.name} ({c.series || 'Kurgu'}) {blindMode && !hasVoted && !aiReport ? '' : `— ${c.tier || 'Tier ?'}`}
               </option>
             ))}
           </select>
@@ -200,7 +211,15 @@ export default function VersusPage() {
                 ) : (
                   <div className="poster-fallback">🎭</div>
                 )}
-                <div className="fighter-tier"><TierBadge tier={c1.tier} /></div>
+                <div className="fighter-tier">
+                  {blindMode && !hasVoted && !aiReport ? (
+                    <span className="tag" style={{ background: 'rgba(0,0,0,0.8)', color: '#fef08a', fontWeight: 800, border: '1px solid #fef08a' }}>
+                      🙈 Tier Gizli
+                    </span>
+                  ) : (
+                    <TierBadge tier={c1.tier} />
+                  )}
+                </div>
               </div>
               <div className="fighter-meta">
                 <h2>{c1.name}</h2>
@@ -265,7 +284,15 @@ export default function VersusPage() {
                 ) : (
                   <div className="poster-fallback">🎭</div>
                 )}
-                <div className="fighter-tier"><TierBadge tier={c2.tier} /></div>
+                <div className="fighter-tier">
+                  {blindMode && !hasVoted && !aiReport ? (
+                    <span className="tag" style={{ background: 'rgba(0,0,0,0.8)', color: '#fef08a', fontWeight: 800, border: '1px solid #fef08a' }}>
+                      🙈 Tier Gizli
+                    </span>
+                  ) : (
+                    <TierBadge tier={c2.tier} />
+                  )}
+                </div>
               </div>
               <div className="fighter-meta">
                 <h2>{c2.name}</h2>
