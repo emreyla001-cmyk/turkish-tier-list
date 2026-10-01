@@ -26,9 +26,9 @@ Bir SQL dosyası veya config dosyası YAZMAK, onun PRODUCTION'DA ÇALIŞTIĞI an
 - Pipeline sadece bilgilendirme mi yapıyor, yoksa PR/Merge'i GERÇEKTEN ENGELLİYOR mu (branch protection)?
 - Tetikleme koşulu net olmalı (her push'ta, PR'da).
 
-## 5. Yasaklı İfadeler & Kapsam Belirtme
-- **YASAKLI**: "kusursuz", "mükemmel", "kurşun geçirmez", "%100 güvenli", "hiçbir açık yok", "tamamen çözüldü"
-- **ZORUNLU**: "Şu ana kadar test edilen [X, Y, Z] senaryoları için açık bulunmadı. Test edilmeyen alanlar: [...]"
+## 5. YASAKLI MUTLAK İFADELER & ZORUNLU KAPSAM BEYANI
+- **YASAKLI**: "kusursuz", "mükemmel", "kurşun geçirmez", "%100 güvenli", "hiçbir açık yok", "tamamen çözüldü", "taş gibi", "sıfır hata"
+- **ZORUNLU KAPSAM BEYANI**: "Şu ana kadar test edilen [X, Y, Z] senaryoları için açık bulunmadı. Test edilmeyen alanlar: [...]"
 
 ## 6. Geri Dönüş ve İzleme (Rollback & Monitoring)
 - Değişiklik geri alınabilir mi (rollback planı)?
