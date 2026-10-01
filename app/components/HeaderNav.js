@@ -142,21 +142,25 @@ export default function HeaderNav() {
         })}
 
         {/* ALT KADEME / DİĞER KEŞFET DROPDOWN */}
-        <div className="nav-dropdown-wrap">
+        <div
+          className="nav-dropdown-wrap"
+          onMouseEnter={() => setOpenExploreDropdown(true)}
+          onMouseLeave={() => setOpenExploreDropdown(false)}
+        >
           <button
             type="button"
             className={`unified-nav-item nav-explore-btn ${isExploreActive ? 'active' : ''}`}
-            onClick={() => setOpenExploreDropdown(!openExploreDropdown)}
-            onMouseEnter={() => setOpenExploreDropdown(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenExploreDropdown((prev) => !prev);
+            }}
+            style={{ cursor: 'pointer', outline: 'none' }}
           >
             Diğer Keşfet <span style={{ fontSize: '.75rem', marginLeft: '4px' }}>▾</span>
           </button>
 
           {openExploreDropdown && (
-            <div
-              className="nav-dropdown-menu nav-explore-dropdown"
-              onMouseLeave={() => setOpenExploreDropdown(false)}
-            >
+            <div className="nav-dropdown-menu nav-explore-dropdown">
               {exploreSubLinks.map((sub) => {
                 const isSubActive = pathname === sub.href;
                 return (

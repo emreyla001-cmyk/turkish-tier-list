@@ -145,14 +145,22 @@ export default function DraftDuelPage() {
     // Oynanmamış Bot Kartlarını Filtrele
     const unplayedBotCards = botDeck.filter((c) => !playedBotCardIds.includes(c.id));
     
-    // AI Bot Seçimi
-    const botPick = selectBotCard({
-      remainingHand: unplayedBotCards,
-      playerCard: card,
-      roundNumber: battleRound,
-      playerScore,
-      botScore,
-    }) || unplayedBotCards[0] || botDeck[battleRound];
+    let botPick = null;
+    try {
+      botPick = selectBotCard({
+        remainingHand: unplayedBotCards,
+        playerCard: card,
+        roundNumber: battleRound,
+        playerScore,
+        botScore,
+      });
+    } catch (e) {
+      console.warn('Bot pick calculation warning:', e);
+    }
+
+    if (!botPick) {
+      botPick = unplayedBotCards[0] || botDeck.find(b => b.id !== card.id) || botDeck[battleRound] || botDeck[0];
+    }
 
     if (botPick) {
       setActiveBotCard(botPick);
@@ -162,6 +170,9 @@ export default function DraftDuelPage() {
       setTimeout(() => {
         calculateClash(card, botPick);
       }, 800);
+    } else {
+      // Fallback if no card can be picked: unlock player state
+      setActivePlayerCard(null);
     }
   }
 

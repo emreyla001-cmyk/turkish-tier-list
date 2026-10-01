@@ -327,12 +327,8 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.unified-nav-links::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
+  flex-wrap: wrap;
 }
 
 .unified-nav-item {

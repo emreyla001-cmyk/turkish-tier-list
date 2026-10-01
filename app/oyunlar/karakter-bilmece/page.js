@@ -9,6 +9,27 @@ import { addCoins, addXP } from '../../lib/wallet';
 
 const MAX_GUESSES = 6;
 
+function selectTargetCharacter(list, playIndex, userId) {
+  if (!list || list.length === 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  if (playIndex === 0) {
+    let hash = 0;
+    for (let i = 0; i < today.length; i++) hash = (hash << 5) - hash + today.charCodeAt(i);
+    const idx = Math.abs(hash) % list.length;
+    return list[idx];
+  } else {
+    const seed = `${today}_${userId || 'anon'}_play_${playIndex}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash << 5) - hash + seed.charCodeAt(i);
+    let idx = Math.abs(hash) % list.length;
+    const firstChar = selectTargetCharacter(list, 0, userId);
+    if (list.length > 1 && list[idx]?.id === firstChar?.id) {
+      idx = (idx + 1) % list.length;
+    }
+    return list[idx];
+  }
+}
+
 export default function KarakterBilmecePage() {
   const [config, setConfig] = useState(null);
   const [characters, setCharacters] = useState([]);
@@ -23,6 +44,18 @@ export default function KarakterBilmecePage() {
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [dailyPlays, setDailyPlays] = useState(0);
   const [hasDeductedPlay, setHasDeductedPlay] = useState(false);
+
+  function handleNextCharacter() {
+    if (dailyPlays >= MAX_DAILY_PLAYS) return;
+    const nextChar = selectTargetCharacter(characters, dailyPlays, user?.id);
+    setTargetChar(nextChar);
+    setGuesses([]);
+    setWon(false);
+    setLost(false);
+    setRewardClaimed(false);
+    setHasDeductedPlay(false);
+    setSearch('');
+  }
 
   useEffect(() => {
     async function init() {
@@ -47,12 +80,8 @@ export default function KarakterBilmecePage() {
         setCharacters(list);
 
         if (list.length > 0) {
-          // Günün karakterini deterministik olarak günün tarihine göre seç
-          const today = new Date().toISOString().slice(0, 10);
-          let hash = 0;
-          for (let i = 0; i < today.length; i++) hash = (hash << 5) - hash + today.charCodeAt(i);
-          const idx = Math.abs(hash) % list.length;
-          setTargetChar(list[idx]);
+          const char = selectTargetCharacter(list, plays, u?.id);
+          setTargetChar(char);
         }
       } catch (err) {
         console.error('Karakter bilmece başlatılamadı:', err);
@@ -239,6 +268,19 @@ export default function KarakterBilmecePage() {
               </a>
             </div>
           )}
+
+          {dailyPlays < MAX_DAILY_PLAYS && (
+            <div style={{ marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleNextCharacter}
+                style={{ background: 'var(--accent)', color: '#000', fontWeight: 900, fontSize: '1rem', padding: '12px 28px' }}
+              >
+                🔄 Sonraki Karakterle Oyna (Kalan Hak: {MAX_DAILY_PLAYS - dailyPlays})
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -263,7 +305,17 @@ export default function KarakterBilmecePage() {
             Bugünkü gizli karakter: <strong>{targetChar?.name}</strong> ({targetChar?.series} · Tier {targetChar?.tier}) idi.
           </p>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {dailyPlays < MAX_DAILY_PLAYS && (
+              <button
+                type="button"
+                className="btn"
+                onClick={handleNextCharacter}
+                style={{ background: 'var(--accent)', color: '#000', fontWeight: 900 }}
+              >
+                🔄 Sonraki Karakterle Oyna (Kalan Hak: {MAX_DAILY_PLAYS - dailyPlays})
+              </button>
+            )}
             <a href="/oyunlar" className="btn btn-ghost">← Mini Oyunlara Dön</a>
             <a href="/vs" className="btn">⚔️ Karakter Karşılaşmasında Şansını Dene</a>
           </div>
