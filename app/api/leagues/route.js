@@ -33,6 +33,11 @@ export async function GET() {
 
 export async function POST(req) {
   try {
+    const authHeader = req.headers.get('authorization') || req.headers.get('x-admin-token');
+    if (!authHeader || authHeader !== 'admin-secret') {
+      return NextResponse.json({ error: 'Yetkisiz erişim. Admin yetkisi gereklidir.' }, { status: 401 });
+    }
+
     const body = await req.json();
     const current = readLeaguesConfig();
     const updated = {

@@ -85,9 +85,14 @@ export async function GET(req) {
 // POST /api/kaos (Yeni Paylaşım, Oy Verme, Yorum Ekleme)
 export async function POST(req) {
   try {
+    const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
     const body = await req.json();
     const { action } = body;
     const posts = readPosts();
+
+    if (!authHeader && !body.userId && !body.user_id && !body.author) {
+      return NextResponse.json({ error: 'Yetkisiz erişim. Oturum gerekli.' }, { status: 401 });
+    }
 
     // 1. EYLEM: OY VERME (UPVOTE / DOWNVOTE)
     if (action === 'vote') {

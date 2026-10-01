@@ -160,12 +160,19 @@ export async function POST(req) {
     // 4. KLAN PUANI (CP) KAZANMA
     if (action === 'contribute_cp') {
       const { user_id, points = 50 } = body;
+      const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
+      if (!authHeader && !user_id) {
+        return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
+      }
+
+      // Boundary Check: Negative points strictly prevented
+      const numericPoints = Math.max(0, Math.min(1000, Number(points) || 50));
       const clan = clans.find((c) => c.members?.some((m) => m.id === user_id));
       if (clan) {
-        clan.points = (clan.points || 0) + points;
+        clan.points = (clan.points || 0) + numericPoints;
         const member = clan.members.find((m) => m.id === user_id);
         if (member) {
-          member.contributed_cp = (member.contributed_cp || 0) + points;
+          member.contributed_cp = (member.contributed_cp || 0) + numericPoints;
         }
         clan.level = Math.floor(Math.sqrt((clan.points || 0) / 1000)) + 1;
         writeClans(clans);
