@@ -5,18 +5,20 @@ import { supabase } from '../../../lib/supabaseClient';
 import TierBadge from '../../components/TierBadge';
 import { getCardRarity } from '../../lib/cardRarity';
 import { cardAudio } from '../../lib/cardAudio';
-import { getBotTierByTrophies, selectBotCard } from '../../lib/cardAIEngine';
-import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon } from '../../components/CyberIcons';
+import { selectBotCard } from '../../lib/cardAIEngine';
+import { CoinIcon, EnergyIcon, SwordsIcon, ShieldIcon } from '../../components/CyberIcons';
 import { addCoins, addXP } from '../../lib/wallet';
+import { getDailyPlays, incrementDailyPlay, MAX_DAILY_PLAYS } from '../../lib/dailyLimit';
 
 export default function DraftDuelPage() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dailyPlays, setDailyPlays] = useState(0);
+  const [hasDeductedPlay, setHasDeductedPlay] = useState(false);
 
-  // Oyun Durumu
-  // 'lobby' | 'drafting' | 'joker_reveal' | 'ready_battle' | 'battling' | 'finished'
+  // Oyun Durumu: 'lobby' | 'drafting' | 'joker_reveal' | 'ready_battle' | 'battling' | 'finished'
   const [state, setState] = useState('lobby');
 
   // Draft Verileri
@@ -27,8 +29,10 @@ export default function DraftDuelPage() {
   const [wildJokerPlayer, setWildJokerPlayer] = useState(null);
   const [wildJokerBot, setWildJokerBot] = useState(null);
 
-  // Savaş Verileri
+  // Savaş Verileri & Kullanılan Kart Takibi
   const [battleRound, setBattleRound] = useState(0); // 0..4
+  const [playedPlayerCardIds, setPlayedPlayerCardIds] = useState([]);
+  const [playedBotCardIds, setPlayedBotCardIds] = useState([]);
   const [playerScore, setPlayerScore] = useState(0);
   const [botScore, setBotScore] = useState(0);
   const [activePlayerCard, setActivePlayerCard] = useState(null);
@@ -44,6 +48,9 @@ export default function DraftDuelPage() {
         if (u) {
           const { data: p } = await supabase.from('profiles').select('id, username, coins, xp').eq('id', u.id).maybeSingle();
           setProfile(p || { id: u.id, username: u.email?.split('@')[0], coins: 0, xp: 0 });
+
+          const plays = getDailyPlays(u, 'draft');
+          setDailyPlays(plays);
         }
 
         const { data: chars } = await supabase.from('characters').select('*').eq('status', 'published');
@@ -60,6 +67,8 @@ export default function DraftDuelPage() {
   // 1. DRAFTI BAŞLAT
   function startDraft() {
     if (characters.length < 12) return;
+    if (dailyPlays >= MAX_DAILY_PLAYS) return;
+
     cardAudio.playWhoosh();
 
     const shuffled = [...characters].sort(() => 0.5 - Math.random());
@@ -69,6 +78,8 @@ export default function DraftDuelPage() {
     setPlayerScore(0);
     setBotScore(0);
     setBattleRound(0);
+    setPlayedPlayerCardIds([]);
+    setPlayedBotCardIds([]);
     setRewardClaimed(false);
 
     // İlk 2 kartlık çifti ayarla
@@ -79,6 +90,15 @@ export default function DraftDuelPage() {
   // 2. KART SEÇİMİ (Pick 1 for Me, Give 1 to Bot)
   function handlePickCard(pickedCard) {
     cardAudio.playPackOpening();
+
+    // Oyuncu seçim yaptığı anda 1 günlük hak hemen düşülür (Yarıda bırakırsa hakkı azalsın)
+    if (!hasDeductedPlay && user && dailyPlays < MAX_DAILY_PLAYS) {
+      setHasDeductedPlay(true);
+      incrementDailyPlay(supabase, user, 'draft').then((newCount) => {
+        setDailyPlays(newCount);
+      });
+    }
+
     const otherCard = currentPair.find((c) => c.id !== pickedCard.id);
 
     const newPlayerDeck = [...playerDeck, pickedCard];
@@ -89,7 +109,6 @@ export default function DraftDuelPage() {
 
     if (draftRound < 3) {
       // Bir sonraki draft çifti
-      const nextIdx = (draftRound + 1) * 2;
       const shuffled = [...characters].filter((c) => !newPlayerDeck.some(p => p.id === c.id) && !newBotDeck.some(b => b.id === c.id));
       setCurrentPair([shuffled[0], shuffled[1]]);
       setDraftRound((r) => r + 1);
@@ -117,33 +136,41 @@ export default function DraftDuelPage() {
 
   // 4. RAUND KARTI SÜRME
   function handlePlayCard(card) {
-    if (activePlayerCard) return;
+    if (activePlayerCard || playedPlayerCardIds.includes(card.id)) return;
     cardAudio.playWhoosh();
 
     setActivePlayerCard(card);
+    setPlayedPlayerCardIds((prev) => [...prev, card.id]);
 
-    // Kural tabanlı bot kartı
-    const botRemaining = botDeck.filter((c, idx) => idx >= battleRound);
+    // Oynanmamış Bot Kartlarını Filtrele
+    const unplayedBotCards = botDeck.filter((c) => !playedBotCardIds.includes(c.id));
+    
+    // AI Bot Seçimi
     const botPick = selectBotCard({
-      remainingHand: botRemaining,
+      remainingHand: unplayedBotCards,
       playerCard: card,
       roundNumber: battleRound,
       playerScore,
       botScore,
-    }) || botRemaining[0];
+    }) || unplayedBotCards[0] || botDeck[battleRound];
 
-    setActiveBotCard(botPick);
+    if (botPick) {
+      setActiveBotCard(botPick);
+      setPlayedBotCardIds((prev) => [...prev, botPick.id]);
 
-    // 800ms sonra çarpışma
-    setTimeout(() => {
-      calculateClash(card, botPick);
-    }, 800);
+      // 800ms sonra çarpışma hesabı
+      setTimeout(() => {
+        calculateClash(card, botPick);
+      }, 800);
+    }
   }
 
   // 5. ÇARPIŞMA HESABI
   function calculateClash(pCard, bCard) {
-    const pPower = (pCard.power_score || 5) * 2 + (pCard.speed_score || 5);
-    const bPower = (bCard.power_score || 5) * 2 + (bCard.speed_score || 5);
+    if (!pCard || !bCard) return;
+
+    const pPower = (Number(pCard.power_score) || 5) * 2 + (Number(pCard.speed_score) || 5);
+    const bPower = (Number(bCard.power_score) || 5) * 2 + (Number(bCard.speed_score) || 5);
 
     let winner = 'draw';
     if (pPower > bPower) {
@@ -208,6 +235,9 @@ export default function DraftDuelPage() {
     return <div className="wrap empty">Draft Düellosu yükleniyor... 🃏</div>;
   }
 
+  // Oynanabilir Oyuncu Kartları (Kullanılmamış olanlar)
+  const availablePlayerCards = playerDeck.filter((c) => !playedPlayerCardIds.includes(c.id));
+
   return (
     <div className="wrap" style={{ maxWidth: '880px', paddingBottom: '80px' }}>
       {/* 1. LOBİ EKRANI */}
@@ -215,7 +245,12 @@ export default function DraftDuelPage() {
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <div className="card" style={{ padding: '40px 24px', borderRadius: '20px', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
             <span style={{ fontSize: '4rem' }}>🃏</span>
-            <h1 style={{ fontSize: '2rem', margin: '14px 0 8px', color: '#fef08a' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '10px 0' }}>
+              <span className="tag" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fef08a', fontWeight: 800 }}>
+                🎮 Kalan Günlük Hak: {Math.max(0, MAX_DAILY_PLAYS - dailyPlays)} / {MAX_DAILY_PLAYS}
+              </span>
+            </div>
+            <h1 style={{ fontSize: '2rem', margin: '10px 0 8px', color: '#fef08a' }}>
               Draft Duel (1v1 Taktiksel Mod)
             </h1>
             <p style={{ maxWidth: '580px', margin: '0 auto 24px', color: 'var(--text-dim)', fontSize: '.95rem', lineHeight: 1.6 }}>
@@ -243,23 +278,29 @@ export default function DraftDuelPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="btn"
-              onClick={startDraft}
-              style={{
-                padding: '14px 44px',
-                fontSize: '1.2rem',
-                fontWeight: 900,
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                boxShadow: '0 0 30px rgba(245, 158, 11, 0.4)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px',
-              }}
-            >
-              <SwordsIcon size={22} /> Draft Düellosunu Başlat
-            </button>
+            {dailyPlays >= MAX_DAILY_PLAYS ? (
+              <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '12px' }}>
+                <strong style={{ color: '#ff4d6d' }}>Bugünkü 5 Draft Hakkın Doldu! Yarın Tekrar Oynayabilirsin.</strong>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="btn"
+                onClick={startDraft}
+                style={{
+                  padding: '14px 44px',
+                  fontSize: '1.2rem',
+                  fontWeight: 900,
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  boxShadow: '0 0 30px rgba(245, 158, 11, 0.4)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}
+              >
+                <SwordsIcon size={22} /> Draft Düellosunu Başlat
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -416,7 +457,7 @@ export default function DraftDuelPage() {
             </div>
           </div>
 
-          {/* Sahadaki Kartlar */}
+          {/* Sahadaki Çarpışan Kartlar */}
           {activePlayerCard && activeBotCard && (
             <div className="card" style={{ padding: '24px', borderRadius: '16px', marginBottom: '20px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(245, 158, 11, 0.08))' }}>
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
@@ -450,12 +491,12 @@ export default function DraftDuelPage() {
             </div>
           )}
 
-          {/* Elindeki Kartlar (Seçim Alanı) */}
+          {/* Elindeki Kartlar (Sahaya Sürme Seçim Alanı) */}
           {!activePlayerCard && (
             <div>
               <h3 style={{ fontSize: '1.1rem', marginBottom: '12px' }}>Sahaya Süreceğin Kartı Seç:</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-                {playerDeck.slice(battleRound).map((card) => (
+                {availablePlayerCards.map((card) => (
                   <div
                     key={card.id}
                     className="card"
@@ -467,9 +508,10 @@ export default function DraftDuelPage() {
                       textAlign: 'center',
                       background: 'var(--bg-2)',
                       border: '1px solid var(--border)',
+                      transition: 'all .15s ease',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f59e0b'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f59e0b'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
                     <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
                     <strong style={{ display: 'block', fontSize: '.84rem', marginTop: '6px' }}>{card.name}</strong>

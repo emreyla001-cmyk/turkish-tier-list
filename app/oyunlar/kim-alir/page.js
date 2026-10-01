@@ -92,8 +92,18 @@ export default function KimAlirPage() {
     setRound(nextRoundNum);
   }
 
+  const [hasDeductedPlay, setHasDeductedPlay] = useState(false);
+
   async function handleChoice(chosenChar) {
     if (revealed || finished) return;
+
+    if (!hasDeductedPlay && user && dailyPlays < MAX_DAILY_PLAYS) {
+      setHasDeductedPlay(true);
+      incrementDailyPlay(supabase, user, 'kim_alir').then((newCount) => {
+        setDailyPlays(newCount);
+      });
+    }
+
     setSelected(chosenChar.id);
     setRevealed(true);
 
@@ -112,20 +122,14 @@ export default function KimAlirPage() {
     if (finished && user && !rewardClaimed) {
       setRewardClaimed(true);
 
-      if (dailyPlays < MAX_DAILY_PLAYS) {
-        incrementDailyPlay(supabase, user, 'kim_alir').then((newCount) => {
-          setDailyPlays(newCount);
-        });
+      const base = config?.kim_alir_odul || 750;
+      // Skora göre orantılı ödül
+      const earnedCoins = Math.round((base * (score / TOTAL_ROUNDS)));
+      const finalCoins = config?.cift_odul ? earnedCoins * 2 : earnedCoins;
+      const finalXp = config?.cift_odul ? 700 : 350;
 
-        const base = config?.kim_alir_odul || 750;
-        // Skora göre orantılı ödül
-        const earnedCoins = Math.round((base * (score / TOTAL_ROUNDS)));
-        const finalCoins = config?.cift_odul ? earnedCoins * 2 : earnedCoins;
-        const finalXp = config?.cift_odul ? 700 : 350;
-
-        addCoins(user, finalCoins);
-        addXP(user, finalXp);
-      }
+      addCoins(user, finalCoins);
+      addXP(user, finalXp);
     }
   }, [finished]);
 
