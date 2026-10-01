@@ -48,6 +48,59 @@ export default async function HomePage() {
       )}
 
       <div className="wrap">
+        {/* Mini Oyunlar & Etkinlikler Vitrini */}
+        <section style={{ margin: '24px 0 16px' }}>
+          <div className="card" style={{ background: 'linear-gradient(135deg, rgba(20,25,45,0.9), rgba(10,13,22,0.95))', border: '1px solid var(--accent)', padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#fef08a' }}>
+                  <span>🎮</span> Mini Oyunlar & Günlük Etkinlik Merkezi
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '.84rem', color: 'var(--text-dim)' }}>
+                  Tier parası ve XP kazanmak için günlük bilmeceleri çöz, düellolara katıl!
+                </p>
+              </div>
+              <a href="/oyunlar" className="btn btn-spotlight-primary" style={{ fontSize: '.82rem', padding: '6px 16px', fontWeight: 800 }}>
+                Tüm Oyunları İncele &rarr;
+              </a>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              <a href="/oyunlar/karakter-bilmece" className="card" style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '2rem' }}>🧩</span>
+                <div>
+                  <strong style={{ fontSize: '.9rem', display: 'block' }}>Karakter Bilmece</strong>
+                  <span style={{ fontSize: '.76rem', color: 'var(--text-dim)' }}>Wordle tarzı tahmin</span>
+                </div>
+              </a>
+
+              <a href="/oyunlar/kim-alir" className="card" style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '2rem' }}>⚔️</span>
+                <div>
+                  <strong style={{ fontSize: '.9rem', display: 'block' }}>Kim Alır? Quiz</strong>
+                  <span style={{ fontSize: '.76rem', color: 'var(--text-dim)' }}>Seri VS testi</span>
+                </div>
+              </a>
+
+              <a href="/oyunlar/draft-duel" className="card" style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '2rem' }}>🃏</span>
+                <div>
+                  <strong style={{ fontSize: '.9rem', display: 'block' }}>Draft Duel 1v1</strong>
+                  <span style={{ fontSize: '.76rem', color: 'var(--text-dim)' }}>Taktiksel kart savaşı</span>
+                </div>
+              </a>
+
+              <a href="/koleksiyon" className="card" style={{ background: 'var(--bg-2)', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '2rem' }}>🎴</span>
+                <div>
+                  <strong style={{ fontSize: '.9rem', display: 'block' }}>Koleksiyon Albümü</strong>
+                  <span style={{ fontSize: '.76rem', color: 'var(--text-dim)' }}>Açılan kart albümü</span>
+                </div>
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* Popüler / Çok Tıklanan Karakterler */}
         <PopularCharacters />
 
