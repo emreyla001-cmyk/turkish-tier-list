@@ -148,7 +148,104 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-dim);
 }
 
-.nav-links { display: flex; gap: 6px; font-size: .9rem; color: var(--text-dim); align-items: center; flex-wrap: wrap; }
+
+/* ========================================================
+   TEK DÜZ ÇİZGİ UNIFIED NAVBAR (MERLİNTOON / UZAYMANGA MODELİ)
+   ======================================================== */
+.unified-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.unified-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.unified-nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.unified-nav-item {
+  color: var(--text-dim);
+  font-size: .92rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all .15s ease;
+  position: relative;
+}
+
+.unified-nav-item:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.unified-nav-item.active {
+  color: var(--accent);
+  font-weight: 700;
+  background: rgba(6, 182, 212, 0.12);
+}
+
+.unified-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.auth-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 14px !important;
+  font-size: .84rem !important;
+}
+
+.user-nav-pill-unified {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 20px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  transition: all .15s ease;
+}
+
+.user-nav-pill-unified:hover {
+  border-color: var(--border-focus);
+  background: var(--card-hover);
+}
+
+.user-nav-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .8rem;
+  color: var(--accent-gold);
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
 .nav-links a { padding: 7px 12px; border-radius: 9px; transition: background .15s, color .15s; font-weight: 600; }
 .nav-links a:hover { color: var(--text); background: var(--card); }
 .nav-vs-link { color: var(--accent) !important; font-weight: 700 !important; }
