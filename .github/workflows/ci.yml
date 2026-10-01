@@ -1,0 +1,49 @@
+name: Antigravity Continuous Security & Build Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-and-build-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          npm ci --prefer-offline --no-audit
+          pip install chromadb sentence-transformers pydantic requests
+
+      - name: Run Dependency & CVE Vulnerability Audit
+        run: python scripts/dependency_security_audit.py
+
+      - name: Run Business Logic & RBAC Audit
+        run: python scripts/business_logic_audit.py
+
+      - name: Run Dual-Brain Pre-Commit Arbiter Audit
+        run: python scripts/dual_brain_arbiter.py
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E UI & Visual Tests
+        run: npx playwright test --project="Desktop Chrome"
+
+      - name: Run Production Build
+        run: npm run build
