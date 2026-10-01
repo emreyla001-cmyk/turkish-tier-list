@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Antigravity Dual-Brain Pre-Commit Arbiter Engine
-------------------------------------------------
-Scans code diffs and files before write/commit for:
-1. Missing 'use client' directive in files using React state/effects.
-2. ReDoS and stateful global regex (/g) lastIndex mutation bugs.
-3. Dummy/placeholder redirects or hardcoded unsafe URLs.
-4. XSS vulnerability vectors.
+Antigravity Çift-Beyin Commit Öncesi Hakem Motoru (Plan E)
+---------------------------------------------------------
+Kod yazma/commit öncesinde diff ve dosyaları tarar:
+1. React state/effect kullanan dosyalarda 'use client' direktifi kontrolü.
+2. ReDoS ve durumlu global regex (/g) lastIndex mutasyon hataları.
+3. Sahte/geçici yönlendirmeler veya güvenli olmayan sabit URL'ler.
+4. XSS güvenlik açığı vektörleri.
 """
 
 import os
@@ -16,7 +16,7 @@ import json
 
 def analyze_file(filepath):
     if not os.path.exists(filepath):
-        return {"valid": False, "errors": [f"File not found: {filepath}"]}
+        return {"valid": False, "errors": [f"Dosya bulunamadı: {filepath}"]}
     
     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
@@ -24,24 +24,24 @@ def analyze_file(filepath):
     errors = []
     warnings = []
     
-    # Rule 1: Next.js 'use client' check
+    # Kural 1: Next.js 'use client' kontrolü
     has_react_hooks = re.search(r'\b(useState|useEffect|useContext|useReducer|useCallback|useMemo|useRef)\b', content)
     if has_react_hooks and not re.search(r'^\s*["\']use client["\']', content, re.MULTILINE):
-        errors.append("React hooks used but missing 'use client' directive at the top of file.")
+        errors.append("React hook'ları kullanılmış ancak dosya başında 'use client' direktifi eksik.")
     
-    # Rule 2: Stateful /g regex in loops without lastIndex reset
+    # Kural 2: lastIndex sıfırlaması olmayan durumlu /g regex kontrolü
     has_global_regex = re.search(r'const\s+\w+\s*=\s*/[^/]+/g[i]*', content)
     has_test_loop = re.search(r'\.test\(', content)
     if has_global_regex and has_test_loop and not re.search(r'\blastIndex\s*=\s*0', content):
-        warnings.append("Global regex (/g) used with .test() without lastIndex = 0 reset before testing.")
+        warnings.append("Global regex (/g) .test() ile kullanılmış fakat lastIndex = 0 sıfırlaması yapılmamış.")
     
-    # Rule 3: Dummy placeholder redirect check
+    # Kural 3: Sahte yönlendirme kuralı kontrolü
     if "example.com" in content and ("redirect" in content.lower() or "destination" in content.lower()):
-        errors.append("Found placeholder 'example.com' redirect rule which can hijack production traffic.")
+        errors.append("Üretim trafiğini saptırabilecek sahte 'example.com' yönlendirme kuralı tespit edildi.")
     
-    # Rule 4: ReDoS nested quantifier pattern
+    # Kural 4: ReDoS iç içe nicelendirici deseni
     if re.search(r'\([^)]*[*+]\)[*+]', content):
-        warnings.append("Potential ReDoS risk detected (nested quantifier pattern).")
+        warnings.append("Potansiyel ReDoS (düzenli ifade aşırı yüklenme) riski tespit edildi (iç içe nicelendirici deseni).")
         
     is_valid = len(errors) == 0
     return {

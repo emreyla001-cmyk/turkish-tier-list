@@ -1,11 +1,12 @@
 @echo off
-title Antigravity Offline Assistant & Security Arbiter
+chcp 65001 >nul
+title Antigravity Çevrimdışı Asistan & Güvenlik Hakemi
 color 0A
 cls
 
 :MENU
 echo =======================================================================
-echo          ANTIGRAVITY OFFLINE ASSISTANT & MULTI-BRAIN ARBITER
+echo          ANTIGRAVITY ÇEVRİMDİŞİ ASİSTAN & ÇOKLU BEYİN HAKEMİ
 echo =======================================================================
 echo.
 echo   [1] Yerel Çevrimdışı AI İncelemesi Yap (Ollama Llama 3.2 - Plan A)
@@ -35,7 +36,7 @@ echo   YEREL ÇEVRİMDİŞİ AI İNCELEMESİ ÇALIŞTIRILIYOR (Ollama Plan A)...
 echo =======================================================================
 echo.
 cd /d C:\Users\EMRE\Desktop\turkish-tier-list-TAM
-python scripts\ollama_arbiter.py "Son yapılan kod değişikliklerini güvenlik, sınır değerler ve VERIFICATION_RULES.md açısından incele."
+python scripts\ollama_arbiter.py "Son yapılan kod değişikliklerini güvenlik, sınır değerler ve VERIFICATION_RULES.md açısından Türkçe olarak incele."
 echo.
 echo =======================================================================
 echo İnceleme Tamamlandı.
