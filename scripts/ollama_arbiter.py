@@ -8,6 +8,7 @@ Antigravity'yi yerel Ollama yapay zeka modellerine (DeepSeek R1 / Qwen 2.5 Coder
 import subprocess
 import sys
 import json
+import time
 import urllib.request
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -17,7 +18,26 @@ Aşağıdaki kod değişikliğini ve isteği güvenlik açıkları, sınır değ
 0/NaN kontrolü ve VERIFICATION_RULES.md kuralları açısından Türkçe olarak detaylıca incele ve yanıtını 100% Türkçe ver.
 """
 
+def ensure_ollama_running():
+    """Ollama servisi çalışmıyorsa arka planda otomatik başlatır."""
+    try:
+        req = urllib.request.Request("http://localhost:11434/api/version", method='GET')
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            if resp.status == 200:
+                return True
+    except Exception:
+        # Servis kapalıysa 'ollama serve' başlatılır
+        try:
+            subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+            time.sleep(3) # Servisin ısınması için kısa bekleme
+            return True
+        except Exception as e:
+            return False
+    return True
+
 def query_ollama(prompt_text, model="llama3.2:latest"):
+    ensure_ollama_running()
+
     payload = {
         "model": model,
         "prompt": f"{function_prompt}\n\nGörev: {prompt_text}\n\nLütfen tüm analizini ve açıklamalarını Türkçe yaz.",
@@ -31,14 +51,14 @@ def query_ollama(prompt_text, model="llama3.2:latest"):
             headers={'Content-Type': 'application/json'},
             method='POST'
         )
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=45) as response:
             res_data = json.loads(response.read().decode('utf-8'))
             return {"success": True, "output": res_data.get("response", "")}
     except Exception as e:
-        # HTTP servisi başlatılmamışsa veya ısınıyorsa CLI komutuna geçiş yapılır
+        # HTTP servisi yanıt vermezse CLI fallback
         try:
             cmd = f'ollama run {model} "{prompt_text} (Yanıtı Türkçe ver)"'
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=30, shell=True)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=45, shell=True)
             if res.returncode == 0:
                 return {"success": True, "output": res.stdout.strip()}
             return {"success": False, "error": f"Ollama HTTP & CLI Hatası: {str(e)}"}
@@ -57,6 +77,6 @@ if __name__ == "__main__":
         print(res["output"])
     else:
         print("[Ollama Durumu]:", res["error"])
-        print("Not: Çevrimdışı servisi başlatmak için terminalde 'ollama app' veya 'ollama serve' komutunu çalıştırabilirsiniz.")
+        print("Not: Çevrimdışı servisi başlatmak için terminalde 'ollama serve' komutunu çalıştırabilirsiniz.")
 
     print("\n=================================================")
