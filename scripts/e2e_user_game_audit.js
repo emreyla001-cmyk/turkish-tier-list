@@ -1,13 +1,14 @@
 const { chromium } = require('@playwright/test');
 
 (async () => {
-  console.log('🚀 Starting E2E User Game Audit on http://localhost:3000...');
+  console.log('🚀 Starting E2E User Game & Feedback Audit on http://localhost:3000...');
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
 
   const auditResults = {
     headerNav: false,
+    sikayetIstekPage: false,
     arenaCollectionTab: false,
     karakterBilmeceFlow: false,
     draftDuelFlow: false,
@@ -26,26 +27,33 @@ const { chromium } = require('@playwright/test');
 
   try {
     // 1. Home & Header Nav Dropdown Test
-    console.log('📌 Test 1: Home page & Header dropdown...');
+    console.log('📌 Test 1: Home page & Header dropdown clickability...');
     await page.goto('http://localhost:3000/', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
     
-    // Look for dropdown element
-    const dropdownWrap = await page.$('.nav-dropdown-wrap');
-    if (dropdownWrap) {
-      await dropdownWrap.click();
+    const exploreBtn = await page.locator('button:has-text("Diğer Keşfet")');
+    if (await exploreBtn.isVisible()) {
+      await exploreBtn.click();
       await page.waitForTimeout(500);
-      const dropdownMenu = await page.$('.nav-dropdown-menu');
-      const isVisible = dropdownMenu ? await dropdownMenu.isVisible() : false;
-      console.log(`Dropdown Menu Visiblity: ${isVisible}`);
+      const dropdownMenu = await page.locator('.nav-explore-dropdown');
+      const isVisible = await dropdownMenu.isVisible();
+      console.log(`Dropdown Menu Visibility: ${isVisible}`);
       auditResults.headerNav = isVisible;
-    } else {
-      console.log('Dropdown wrap not found, checking mobile or standard nav...');
-      auditResults.headerNav = true;
     }
 
-    // 2. Kart Oyunu & Koleksiyon Tab Test
-    console.log('📌 Test 2: Kart Oyunu Arena & Koleksiyon Tab...');
+    // 2. Şikayet & İstek Page Test
+    console.log('📌 Test 2: Şikayet & İstek Page & Submission...');
+    await page.goto('http://localhost:3000/sikayet-istek', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
+    
+    const pageTitle = await page.locator('text=Şikayet & İstek Paneli');
+    if (await pageTitle.isVisible()) {
+      auditResults.sikayetIstekPage = true;
+      console.log('Şikayet & İstek Paneli rendered successfully!');
+    }
+
+    // 3. Kart Oyunu & Koleksiyon Tab Test
+    console.log('📌 Test 3: Kart Oyunu Arena & Koleksiyon Tab...');
     await page.goto('http://localhost:3000/kart-oyunu', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
     
@@ -53,13 +61,13 @@ const { chromium } = require('@playwright/test');
     if (await collectionBtn.isVisible()) {
       await collectionBtn.click();
       await page.waitForTimeout(1000);
-      const albumContent = await page.locator('text=Koleksiyon Albumü').or(page.locator('text=Kart')).first();
+      const albumContent = await page.locator('text=Koleksiyon Albümü').or(page.locator('text=Deste Oluşturma')).first();
       auditResults.arenaCollectionTab = await albumContent.isVisible();
       console.log(`Arena Collection Tab Rendered: ${auditResults.arenaCollectionTab}`);
     }
 
-    // 3. Karakter Bilmece Test
-    console.log('📌 Test 3: Karakter Bilmece Game Flow...');
+    // 4. Karakter Bilmece Test
+    console.log('📌 Test 4: Karakter Bilmece Game Flow...');
     await page.goto('http://localhost:3000/oyunlar/karakter-bilmece', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
     
@@ -67,18 +75,14 @@ const { chromium } = require('@playwright/test');
     if (searchInput) {
       await searchInput.type('Polat');
       await page.waitForTimeout(500);
-      const searchItem = await page.locator('.card button, .card div').first();
-      if (await searchItem.isVisible()) {
-        console.log('Selected guess card from search');
-      }
       auditResults.karakterBilmeceFlow = true;
     } else {
       console.log('Daily plays quota active or modal present');
       auditResults.karakterBilmeceFlow = true;
     }
 
-    // 4. Draft Duel Test
-    console.log('📌 Test 4: Draft Duel Game Flow...');
+    // 5. Draft Duel Test
+    console.log('📌 Test 5: Draft Duel Game Flow...');
     await page.goto('http://localhost:3000/oyunlar/draft-duel', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
 
@@ -87,7 +91,6 @@ const { chromium } = require('@playwright/test');
       await startBtn.click();
       await page.waitForTimeout(1000);
       
-      // Select 4 cards in drafting round
       for (let round = 0; round < 4; round++) {
         const pickBtn = await page.locator('button:has-text("Kendime Al")').first();
         if (await pickBtn.isVisible()) {
@@ -96,14 +99,12 @@ const { chromium } = require('@playwright/test');
         }
       }
 
-      // Joker reveal button
       const arenaBtn = await page.locator('button:has-text("Arenaya Gir")');
       if (await arenaBtn.isVisible()) {
         await arenaBtn.click();
         await page.waitForTimeout(1000);
       }
 
-      // Play a card into the arena
       const playCard = await page.locator('.card img').first();
       if (await playCard.isVisible()) {
         await playCard.click();
