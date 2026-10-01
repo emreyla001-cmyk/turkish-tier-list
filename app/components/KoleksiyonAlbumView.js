@@ -314,7 +314,7 @@ export default function KoleksiyonAlbumView() {
       {loading ? (
         <div className="empty">Koleksiyon albümü ve envanter yükleniyor...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+        <div className="stagger-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
           {filteredCharacters.map((c) => {
             const isOwned = ownedCardIds.includes(c.id);
             const isClaimed = claimedAlbumCardIds.includes(c.id);
@@ -324,7 +324,7 @@ export default function KoleksiyonAlbumView() {
             return (
               <div
                 key={c.id}
-                className="poster-card"
+                className="poster-card stagger-in"
                 style={{
                   opacity: isOwned ? 1 : 0.45,
                   filter: isOwned ? 'none' : 'grayscale(0.9) brightness(0.65)',
