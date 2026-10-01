@@ -5,7 +5,8 @@
 ---
 
 ## 1. Proje Kimliği ve Teknolojiler
-* **Proje:** Turkish Tier List (Türkiye Pop-Kültür, Dizi, Film ve Karakter Tier Listesi & Kart Oyunu)
+* **Kurucu & Ürün Sahibi:** Ahmet Emre Yılmaz (07/12/2003, Adana/Yüreğir)
+* **Proje:** Turkish Tier List (Türkiye Pop-Kültür, Dizi, Film, Tarih ve Karakter Tier Listesi & Kart Oyunu)
 * **Teknoloji Yığını:** Next.js 14 (App Router), React 18, Tailwind CSS, Supabase, Playwright E2E, ChromaDB Vector Memory.
 * **Klasör Konumu:** `C:\Users\EMRE\Desktop\turkish-tier-list-TAM`
 * **Canlı Dal (Production):** GitHub `main` -> Railway (`https://turkish-tier-list-web-production.up.railway.app/`)
