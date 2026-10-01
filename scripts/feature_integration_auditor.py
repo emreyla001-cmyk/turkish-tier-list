@@ -27,9 +27,9 @@ EXCLUDED_ROUTES = {
 }
 
 ROUTE_LABELS = {
-    'oyunlar': '🎮 Oyunlar',
-    'vs': 'VS Arenası',
-    'kart-oyunu': 'Kart Oyunu',
+    'oyunlar': 'Oyunlar',
+    'vs': 'Karakter Karşılaşması',
+    'kart-oyunu': 'Arena',
     'koleksiyon': 'Koleksiyon',
     'kaos': 'Kaos Duvarı',
     'magaza': 'Mağaza',

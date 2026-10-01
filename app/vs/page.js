@@ -153,7 +153,7 @@ export default function VersusPage() {
       <div className="section-head text-center" style={{ marginTop: '28px' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <span className="kicker kicker-red" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span>🤖</span> YAPAY ZEKA HAKEMLİ DÜELLO ARENASI
+            <span>🤖</span> YAPAY ZEKA HAKEMLİ KARAKTER KARŞILAŞMASI
           </span>
           <button
             type="button"
