@@ -159,14 +159,15 @@ export async function POST(req) {
 
     // 4. KLAN PUANI (CP) KAZANMA
     if (action === 'contribute_cp') {
-      const { user_id, points = 50 } = body;
+      const { user_id, points } = body;
       const authHeader = req.headers.get('authorization') || req.headers.get('x-user-id');
       if (!authHeader && !user_id) {
         return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
       }
 
-      // Boundary Check: Negative points strictly prevented
-      const numericPoints = Math.max(0, Math.min(1000, Number(points) || 50));
+      // Boundary & Falsy Check: Handle 0, NaN, invalid types, and default 50 only if undefined
+      const parsedPoints = points === undefined ? 50 : Number(points);
+      const numericPoints = isNaN(parsedPoints) ? 0 : Math.max(0, Math.min(1000, Math.floor(parsedPoints)));
       const clan = clans.find((c) => c.members?.some((m) => m.id === user_id));
       if (clan) {
         clan.points = (clan.points || 0) + numericPoints;
