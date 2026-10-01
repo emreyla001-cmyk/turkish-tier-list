@@ -13,6 +13,7 @@ export default function HeaderNav() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [openUserDropdown, setOpenUserDropdown] = useState(false);
+  const [openExploreDropdown, setOpenExploreDropdown] = useState(false);
   const navRef = useRef(null);
   const pathname = usePathname();
 
@@ -80,6 +81,7 @@ export default function HeaderNav() {
     const handleClickOutside = (e) => {
       if (navRef.current && !navRef.current.contains(e.target)) {
         setOpenUserDropdown(false);
+        setOpenExploreDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -102,23 +104,31 @@ export default function HeaderNav() {
   const frameGrad = resolveFrame(profile?.equipped_frame);
   const nameColor = resolveNameColor(profile?.equipped_name_color);
 
-  const navLinks = [
+  const mainNavLinks = [
     { href: '/', label: 'Ana Sayfa' },
-    { href: '/oyunlar', label: 'Oyunlar' },
+    { href: '/tier-sistemi', label: 'Tier Sistemi' },
     { href: '/vs', label: 'Karakter Karşılaşması' },
     { href: '/kart-oyunu', label: 'Arena' },
-    { href: '/koleksiyon', label: 'Koleksiyon' },
-    { href: '/kaos', label: 'Kaos Duvarı' },
     { href: '/magaza', label: 'Mağaza' },
-    { href: '/klanlar', label: 'Klanlar' },
-    { href: '/hakkinda', label: 'Hakkında' },
   ];
+
+  const exploreSubLinks = [
+    { href: '/oyunlar', label: 'Mini Oyunlar', desc: 'Bilmece, Kim Alır & Düellolar' },
+    { href: '/koleksiyon', label: 'Koleksiyon Albümü', desc: 'Açılan kartlar ve albüm ödülleri' },
+    { href: '/klanlar', label: 'Klanlar & Loncalar', desc: 'Topluluk klanları ve rekabet' },
+    { href: '/kaos', label: 'Kaos Duvarı', desc: 'Rastgele kart kapışmaları' },
+    { href: '/gorevler', label: 'Görevler', desc: 'Günlük görevler ve rozetler' },
+    { href: '/cekilis', label: 'Çarkıfelek', desc: 'Günlük şans çarkı' },
+    { href: '/hakkinda', label: 'Hakkında', desc: 'Adil kullanım ve sistem rehberi' },
+  ];
+
+  const isExploreActive = exploreSubLinks.some(link => pathname === link.href);
 
   return (
     <nav className="unified-nav-row" ref={navRef}>
-      {/* TEK DÜZ ÇİZGİ MENÜ LİNKLERİ (MERLİNTOON / UZAYMANGA MODELİ) */}
+      {/* ÜST DÜZEY GEZİNTİ MENÜSÜ */}
       <div className="unified-nav-links">
-        {navLinks.map((link) => {
+        {mainNavLinks.map((link) => {
           const isActive = pathname === link.href;
           return (
             <a
@@ -130,6 +140,42 @@ export default function HeaderNav() {
             </a>
           );
         })}
+
+        {/* ALT KADEME / DİĞER KEŞFET DROPDOWN */}
+        <div className="nav-dropdown-wrap">
+          <button
+            type="button"
+            className={`unified-nav-item nav-explore-btn ${isExploreActive ? 'active' : ''}`}
+            onClick={() => setOpenExploreDropdown(!openExploreDropdown)}
+            onMouseEnter={() => setOpenExploreDropdown(true)}
+          >
+            Diğer Keşfet <span style={{ fontSize: '.75rem', marginLeft: '4px' }}>▾</span>
+          </button>
+
+          {openExploreDropdown && (
+            <div
+              className="nav-dropdown-menu nav-explore-dropdown"
+              onMouseLeave={() => setOpenExploreDropdown(false)}
+            >
+              {exploreSubLinks.map((sub) => {
+                const isSubActive = pathname === sub.href;
+                return (
+                  <a
+                    key={sub.href}
+                    href={sub.href}
+                    onClick={() => setOpenExploreDropdown(false)}
+                    className={`dropdown-item ${isSubActive ? 'active' : ''}`}
+                  >
+                    <div>
+                      <strong style={{ color: isSubActive ? 'var(--accent)' : 'inherit' }}>{sub.label}</strong>
+                      <p>{sub.desc}</p>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* SAĞ TARAF: TEMA & PROFİL */}
