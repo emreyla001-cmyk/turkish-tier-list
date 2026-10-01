@@ -20,43 +20,128 @@
 html.light {
   --bg: #f8fafc;
   --bg-2: #f1f5f9;
-  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card: #ffffff;
   --card: #ffffff;
-  --card-hover: #e2e8f0;
-  --border: rgba(0, 0, 0, 0.12);
+  --card-hover: #f1f5f9;
+  --border: rgba(15, 23, 42, 0.12);
+  --border-focus: rgba(2, 132, 199, 0.6);
   --text: #0f172a;
   --text-dim: #475569;
   --text-light: #1e293b;
+  --accent: #0284c7;
+  --accent-2: #7c3aed;
+  --accent-gold: #d97706;
+  --accent-glow: rgba(2, 132, 199, 0.15);
+}
+
+html.light body {
+  background-color: #f8fafc !important;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(2, 132, 199, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(217, 119, 6, 0.06) 0px, transparent 50%) !important;
+  color: #0f172a !important;
+}
+
+html.light body::before,
+html.light body::after {
+  opacity: 0.25 !important;
 }
 
 html.light h1, 
 html.light h2, 
 html.light h3, 
 html.light h4, 
+html.light h5, 
+html.light h6, 
 html.light .brand-title, 
 html.light .poster-name, 
 html.light .hero-spotlight-title, 
 html.light .fighter-meta h3, 
 html.light .card h3, 
-html.light .section-head h2 {
+html.light .section-head h2,
+html.light .dropdown-item strong,
+html.light .tier-page-hero h1,
+html.light .tier-group h2,
+html.light .tier-row .nm {
   color: #0f172a !important;
 }
 
+html.light p, 
+html.light label, 
 html.light .poster-series, 
 html.light .section-head p, 
 html.light .card p, 
-html.light .unified-nav-item, 
+html.light .ds,
+html.light .footer-copy,
 html.light .footer-links-grid a {
-  color: #475569;
+  color: #334155 !important;
 }
 
-html.light .poster-details {
-  background: #ffffff;
+html.light .unified-nav-item {
+  color: #334155 !important;
+}
+
+html.light .unified-nav-item:hover,
+html.light .unified-nav-item.active {
+  color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.08) !important;
+}
+
+html.light .card,
+html.light .poster-details,
+html.light .tier-group,
+html.light .user-nav-pill-unified,
+html.light .vs-card,
+html.light .album-card,
+html.light .character-card,
+html.light .spotlight-search-box,
+html.light .mobile-bottom-nav {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .nav-dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.14) !important;
+}
+
+html.light .dropdown-item {
+  color: #0f172a !important;
+}
+
+html.light .dropdown-item:hover {
+  background: #f1f5f9 !important;
+}
+
+html.light .dropdown-divider {
+  border-bottom-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+html.light input,
+html.light select,
+html.light textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 html.light .site-header {
-  background: rgba(255, 255, 255, 0.94);
-  border-bottom-color: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+html.light .site-footer {
+  background: #f1f5f9 !important;
+  border-top-color: rgba(15, 23, 42, 0.1) !important;
 }
 
 * { box-sizing: border-box; }
@@ -1258,38 +1343,38 @@ a { color: inherit; text-decoration: none; }
 a.card { transition: transform .15s, background .15s, border-color .15s; }
 a.card:hover { transform: translateY(-3px); background: var(--card-hover); border-color: #3a4258; }
 
-/* Tier Rozetleri (Modern Cyberpunk / Sora Tipografi & Metalik Gradiyentler) */
+/* Tier Rozetleri (Chakra Petch & Rajdhani Gaming Tipografisi & Metalik Gradiyentler) */
 .tier-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 28px;
-  padding: 0 11px;
+  min-width: 38px;
+  height: 30px;
+  padding: 0 12px;
   border-radius: 8px;
-  font-family: 'Sora', system-ui, sans-serif;
-  font-weight: 900;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
+  font-family: 'Chakra Petch', 'Rajdhani', 'Unbounded', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #0d1117;
   white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 3px 8px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
 }
 
 .tier-badge:hover {
-  transform: translateY(-1px) scale(1.03);
+  transform: translateY(-2px) scale(1.04);
 }
 
 .tier-badge.lg {
-  height: 38px;
-  padding: 0 18px;
-  font-size: 1.05rem;
+  height: 42px;
+  padding: 0 20px;
+  font-size: 1.12rem;
   border-radius: 10px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 /* Tier Gradiyent Renk Kümeleri */

@@ -32,8 +32,8 @@ def log(msg, level="INFO"):
     print(f"[{symbol} {level}] {msg}")
 
 def run_cmd(cmd_str, cwd=PROJECT_DIR):
-    res = subprocess.run(cmd_str, shell=True, capture_output=True, text=True, cwd=cwd)
-    return res.returncode, res.stdout, res.stderr
+    res = subprocess.run(cmd_str, shell=True, capture_output=True, encoding="utf-8", errors="replace", cwd=cwd)
+    return res.returncode, res.stdout or "", res.stderr or ""
 
 # ========================================================
 # 1. CLIENT DIRECTIVE INSPECTOR & AUTO-FIXER

@@ -15,9 +15,18 @@ import json
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP_DIR = os.path.join(PROJECT_DIR, "app")
 
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 def log(msg, level="INFO"):
     symbol = "🔗" if level == "INFO" else ("🛠️" if level == "FIX" else ("⚠️" if level == "WARN" else "✅"))
-    print(f"[{symbol} {level}] {msg}")
+    try:
+        print(f"[{symbol} {level}] {msg}")
+    except Exception:
+        print(f"[{level}] {msg}")
 
 # ========================================================
 # 1. PAGE ROUTE TO HEADER NAVIGATION INTEGRATION AUDITOR
@@ -27,13 +36,14 @@ EXCLUDED_ROUTES = {
 }
 
 ROUTE_LABELS = {
-    'oyunlar': 'Oyunlar',
+    'tier-sistemi': 'Tier Sistemi',
+    'oyunlar': 'Mini Oyunlar',
     'vs': 'Karakter Karşılaşması',
     'kart-oyunu': 'Arena',
-    'koleksiyon': 'Koleksiyon',
+    'koleksiyon': 'Koleksiyon Albümü',
     'kaos': 'Kaos Duvarı',
     'magaza': 'Mağaza',
-    'klanlar': 'Klanlar',
+    'klanlar': 'Klanlar & Loncalar',
     'hakkinda': 'Hakkında',
     'gorevler': '🎯 Görevler',
     'cekilis': '🎡 Çarkıfelek'
