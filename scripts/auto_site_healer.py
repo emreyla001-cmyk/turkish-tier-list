@@ -152,6 +152,23 @@ def audit_api_routes():
     return code == 0
 
 # ========================================================
+# 4B. PLAYWRIGHT LIVE BROWSER HEALTH SCANNER (CLAUDE INTEGRATION)
+# ========================================================
+def run_live_browser_health_scan(target_url="http://localhost:3004"):
+    log(f"Running Playwright Headless Browser Site Health Scan on {target_url}...")
+    scan_script = os.path.join(PROJECT_DIR, "scripts", "site_health_scan.js")
+    if not os.path.exists(scan_script):
+        log("site_health_scan.js script not found, skipping...", level="WARN")
+        return 0
+
+    code, out, err = run_cmd(f"node scripts/site_health_scan.js {target_url}")
+    if code == 0:
+        log("Playwright Live Browser Scan completed.", level="INFO")
+    else:
+        log("Playwright Scan notice: Dev server might not be running on port or offline.", level="WARN")
+    return code == 0
+
+# ========================================================
 # 5. SELF-HEALING BUILD LOOP (AUTOMATED COMPILATION)
 # ========================================================
 def self_heal_build_loop(max_attempts=4):
