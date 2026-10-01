@@ -11,6 +11,7 @@ import { GACHA_PACKS, drawCardsFromPack, getPackOddsText } from '../lib/gachaEng
 import { cardAudio } from '../lib/cardAudio';
 import { getCardRarity, getStarInfo } from '../lib/cardRarity';
 import PackOpeningCinematic from '../components/PackOpeningCinematic';
+import PackVisualCard from '../components/PackVisualCard';
 
 const KIND_LABEL = {
   packs: '🃏 Tier Kart Paketleri (Gacha)',
@@ -1271,13 +1272,14 @@ export default function MagazaPage() {
                 >
                   <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(230, 179, 37, 0.25), transparent)', pointerEvents: 'none' }} />
 
-                  <div>
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
                       <span className="tag" style={{ background: pack.badgeColor, color: '#000', fontWeight: 900, fontSize: '.75rem', letterSpacing: '.05em', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
                         {pack.badge}
                       </span>
                     </div>
-                    <div style={{ fontSize: '3.5rem', marginBottom: '12px', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }}>{pack.icon}</div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <PackVisualCard pack={pack} isOpening={openingPackId === pack.id} onOpen={() => handleOpenPack(pack)} />
+                    </div>
                     <h3 style={{ fontSize: '1.2rem', margin: '0 0 6px', color: '#fff', fontWeight: 900 }}>{pack.name}</h3>
                     <p style={{ fontSize: '.84rem', color: 'var(--text-dim)', minHeight: '44px', lineHeight: 1.45 }}>
                       {pack.desc}
@@ -1294,7 +1296,6 @@ export default function MagazaPage() {
                     <div style={{ margin: '14px 0', fontSize: '1.3rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                       <CoinIcon size={22} /> {pack.price.toLocaleString('tr-TR')}
                     </div>
-                  </div>
 
                   <button
                     type="button"

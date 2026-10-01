@@ -11,6 +11,7 @@ import { CoinIcon, EnergyIcon, SwordsIcon, TrophyIcon, ShieldIcon, FireIcon } fr
 import { GACHA_PACKS, drawCardsFromPack, getPackOddsText } from '../lib/gachaEngine';
 import KoleksiyonAlbumView from '../components/KoleksiyonAlbumView';
 import PackOpeningCinematic from '../components/PackOpeningCinematic';
+import PackVisualCard from '../components/PackVisualCard';
 
 export default function KartOyunuHub() {
   const [user, setUser] = useState(undefined);
@@ -680,13 +681,14 @@ export default function KartOyunuHub() {
                   transition: 'all .3s ease',
                 }}
               >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
-                    <span className="tag" style={{ background: pack.badgeColor, color: '#000', fontWeight: 900, fontSize: '.75rem' }}>
-                      {pack.badge}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '3.2rem', marginBottom: '10px' }}>{pack.icon}</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                      <span className="tag" style={{ background: pack.badgeColor, color: '#000', fontWeight: 900, fontSize: '.75rem' }}>
+                        {pack.badge}
+                      </span>
+                    </div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <PackVisualCard pack={pack} isOpening={openingPackId === pack.id} onOpen={() => handleOpenPack(pack)} />
+                    </div>
                   <h3 style={{ fontSize: '1.15rem', margin: '0 0 6px', color: '#fff' }}>{pack.name}</h3>
                   <p style={{ fontSize: '.82rem', color: 'var(--text-dim)', minHeight: '44px', lineHeight: 1.4 }}>
                     {pack.desc}
@@ -703,7 +705,6 @@ export default function KartOyunuHub() {
                   <div style={{ margin: '14px 0', fontSize: '1.25rem', fontWeight: 900, color: '#fef08a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                     <CoinIcon size={20} /> {pack.price.toLocaleString('tr-TR')}
                   </div>
-                </div>
 
                 <button
                   type="button"
