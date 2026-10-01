@@ -108,6 +108,9 @@ function ProfilContent() {
   const [profile, setProfile] = useState(null);
   const [userBadges, setUserBadges] = useState([]);
   const [showcaseCards, setShowcaseCards] = useState([]);
+  const [allOwnedCards, setAllOwnedCards] = useState([]);
+  const [isEditingFlex, setIsEditingFlex] = useState(false);
+  const [flexSelectedIds, setFlexSelectedIds] = useState([]);
   const [ownedItems, setOwnedItems] = useState(new Set());
   const [trophies, setTrophies] = useState(150);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'cosmetics' | 'flex' | 'security'
@@ -143,12 +146,13 @@ function ProfilContent() {
 
       // Flex Vitrini Kartlarını Getir
       const cardIds = Array.isArray(u.user_metadata?.card_collection) ? u.user_metadata.card_collection : [];
+      const customFlexIds = Array.isArray(u.user_metadata?.flex_showcase_ids) ? u.user_metadata.flex_showcase_ids : [];
       const upgrades = u.user_metadata?.card_upgrades || {};
       if (cardIds.length > 0) {
         supabase
           .from('characters')
           .select('id, name, series, tier, power_score, speed_score, durability_score, image_url')
-          .in('id', cardIds.slice(0, 30))
+          .in('id', cardIds.slice(0, 50))
           .then(({ data: chars }) => {
             if (chars && chars.length > 0) {
               const enriched = chars.map((c) => {
@@ -162,7 +166,17 @@ function ProfilContent() {
                 const scoreB = (b.awakened || 0) * 10 + (b.stars || 1);
                 return scoreB - scoreA;
               });
-              setShowcaseCards(enriched.slice(0, 3));
+
+              setAllOwnedCards(enriched);
+
+              if (customFlexIds.length > 0) {
+                const chosen = customFlexIds.map((cid) => enriched.find((item) => item.id === cid)).filter(Boolean);
+                setShowcaseCards(chosen.length > 0 ? chosen : enriched.slice(0, 3));
+                setFlexSelectedIds(customFlexIds);
+              } else {
+                setShowcaseCards(enriched.slice(0, 3));
+                setFlexSelectedIds(enriched.slice(0, 3).map((item) => item.id));
+              }
             }
           })
           .catch(() => {});
@@ -258,6 +272,40 @@ function ProfilContent() {
       window.removeEventListener('cosmetics-updated', handleProfileSync);
     };
   }, []);
+
+  function toggleFlexSelection(cardId) {
+    setFlexSelectedIds((prev) => {
+      if (prev.includes(cardId)) {
+        return prev.filter((id) => id !== cardId);
+      }
+      if (prev.length >= 3) {
+        say('flex', 'Vitrininde en fazla 3 adet kart sergileyebilirsin. Önce birini kaldırıp yenisini seçmelisin.');
+        return prev;
+      }
+      say('flex', '');
+      return [...prev, cardId];
+    });
+  }
+
+  async function saveFlexShowcase() {
+    if (!user) return;
+    if (flexSelectedIds.length === 0) {
+      say('flex', 'Lütfen vitrinde sergilemek için en az 1 kart seç.');
+      return;
+    }
+    say('flex', 'Flex vitrinin güncelleniyor...');
+    try {
+      await supabase.auth.updateUser({
+        data: { flex_showcase_ids: flexSelectedIds }
+      });
+      const chosen = flexSelectedIds.map((cid) => allOwnedCards.find((item) => item.id === cid)).filter(Boolean);
+      setShowcaseCards(chosen);
+      setIsEditingFlex(false);
+      say('flex', 'Vitrin başarımınız başarıyla kaydedildi!');
+    } catch (err) {
+      say('flex', 'Kaydedilemedi: ' + (err.message || ''));
+    }
+  }
 
   async function saveUsername(e) {
     e.preventDefault();
@@ -1065,16 +1113,89 @@ function ProfilContent() {
             </div>
           </div>
 
-          {/* En Güçlü 3 Kart Vitrini */}
+          {/* Vitrinde Sergilenen Kartlar */}
           <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>🃏</span> Vitrindeki En Güçlü Uyanmış Kartların
+                <span>🃏</span> Vitrininde Sergilenen Kartların
               </h3>
-              <span className="tag" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fef08a', fontWeight: 800 }}>
-                {showcaseCards.length} / 3 Kart Sergileniyor
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span className="tag" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fef08a', fontWeight: 800 }}>
+                  {showcaseCards.length} / 3 Kart
+                </span>
+                <button
+                  type="button"
+                  className={`btn ${isEditingFlex ? 'btn-ghost' : 'btn-spotlight-primary'}`}
+                  style={{ fontSize: '.82rem', padding: '6px 14px' }}
+                  onClick={() => setIsEditingFlex(!isEditingFlex)}
+                >
+                  {isEditingFlex ? '✖ İptal Et' : '✏️ Vitrini Düzenle / Kart Seç'}
+                </button>
+              </div>
             </div>
+
+            {/* DÜZENLEME PANELİ (KULLANICI KENDİ KARTLARINI SEÇER) */}
+            {isEditingFlex && (
+              <div
+                style={{
+                  padding: '18px',
+                  borderRadius: '14px',
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--accent)',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div>
+                    <h4 style={{ margin: 0, color: 'var(--accent)' }}>Vitrinde Gösterilecek 3 Kartını Seç:</h4>
+                    <p style={{ margin: '2px 0 0', fontSize: '.8rem', color: 'var(--text-dim)' }}>
+                      Sahip olduğun albümdeki kartlardan sergilemek istediğin 3 karta tıkla ve kaydet.
+                    </p>
+                  </div>
+                  <button type="button" className="btn btn-spotlight-primary" style={{ fontSize: '.8rem', padding: '6px 16px' }} onClick={saveFlexShowcase}>
+                    ✓ Seçimleri Kaydet
+                  </button>
+                </div>
+
+                {msg.flex && <p style={{ fontSize: '.82rem', color: 'var(--accent)', marginBottom: '10px' }}>{msg.flex}</p>}
+
+                {allOwnedCards.length === 0 ? (
+                  <div style={{ fontSize: '.85rem', color: 'var(--text-dim)' }}>Koleksiyonunda henüz kart bulunmuyor.</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
+                    {allOwnedCards.map((c) => {
+                      const isSel = flexSelectedIds.includes(c.id);
+                      return (
+                        <div
+                          key={c.id}
+                          onClick={() => toggleFlexSelection(c.id)}
+                          style={{
+                            padding: '8px',
+                            borderRadius: '10px',
+                            border: isSel ? '2px solid var(--accent)' : '1px solid var(--border)',
+                            background: isSel ? 'rgba(230, 179, 37, 0.15)' : 'var(--bg-3)',
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                            position: 'relative',
+                          }}
+                        >
+                          {isSel && (
+                            <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--accent)', color: '#000', borderRadius: '50%', width: '18px', height: '18px', fontSize: '.7rem', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              ✓
+                            </div>
+                          )}
+                          <img src={c.image_url || '/placeholder.png'} alt={c.name} style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px' }} />
+                          <div style={{ fontSize: '.75rem', fontWeight: 700, marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {c.name}
+                          </div>
+                          <span style={{ fontSize: '.68rem', color: 'var(--text-dim)' }}>{c.tier}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {showcaseCards.length === 0 ? (
               <div style={{ padding: '36px', textAlign: 'center', background: 'var(--bg-2)', borderRadius: '12px' }}>
