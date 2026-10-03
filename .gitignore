@@ -39,3 +39,17 @@ data/*.json
 supabase_yedek_*.sql
 supabase_ekonomi_fix.sql
 _backup_*.sql
+# --- 3 Ekim 2026 eklendi ---
+# Gelistirme sirasinda uretilen gecici test ciktilari (ekran goruntusu, konsol)
+.scratch/
+
+# Veri semasi + guvenlik acigi detayi tasiyor, repo PUBLIC
+supabase_rls_fix.sql
+supabase_rls_*.sql
+
+# Gecici calisma dosyalari
+build_output.txt
+claude_request.txt
+karanlik_olc.js
+fix_handlers.ps1
+fix_jsx.ps1

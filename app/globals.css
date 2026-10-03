@@ -2692,3 +2692,30 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
 
 
 
+
+/* ============================================================
+   MOTION — sayfa gecisi + scroll reveal (MotionRoot / template)
+   ============================================================ */
+
+/* Sayfa gecis: template.js her sayfa gecisinde yeniden mount olur */
+.sayfa-giris {
+  animation: sayfa-giris .42s cubic-bezier(.22,.9,.28,1) both;
+}
+@keyframes sayfa-giris {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Scroll reveal: MotionRoot bu ogeleri GSAP ile animat eder.
+   JS kapali kalirsa (veya yuklenmezse) gorunur kalsin diye
+   yalnizca opacity:0 veriyoruz; yukse sorumlulugu devrede.
+   reduced-motion altinda bu kural devre disi birakilir. */
+[data-reveal],
+[data-stagger] > * {
+  will-change: opacity, transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sayfa-giris { animation: none; }
+  [data-reveal],
+  [data-stagger] > * { opacity: 1 !important; transform: none !important; }
+}
