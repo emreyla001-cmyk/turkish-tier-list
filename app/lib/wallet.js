@@ -94,7 +94,10 @@ export function getEffectiveXP(user, profile) {
     ? Number(localStorage.getItem(`user_xp_${user.id}`))
     : null;
 
-  const validValues = [metaXp, profileXp, localXp].filter((v) => v !== null && !isNaN(v) && v >= 0);
+  // user_metadata.xp ARTIK OKUNMUYOR (hile vektoru: kullanici metadata'yi
+  // serbestce yazabiliyor). Tek dogruluk kaynagi: public.profiles.xp
+  // localXp yalnizca sayfa yenileme arasi gecici gosterim icin tutulur.
+  const validValues = [profileXp, localXp].filter((v) => v !== null && !isNaN(v) && v >= 0);
   if (validValues.length === 0) return 0;
   return Math.max(...validValues);
 }

@@ -42,9 +42,7 @@ export default function KlanlarPage() {
           .eq('id', u.id)
           .maybeSingle();
 
-        const userCoins = u.user_metadata?.coins !== undefined
-          ? Number(u.user_metadata.coins)
-          : Number(p?.coins || 0);
+        const userCoins = Number(p?.coins || 0);
 
         setProfile(p ? { ...p, coins: userCoins } : {
           id: u.id,

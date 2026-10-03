@@ -53,9 +53,7 @@ export default function KartOyunuHub() {
           .eq('id', u.id)
           .maybeSingle();
 
-        const currentCoins = u.user_metadata?.coins !== undefined
-          ? Number(u.user_metadata.coins)
-          : Number(p?.coins || 0);
+        const currentCoins = Number(p?.coins || 0);
 
         setProfile(p ? { ...p, coins: currentCoins } : { id: u.id, username: u.user_metadata?.username || 'Kullanıcı', coins: currentCoins, xp: 0 });
 
@@ -101,9 +99,7 @@ export default function KartOyunuHub() {
 
   async function handleBuyPotion() {
     if (!user) return;
-    const currentCoins = user.user_metadata?.coins !== undefined
-      ? Number(user.user_metadata.coins)
-      : Number(profile?.coins || 0);
+    const currentCoins = Number(profile?.coins || 0);
 
     const res = await buyStaminaPotion(user, currentCoins);
     if (res.success) {
@@ -121,9 +117,7 @@ export default function KartOyunuHub() {
   async function handleOpenPack(pack) {
     setMsg(null);
 
-    const currentCoins = user?.user_metadata?.coins !== undefined
-      ? Number(user.user_metadata.coins)
-      : Number(profile?.coins || 0);
+    const currentCoins = Number(profile?.coins || 0);
 
     // Eğer oturum veya bakiye yoksa da sinematik animasyonu başlat ve göster (Demo modu)
     if (!user || !profile || currentCoins < pack.price) {
