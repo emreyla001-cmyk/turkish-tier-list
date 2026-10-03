@@ -38,11 +38,11 @@ export default async function HomePage() {
       {count > 0 ? (
         <HeroSpotlight featuredCharacters={spotlightChars} />
       ) : (
-        <section className="hero">
+        <section className="hero" data-hero>
           <div className="wrap">
-            <span className="kicker">Türk Kurgusunun Güç Sıralaması</span>
-            <h1>Türk dizi ve filmlerinin karakterleri ne kadar güçlü?</h1>
-            <p>
+            <span className="kicker" data-hero-part>Türk Kurgusunun Güç Sıralaması</span>
+            <h1 data-hero-part>Türk dizi ve filmlerinin karakterleri ne kadar güçlü?</h1>
+            <p data-hero-part>
               Karakterlerin güç, zeka, hız ve dayanıklılık değerlerini gerekçeleri ve kaynak sahneleriyle birlikte incele.
             </p>
           </div>
@@ -110,7 +110,7 @@ export default async function HomePage() {
         {count >= 2 && <VersusDuel characters={list} />}
 
         {/* Ana Karakterler Bölümü & 3:4 Poster Izgarası */}
-        <section className="section" id="karakterler">
+        <section className="section" id="karakterler" data-reveal>
           <div className="section-head">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
               <div>

@@ -6,6 +6,7 @@ import BanGuard from './components/BanGuard';
 import SpotlightSearch from './components/SpotlightSearch';
 import MobileNav from './components/MobileNav';
 import BDSNAmbientCanvas from './components/BDSNAmbientCanvas';
+import MotionRoot from './components/MotionRoot';
 
 export const metadata = {
   title: {
@@ -24,7 +25,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr">
+    <html lang="tr" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/logo.jpg" type="image/jpeg" />
         <link rel="apple-touch-icon" href="/logo.jpg" />
@@ -34,6 +35,24 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Manrope:wght@400;500;600;700;800&family=Rajdhani:wght@600;700;800&family=Sora:wght@600;700;800;900&family=Unbounded:wght@700;800;900&display=swap"
           rel="stylesheet"
         />
+
+        {/* TEMA — React hydrate OLMADAN uygulanir.
+            Yoksa sayfa once koyu cizilir, sonra `light` class'i eklenir
+            -> acik temada kullanici bir anlik koyu flash (FOUC) gorur.
+            Kayit yoksa sistem tercihine (prefers-color-scheme) uyar. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{
+              var t=localStorage.getItem('theme');
+              if(t!=='light'&&t!=='dark'){
+                t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
+              }
+              var r=document.documentElement;
+              r.classList.remove('dark','light');
+              r.classList.add(t);
+            }catch(e){document.documentElement.classList.add('dark');}})();`,
+          }}
+        />
       </head>
       <body>
         {/* Klavye ve ekran okuyucu kullanicilari icin: ilk Tab'da icerige atla.
@@ -41,6 +60,7 @@ export default function RootLayout({ children }) {
         <a href="#ana-icerik" className="skip-link">İçeriğe geç</a>
 
         <BDSNAmbientCanvas />
+        <MotionRoot />
         <Heartbeat />
         <BanGuard />
 
