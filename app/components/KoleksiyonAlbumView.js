@@ -67,7 +67,7 @@ export default function KoleksiyonAlbumView() {
 
         const { data: prof } = await supabase
           .from('profiles')
-          .select('id, username, coins, xp, inventory')
+          .select('id, username, coins, xp')
           .eq('id', u.id)
           .maybeSingle();
 
@@ -75,10 +75,12 @@ export default function KoleksiyonAlbumView() {
         const effectiveXp = getEffectiveXP(u, prof);
         setProfile(prof ? { ...prof, coins: effectiveCoins, xp: effectiveXp } : { id: u.id, coins: effectiveCoins, xp: effectiveXp });
 
+        // Kart sahipligi user_metadata.card_collection icinde tutulur.
+        // NOT: profiles tablosunda 'inventory' kolonu YOK; onu secmek PostgREST'e
+        // 400 donduruyordu ve sayfa hic calismiyordu.
         const metaCollection = Array.isArray(u.user_metadata?.card_collection) ? u.user_metadata.card_collection : [];
         const metaInv = Array.isArray(u.user_metadata?.inventory) ? u.user_metadata.inventory : [];
-        const profInv = Array.isArray(prof?.inventory) ? prof.inventory : [];
-        const combinedOwned = [...new Set([...metaCollection, ...metaInv, ...profInv])];
+        const combinedOwned = [...new Set([...metaCollection, ...metaInv])];
         setOwnedCardIds(combinedOwned);
 
         const claimed = Array.isArray(u.user_metadata?.claimed_album_cards) ? u.user_metadata.claimed_album_cards : [];
