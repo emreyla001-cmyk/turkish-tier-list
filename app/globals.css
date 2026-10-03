@@ -146,6 +146,64 @@ html.light .site-footer {
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+
+/* ========================================================
+   KLAVYE FOCUS GÖRÜNÜRLÜĞÜ (WCAG 2.4.7)
+   Yalnizca `outline` kullanilir:
+   - `border-radius` yazilmaz; aksi halde specificity esit oldugu icin
+     bu kural dosya sonunda gelip .avatar (50%) gibi daireleri kareye cevirirdi.
+   - `box-shadow` yazilmaz; projede 40 box-shadow kurali var, global bir
+     atama odak aninda 37'sini silerdi.
+   ======================================================== */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Windows Yuksek Kontrast modunda sistem rengi kullan. */
+@media (forced-colors: active) {
+  *:focus-visible { outline: 2px solid CanvasText; }
+}
+
+/* Skip link ile <main>'e odaklaninca sayfayi saran dev halka cizilmesin.
+   WebAIM skip-link deseni: odak gecici konteyner, gosterge gerekmez. */
+main:focus, main:focus-visible { outline: none; }
+
+/* ========================================================
+   SKIP LINK — klavyeyle icerige atlama
+   ======================================================== */
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 10000;
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 2px solid var(--accent);
+  color: var(--text);
+  font-weight: 700;
+  font-size: .9rem;
+  text-decoration: none;
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, .65);
+
+  /* Gizlerken display:none DEGIL: o zaman ilk Tab odagi yutar.
+     transform + opacity ile DOM'da kalir, ekran okuyucu okumaya devam eder. */
+  transform: translateY(calc(-100% - 24px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .16s ease-out, opacity .16s ease-out;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -600,7 +658,6 @@ a { color: inherit; text-decoration: none; }
   color: #fff;
   font-family: inherit;
   font-size: 1rem;
-  outline: none;
 }
 .spotlight-close {
   background: transparent;
@@ -1058,7 +1115,7 @@ a { color: inherit; text-decoration: none; }
   font-family: inherit;
   font-size: .9rem;
 }
-.toolbar-search input:focus { outline: none; border-color: var(--accent); }
+.toolbar-search input:focus { border-color: var(--accent); }
 .clear-search-btn {
   position: absolute;
   right: 12px;
@@ -1079,7 +1136,6 @@ a { color: inherit; text-decoration: none; }
   color: var(--text);
   font-family: inherit;
   font-size: .85rem;
-  outline: none;
   cursor: pointer;
 }
 .toolbar-filters select:focus { border-color: var(--accent); }
@@ -1608,9 +1664,9 @@ a.card:hover { transform: translateY(-3px); background: var(--card-hover); borde
 .field { margin-bottom: 14px; }
 .field label { display: block; font-size: .8rem; font-weight: 700; margin-bottom: 6px; color: var(--text-dim); }
 .field input, .field select { width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; color: var(--text); font-family: inherit; font-size: .92rem; }
-.field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+.field input:focus, .field select:focus { border-color: var(--accent); }
 .field textarea { width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; color: var(--text); font-family: inherit; font-size: .92rem; resize: vertical; }
-.field textarea:focus { outline: none; border-color: var(--accent); }
+.field textarea:focus { border-color: var(--accent); }
 .auth-card { max-width: 400px; margin: 48px auto; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
 
 /* Stat Çubukları */
@@ -2229,6 +2285,15 @@ code { background: var(--bg-2); padding: 2px 6px; border-radius: 6px; font-size:
   .avatar-animated-frame-wrap,
   .avatar-animated-frame-spinner {
     animation: none !important;
+  }
+  /* Skip link gecisi ve yumuşak kayma: reduced-motion tercih eden
+     kullanici bunlari almamali. scroll-behavior en kritigi — cünkü
+     skip link'e basinca tetiklenen asil hareket o. */
+  .skip-link {
+    transition: none !important;
+  }
+  html {
+    scroll-behavior: auto !important;
   }
 }
 

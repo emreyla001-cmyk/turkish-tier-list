@@ -36,6 +36,10 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        {/* Klavye ve ekran okuyucu kullanicilari icin: ilk Tab'da icerige atla.
+            CSS'te gizli, :focus ile gorunur. <body>'nin ilk odaklanabilir cocugu. */}
+        <a href="#ana-icerik" className="skip-link">İçeriğe geç</a>
+
         <BDSNAmbientCanvas />
         <Heartbeat />
         <BanGuard />
@@ -59,7 +63,7 @@ export default function RootLayout({ children }) {
           </div>
         </header>
 
-        <main>{children}</main>
+        <main id="ana-icerik" tabIndex={-1}>{children}</main>
 
         {/* MODERN FOOTER (MERLİNTOON & UZAYMANGA FOOTER STYLE) */}
         <footer className="site-footer">

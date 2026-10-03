@@ -243,7 +243,6 @@ export default function SikayetIstekPage() {
                   border: '1px solid var(--border)',
                   borderRadius: '10px',
                   color: 'var(--text)',
-                  outline: 'none',
                 }}
               />
             </div>
@@ -262,7 +261,6 @@ export default function SikayetIstekPage() {
                   border: '1px solid var(--border)',
                   borderRadius: '10px',
                   color: 'var(--text)',
-                  outline: 'none',
                 }}
               >
                 {CATEGORIES.map((cat) => (
@@ -290,7 +288,6 @@ export default function SikayetIstekPage() {
                   border: '1px solid var(--border)',
                   borderRadius: '10px',
                   color: 'var(--text)',
-                  outline: 'none',
                 }}
               >
                 <option value="düşük">🟢 Düşük - Acelesi Yok</option>
@@ -316,7 +313,6 @@ export default function SikayetIstekPage() {
                   border: '1px solid var(--border)',
                   borderRadius: '10px',
                   color: 'var(--text)',
-                  outline: 'none',
                 }}
               />
             </div>
@@ -343,7 +339,6 @@ export default function SikayetIstekPage() {
                 border: '1px solid var(--border)',
                 borderRadius: '10px',
                 color: 'var(--text)',
-                outline: 'none',
                 resize: 'vertical',
                 lineHeight: 1.5,
               }}
