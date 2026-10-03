@@ -53,9 +53,9 @@ export default async function HomePage() {
           <div className="card" style={{ background: 'linear-gradient(135deg, rgba(20,25,45,0.9), rgba(10,13,22,0.95))', border: '1px solid var(--accent)', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#fef08a' }}>
+                <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#fef08a', fontSize: '1.25rem' }}>
                   <span>🎮</span> Mini Oyunlar & Günlük Etkinlik Merkezi
-                </h3>
+                </h2>
                 <p style={{ margin: '4px 0 0', fontSize: '.84rem', color: 'var(--text-dim)' }}>
                   Tier parası ve XP kazanmak için günlük bilmeceleri çöz, düellolara katıl!
                 </p>

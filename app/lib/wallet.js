@@ -5,10 +5,13 @@ import { validateXpGain } from './gamificationUtils';
  * Kullanıcının güncel bakiyesini user_metadata ve profiles senkronizasyonunu gözeterek döndürür.
  */
 export function getEffectiveCoins(user, profile) {
-  if (user?.user_metadata?.coins !== undefined) {
-    return Number(user.user_metadata.coins);
-  }
-  return Number(profile?.coins || 0);
+  // Tek dogruluk kaynagi: public.profiles.coins (sunucu kontrolunde).
+  // user_metadata.coins ARTIK OKUNMAZ. Supabase kullanicinin kendi
+  // metadata'sini serbestce yazmasina izin verir; okunmasi hile vektoruydu.
+  const profRaw = profile?.coins;
+  if (profRaw === undefined || profRaw === null) return 0;
+  const n = Number(profRaw);
+  return isNaN(n) ? 0 : n;
 }
 
 /**
@@ -18,59 +21,24 @@ export function getEffectiveCoins(user, profile) {
 export async function deductCoins(userOrId, amount, currentCoinsFallback = null) {
   if (!userOrId) return { success: false, error: 'Giriş yapılmalıdır.' };
 
-  let userObj = typeof userOrId === 'object' ? userOrId : null;
-  let userId = typeof userOrId === 'string' ? userOrId : userOrId?.id;
+  // Harcama SUNUCUDA dogrulanir (public.spend_coins): atomik UPDATE,
+  // yetersiz bakiye veritabaninda engellenir. Istemcideki bakiye
+  // bilgisi guvenilmez oldugu icin karar buraya birakilir.
+  const { data, error } = await supabase.rpc('spend_coins', {
+    p_amount: Math.round(Number(amount)),
+    p_reason: 'purchase',
+  });
 
-  if (!userObj) {
-    try {
-      const { data } = await supabase.auth.getUser();
-      userObj = data?.user || null;
-      if (!userId && userObj) userId = userObj.id;
-    } catch {}
+  if (error) {
+    // 23514 = yetersiz bakiye (CHECK violation), fonksiyon icinden firlatildi.
+    const yetersiz = error.code === '23514';
+    const msg = yetersiz
+      ? `Yetersiz Bakiye! Bu işlem için ${Number(amount).toLocaleString('tr-TR')} Tier Parasına ihtiyacınız var.`
+      : error.message || 'Bakiye düşürülemedi.';
+    return { success: false, error: msg, currentCoins: null };
   }
 
-  // Mevcut bakiye: user_metadata -> currentCoinsFallback -> profiles tablosu
-  let currentCoins = 0;
-  if (userObj?.user_metadata?.coins !== undefined) {
-    currentCoins = Number(userObj.user_metadata.coins);
-  } else if (currentCoinsFallback !== null && !isNaN(Number(currentCoinsFallback))) {
-    currentCoins = Number(currentCoinsFallback);
-  } else if (userId) {
-    try {
-      const { data: p } = await supabase.from('profiles').select('coins').eq('id', userId).maybeSingle();
-      if (p?.coins !== undefined) currentCoins = Number(p.coins);
-    } catch {}
-  }
-
-  if (currentCoins < amount) {
-    return {
-      success: false,
-      error: `Yetersiz Bakiye! Bu işlem için ${amount.toLocaleString('tr-TR')} Tier Parasına ihtiyacınız var. Mevcut bakiyeniz: ${currentCoins.toLocaleString('tr-TR')}`,
-      currentCoins,
-    };
-  }
-
-  const newCoins = Math.max(0, currentCoins - amount);
-
-  // 1. user_metadata'yı güncelle
-  try {
-    await supabase.auth.updateUser({
-      data: {
-        coins: newCoins,
-      },
-    });
-  } catch (metaErr) {
-    console.warn('Metadata coins update error:', metaErr);
-  }
-
-  // 2. profiles tablosunu güncelle
-  if (userId) {
-    try {
-      await supabase.from('profiles').update({ coins: newCoins }).eq('id', userId);
-    } catch (tableErr) {
-      console.warn('Profiles table update bypassed:', tableErr?.message);
-    }
-  }
+  const newCoins = Number(data);
 
   // 3. UI genelinde anlık bakiye yenilemesi fırlat
   if (typeof window !== 'undefined') {
@@ -90,52 +58,21 @@ export async function deductCoins(userOrId, amount, currentCoinsFallback = null)
 export async function addCoins(userOrId, amount, currentCoinsFallback = null) {
   if (!userOrId || amount <= 0) return { success: false };
 
-  let userObj = typeof userOrId === 'object' ? userOrId : null;
-  let userId = typeof userOrId === 'string' ? userOrId : userOrId?.id;
+  // Bakiye artik SUNUCUDA hesaplaniyor (public.reward_coins).
+  // Istemci yalnizca miktar ve sebep gonderir; geri kalan bakiyeyi
+  // veritabani dondurur. Boylece hatalar sessizce yutulmaz.
+  const { data, error } = await supabase.rpc('reward_coins', {
+    p_amount: Math.round(Number(amount)),
+    p_reason: 'game_reward',
+  });
 
-  if (!userObj) {
-    try {
-      const { data } = await supabase.auth.getUser();
-      userObj = data?.user || null;
-      if (!userId && userObj) userId = userObj.id;
-    } catch {}
+  if (error) {
+    console.error('addCoins basarisiz:', error);
+    return { success: false, error: error.message || 'Odul verilemedi.' };
   }
 
-  let currentCoins = 0;
-  if (userObj?.user_metadata?.coins !== undefined) {
-    currentCoins = Number(userObj.user_metadata.coins);
-  } else if (currentCoinsFallback !== null && !isNaN(Number(currentCoinsFallback))) {
-    currentCoins = Number(currentCoinsFallback);
-  } else if (userId) {
-    try {
-      const { data: p } = await supabase.from('profiles').select('coins').eq('id', userId).maybeSingle();
-      if (p?.coins !== undefined) currentCoins = Number(p.coins);
-    } catch {}
-  }
+  const newCoins = Number(data);
 
-  const newCoins = currentCoins + amount;
-
-  // 1. Metadata güncelle
-  try {
-    await supabase.auth.updateUser({
-      data: {
-        coins: newCoins,
-      },
-    });
-  } catch (err) {
-    console.warn('Metadata add coins error:', err);
-  }
-
-  // 2. profiles tablosu
-  if (userId) {
-    try {
-      await supabase.from('profiles').update({ coins: newCoins }).eq('id', userId);
-    } catch (err) {
-      console.warn('Profiles table add coins error:', err);
-    }
-  }
-
-  // 3. Event fırlat
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('coins-updated', { detail: { coins: newCoins } }));
     window.dispatchEvent(new CustomEvent('profile-updated', { detail: { coins: newCoins } }));
@@ -152,7 +89,6 @@ export async function addCoins(userOrId, amount, currentCoinsFallback = null) {
  * Hiçbir kazanılan XP kaybolmaz (en yüksek ve geçerli değer esas alınır).
  */
 export function getEffectiveXP(user, profile) {
-  const metaXp = user?.user_metadata?.xp !== undefined ? Number(user.user_metadata.xp) : null;
   const profileXp = profile?.xp !== undefined ? Number(profile.xp) : null;
   const localXp = typeof window !== 'undefined' && user?.id
     ? Number(localStorage.getItem(`user_xp_${user.id}`))
@@ -185,15 +121,6 @@ export async function addXP(userOrId, amount, currentXpFallback = null) {
     currentXp = Math.max(currentXp, Number(currentXpFallback));
   }
 
-  if (userId) {
-    try {
-      const { data: p } = await supabase.from('profiles').select('xp').eq('id', userId).maybeSingle();
-      if (p?.xp !== undefined && !isNaN(Number(p.xp))) {
-        currentXp = Math.max(currentXp, Number(p.xp));
-      }
-    } catch {}
-  }
-
   const validation = validateXpGain(userId || 'anon', amount);
   if (!validation.allowed || validation.adjustedAmount <= 0) {
     console.warn('XP validation blocked or capped:', validation.reason);
@@ -201,34 +128,26 @@ export async function addXP(userOrId, amount, currentXpFallback = null) {
   }
 
   const grantedAmount = validation.adjustedAmount;
-  const newXp = currentXp + grantedAmount;
 
-  // 1. Supabase Auth user_metadata'ya anında yaz (En güvenilir oturum state'i)
-  try {
-    await supabase.auth.updateUser({
-      data: {
-        xp: newXp,
-      },
-    });
-  } catch (err) {
-    console.warn('Metadata addXP error:', err);
+  // XP artik SUNUCUDA hesaplaniyor (public.reward_xp): VIP carpani ve
+  // toplam deger veritabaninda uygulanir, istemci tahmin etmez.
+  const { data, error } = await supabase.rpc('reward_xp', {
+    p_amount: Math.round(Number(grantedAmount)),
+  });
+
+  if (error) {
+    console.error('addXP basarisiz:', error);
+    return { success: false, newXp: currentXp, reason: error.message };
   }
 
-  // 2. Tarayıcı localStorage'a anında yaz (Çevrimdışı ve sayfa yenileme yedeklemesi)
+  const newXp = Number(data);
+
+  // Tarayici localStorage yedegi (sayfa yenileme arasi gecici gosterim)
   if (typeof window !== 'undefined' && userId) {
     localStorage.setItem(`user_xp_${userId}`, String(newXp));
   }
 
-  // 3. profiles tablosunu güncelle
-  if (userId) {
-    try {
-      await supabase.from('profiles').update({ xp: newXp }).eq('id', userId);
-    } catch (err) {
-      console.warn('Profiles table addXP error:', err);
-    }
-  }
-
-  // 4. Global UI eventlerini ateşle (Profil, HeaderNav, Görevler anında yenilenir)
+  // Global UI eventlerini atesle (Profil, HeaderNav, Gorevler aninda yenilenir)
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('xp-updated', { detail: { xp: newXp } }));
     window.dispatchEvent(new CustomEvent('profile-updated', { detail: { xp: newXp } }));
