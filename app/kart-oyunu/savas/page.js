@@ -60,9 +60,7 @@ export default function SavasArenasi() {
 
   async function handleBuyPotionInArena() {
     if (!user) return;
-    const currentCoins = user.user_metadata?.coins !== undefined
-      ? Number(user.user_metadata.coins)
-      : Number(profile?.coins || 0);
+    const currentCoins = Number(profile?.coins || 0);
 
     const res = await buyStaminaPotion(user, currentCoins);
     if (res.success) {
@@ -103,9 +101,7 @@ export default function SavasArenasi() {
         supabase.from('profiles').select('id, username, coins, xp').eq('id', u.id).maybeSingle(),
       ]);
 
-      const userCoins = u.user_metadata?.coins !== undefined
-        ? Number(u.user_metadata.coins)
-        : Number(p?.coins || 0);
+      const userCoins = Number(p?.coins || 0);
 
       setLeaguesConfig(cfgRes);
       setProfile(p ? { ...p, coins: userCoins } : { id: u.id, username: u.user_metadata?.username || 'Sen', coins: userCoins, xp: 0 });
