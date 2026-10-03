@@ -157,8 +157,9 @@ export default function HeroSpotlight({ featuredCharacters = [] }) {
           </p>
 
           <p className="hero-spotlight-desc">
-            {current.description
-              ? current.description.slice(0, 160) + (current.description.length > 160 ? '...' : '')
+            {(current.description_short || current.description)
+              ? (current.description_short || current.description).slice(0, 160)
+                + ((current.description_short || current.description).length > 160 ? '...' : '')
               : 'Türk kurgusunun en güçlü figürlerinden biri. Detaylı scaling, güç analizi ve tartışmalar sayfada.'}
           </p>
 
