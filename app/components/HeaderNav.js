@@ -157,7 +157,7 @@ export default function HeaderNav() {
               e.stopPropagation();
               setOpenExploreDropdown(true);
             }}
-            style={{ cursor: 'pointer', outline: 'none' }}
+            style={{ cursor: 'pointer' }}
           >
             Diğer Keşfet <span style={{ fontSize: '.75rem', marginLeft: '4px' }}>▾</span>
           </button>

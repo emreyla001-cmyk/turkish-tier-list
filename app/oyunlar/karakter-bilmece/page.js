@@ -338,7 +338,6 @@ export default function KarakterBilmecePage() {
               border: '2px solid var(--border)',
               borderRadius: '14px',
               color: 'var(--text)',
-              outline: 'none',
               boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
             }}
           />
