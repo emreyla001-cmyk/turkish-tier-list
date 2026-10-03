@@ -27,6 +27,7 @@ function Users() {
   const [banReason, setBanReason] = useState('');
   const [rightDays, setRightDays] = useState('7');
   const [lastBatch, setLastBatch] = useState(null);
+  const [bekliyor, setBekliyor] = useState(false);
 
   async function load() {
     const [{ data: us }, { data: it }] = await Promise.all([
@@ -57,11 +58,51 @@ function Users() {
 
   async function giveAll() {
     setMsg(null);
-    const { data, error } = await supabase.rpc('grant_coins_all', { amount: Number(bulkAmount), reason: 'Admin: herkese dağıtım' });
-    if (error) { setMsg(error.message); return; }
-    setLastBatch(data);
-    setMsg(`Herkese ${bulkAmount} tier parası dağıtıldı. İstersen aşağıdan geri alabilirsin.`);
-    load();
+
+    // --- Guvenlik: geri alinamaz toplu islem icin dogrulama ---
+    const miktar = Number(bulkAmount);
+
+    if (!Number.isFinite(miktar) || !Number.isInteger(miktar)) {
+      setMsg('Hata: miktar tam sayi olmali.');
+      return;
+    }
+    if (miktar === 0) {
+      setMsg('Hata: miktar 0 olamaz.');
+      return;
+    }
+    if (miktar < 0) {
+      setMsg('Hata: negatif miktar kullanilamaz. Almak icin kullanici satirindaki "Al" butonunu kullanin.');
+      return;
+    }
+    if (miktar > 1000000) {
+      setMsg('Hata: tek seferde en fazla 1.000.000 verilebilir.');
+      return;
+    }
+
+    // Kac kullanicinin etkilenecegini onay ekraninda goster
+    const etkilenecek = users.length;
+    const onay = window.confirm(
+      `TUM KULLANICILARA ${miktar.toLocaleString('tr-TR')} tier para verilecek.\n\n` +
+      `Etkilenecek kullanici sayisi: ${etkilenecek}\n\n` +
+      `Bu islem geri alinabilir ("Son Dagitimi Geri Al" dugmesi) ama\n` +
+      `bir kez uygulandiktan sonra otomatik geri olmaz.\n\n` +
+      `Devam edilsin mi?`
+    );
+    if (!onay) {
+      setMsg('Islem iptal edildi.');
+      return;
+    }
+
+    setBekliyor(true);
+    try {
+      const { data, error } = await supabase.rpc('grant_coins_all', { amount: miktar, reason: 'Admin: herkese dağıtım' });
+      if (error) { setMsg(error.message); return; }
+      setLastBatch(data);
+      setMsg(`Herkese ${miktar.toLocaleString('tr-TR')} tier parası dağıtıldı. Geri almak için aşağıdaki düğmeyi kullan (yalnızca son dağıtım için).`);
+      load();
+    } finally {
+      setBekliyor(false);
+    }
   }
   async function undoLastBatch() {
     if (!lastBatch) return;
@@ -80,8 +121,18 @@ function Users() {
       <div className="card">
         <h3>Herkese Tier Parası Dağıt</h3>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
-          <input type="number" value={bulkAmount} onChange={(e) => setBulkAmount(e.target.value)} style={{ width: '140px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 11px', color: 'var(--text)' }} />
-          <button className="btn" onClick={giveAll}>Herkese Ver</button>
+          <input type="number"
+            value={bulkAmount}
+            onChange={(e) => setBulkAmount(e.target.value)}
+            min="1"
+            max="1000000"
+            step="1"
+            disabled={bekliyor}
+            style={{ width: '140px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 11px', color: 'var(--text)' }}
+          />
+          <button className="btn" onClick={giveAll} disabled={bekliyor}>
+            {bekliyor ? 'Isleniyor...' : 'Herkese Ver'}
+          </button>
           {lastBatch && <button className="btn btn-ghost" onClick={undoLastBatch}>Son Dağıtımı Geri Al</button>}
         </div>
       </div>

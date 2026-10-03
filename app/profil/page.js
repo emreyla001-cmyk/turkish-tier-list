@@ -48,7 +48,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="card" style={{ margin: '14px 0', border: '1px solid #e6455b', padding: '16px' }}>
-          <h4 style={{ color: '#e6455b', margin: '0 0 8px' }}>Bu bölüm yüklenirken bir sorun oluştu</h4>
+          <h3 style={{ color: '#e6455b', margin: '0 0 8px', fontSize: '1.15rem' }}>Bu bölüm yüklenirken bir sorun oluştu</h3>
           <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: 0 }}>
             {this.state.error?.message || String(this.state.error)}
           </p>
@@ -1147,7 +1147,7 @@ function ProfilContent() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <div>
-                    <h4 style={{ margin: 0, color: 'var(--accent)' }}>Vitrinde Gösterilecek 3 Kartını Seç:</h4>
+                    <h3 style={{ margin: 0, color: 'var(--accent)', fontSize: '1.05rem' }}>Vitrinde Gösterilecek 3 Kartını Seç:</h3>
                     <p style={{ margin: '2px 0 0', fontSize: '.8rem', color: 'var(--text-dim)' }}>
                       Sahip olduğun albümdeki kartlardan sergilemek istediğin 3 karta tıkla ve kaydet.
                     </p>
@@ -1200,7 +1200,7 @@ function ProfilContent() {
             {showcaseCards.length === 0 ? (
               <div style={{ padding: '36px', textAlign: 'center', background: 'var(--bg-2)', borderRadius: '12px' }}>
                 <span style={{ fontSize: '2.5rem' }}>🎴</span>
-                <h4 style={{ margin: '10px 0 4px' }}>Henüz Kart Vitrinin Boş</h4>
+                <h3 style={{ margin: '10px 0 4px', fontSize: '1.05rem' }}>Henüz Kart Vitrinin Boş</h3>
                 <p style={{ fontSize: '.85rem', color: 'var(--text-dim)', margin: 0 }}>
                   Kart Arenasında paket açıp karakterlerini uyandırdıkça en görkemli 3 kartın otomatik olarak burada sergilenecektir.
                 </p>
@@ -1288,7 +1288,7 @@ function ProfilContent() {
 
                       {/* Karakter Bilgileri */}
                       <div>
-                        <h4 style={{ margin: '0 0 2px', fontSize: '1.05rem', color: '#fff' }}>{card.name}</h4>
+                        <h5 style={{ margin: '0 0 2px', fontSize: '1.05rem', color: '#fff', fontWeight: 700 }}>{card.name}</h5>
                         <span style={{ fontSize: '.78rem', color: 'var(--text-dim)', display: 'block', marginBottom: '8px' }}>
                           {card.series}
                         </span>
