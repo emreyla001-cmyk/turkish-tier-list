@@ -17,7 +17,9 @@ const steps = [
 export default async function HomePage() {
   const { data: characters } = await supabase
     .from('characters')
-    .select('id, name, series, tier, category, image_url, created_at, power_score, intelligence_score, speed_score, durability_score, description')
+    // description_short: veritabaninda uretilen kisaltilmis surum (ilk 180 karakter).
+    // HeroSpotlight yalnizca 160 karakter gosteriyor; tam aciklamayi (98 KB) cekmeye gerek yok.
+    .select('id, name, series, tier, category, image_url, created_at, power_score, intelligence_score, speed_score, durability_score, description_short')
     .eq('status', 'published')
     .order('created_at', { ascending: false });
 
