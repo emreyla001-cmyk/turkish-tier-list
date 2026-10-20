@@ -1,0 +1,51 @@
+name: Antigravity Continuous Security & Build Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-and-build-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          npm ci --prefer-offline --no-audit
+          pip install requests pydantic
+
+      - name: Run Dependency & CVE Vulnerability Audit
+        run: python scripts/dependency_security_audit.py || true
+
+      - name: Run Business Logic & RBAC Audit
+        run: python scripts/business_logic_audit.py || true
+
+      - name: Run Production Build
+        run: npm run build
+
+      - name: Start Production Server for E2E Tests
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E User Game Audit
+        run: node scripts/e2e_user_game_audit.js

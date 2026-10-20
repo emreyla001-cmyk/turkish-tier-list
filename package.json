@@ -1,0 +1,33 @@
+{
+  "name": "turkish-tier-list",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:auto": "node dev-auto.js",
+    "heal": "python scripts/auto_site_healer.py",
+    "scan:live": "node scripts/site_health_scan.js",
+    "orchestrate": "python scripts/master_autonomous_orchestrator.py"
+  },
+  "dependencies": {
+    "@rive-app/react-canvas": "^4.36.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.26",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "overrides": {
+    "postcss": "^8.5.28"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "chokidar": "^5.0.0"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "leagues": [
+    { "id": "lig_1", "name": "Sokak Dövüşçüsü", "icon": "🥉", "minTrophies": 0, "maxTrophies": 299, "color": "#cd7f32" },
+    { "id": "lig_2", "name": "Yeraltı Reisi", "icon": "🥈", "minTrophies": 300, "maxTrophies": 699, "color": "#c0c0c0" },
+    { "id": "lig_3", "name": "Baronlar Masası", "icon": "🥇", "minTrophies": 700, "maxTrophies": 1199, "color": "#ffd700" },
+    { "id": "lig_4", "name": "Bozkır Alpi", "icon": "💎", "minTrophies": 1200, "maxTrophies": 1799, "color": "#00f0ff" },
+    { "id": "lig_5", "name": "Tengri Divanı", "icon": "👑", "minTrophies": 1800, "maxTrophies": 99999, "color": "#ff007f" }
+  ],
+  "packs": [
+    {
+      "id": "pack_bronze",
+      "name": "Bronz Paket (Sokak Savaşçısı)",
+      "price": 1500,
+      "icon": "🥉",
+      "cardCount": 3,
+      "cashback": 150,
+      "xpReward": 100,
+      "badge": "Giriş Seviye",
+      "badgeColor": "#cd7f32",
+      "desc": "3 Karakter Kartı içerir. Sokak ve çaylak seviyesindeki kahramanlar. (+150 TP İade)",
+      "ratesText": "R: %72 · SR: %23 · SSR: %4.5 · UR: %0.5"
+    },
+    {
+      "id": "pack_silver",
+      "name": "Gümüş Paket (Yeraltı Hükümdarı)",
+      "price": 4000,
+      "icon": "🥈",
+      "cardCount": 4,
+      "cashback": 400,
+      "xpReward": 250,
+      "badge": "1 SR Garanti",
+      "badgeColor": "#94a3b8",
+      "desc": "4 Karakter Kartı içerir. Bina ve mahalle yıkan kudretli dövüşçüler (En az 1 SR Garanti + 400 TP İade).",
+      "ratesText": "R: %50 · SR: %38 · SSR: %10.5 · UR: %1.5"
+    },
+    {
+      "id": "pack_gold",
+      "name": "Altın Paket (Kasaba & Şehir Baronu)",
+      "price": 9000,
+      "icon": "🥇",
+      "cardCount": 5,
+      "cashback": 1000,
+      "xpReward": 600,
+      "badge": "Yüksek SSR İhtimali",
+      "badgeColor": "#f59e0b",
+      "desc": "5 Karakter Kartı içerir. Şehir ve ordu ölçeğinde efsaneleşmiş savaşçılar (5 Kart + 1.000 TP İade).",
+      "ratesText": "R: %30 · SR: %47 · SSR: %19 · UR: %4"
+    },
+    {
+      "id": "pack_mega",
+      "name": "Mega Efsanevi Paket (Bozkır Alpi)",
+      "price": 20000,
+      "icon": "💎",
+      "cardCount": 6,
+      "cashback": 2500,
+      "xpReward": 1500,
+      "badge": "1 SSR Garanti!",
+      "badgeColor": "#00f0ff",
+      "desc": "6 Karakter Kartı içerir. Kıta ve gezegen seviyesinde devasa varlıklar (1 Garanti SSR + 2.500 TP İade).",
+      "ratesText": "R: %18 · SR: %42 · SSR: %32 · UR: %8"
+    },
+    {
+      "id": "pack_cosmic",
+      "name": "Kozmik & İlahi Tanrılar Paketi (Tengri Divanı)",
+      "price": 45000,
+      "icon": "👑",
+      "cardCount": 7,
+      "cashback": 6000,
+      "xpReward": 3500,
+      "badge": "2 SSR veya UR Garanti!",
+      "badgeColor": "#ff007f",
+      "desc": "7 Karakter Kartı içerir. Evren, boyut ve kozmik gerçeklik büken tanrılar (2 SSR/UR Garanti + 6.000 TP İade).",
+      "ratesText": "R: %10 · SR: %33 · SSR: %42 · UR: %15"
+    }
+  ]
+}
